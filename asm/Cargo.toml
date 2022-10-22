@@ -1,0 +1,13 @@
+[package]
+name = "asm"
+version = "0.1.0"
+edition = "2021"
+description = "Zeus RISC-V assembler"
+readme = "../README.md"
+license = "MIT"
+publish = false
+
+[dependencies]
+common = { path="../common" }
+
+log = { workspace=true }

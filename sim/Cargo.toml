@@ -1,0 +1,11 @@
+[package]
+name = "sim"
+version = "0.1.0"
+edition = "2021"
+description = "Zeus RISC-V simulator"
+readme = "../README.md"
+license = "MIT"
+publish = false
+
+[dependencies]
+common = { path="../common" }

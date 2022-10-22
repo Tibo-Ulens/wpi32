@@ -1,0 +1,11 @@
+[package]
+name = "common"
+version = "0.1.0"
+edition = "2021"
+description = "Common types and functions"
+readme = "../README.md"
+license = "MIT"
+publish = false
+
+[dependencies]
+thiserror = "1.0.37"
