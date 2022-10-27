@@ -32,6 +32,9 @@ impl<'s> Iterator for Lexer<'s> {
 				match res {
 					Ok(t) => Some(t),
 					Err(e) => {
+						// If a lex error occurs, keep searching so it can
+						// print all potential errors, but don't return any
+						// more lexemes
 						error!("{}", e);
 
 						while let Some(res) = self.lex_token() {
