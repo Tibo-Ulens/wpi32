@@ -104,7 +104,6 @@ pub(crate) enum TokenType<'s> {
 	DirByte,
 	DirHalf,
 	DirWord,
-	DirString,
 	DirRepeat,
 	DirEqu,
 
@@ -125,6 +124,25 @@ pub(crate) enum TokenType<'s> {
 	SymRightParen,
 	SymLeftBracket,
 	SymRightBracket,
+
+	// Operators
+	OperatorOr,
+	OperatorXor,
+	OperatorAnd,
+	OperatorEq,
+	OperatorNeq,
+	OperatorLt,
+	OperatorLte,
+	OperatorGt,
+	OperatorGte,
+	OperatorLsl,
+	OperatorLsr,
+	OperatorAsr,
+	OperatorPlus,
+	OperatorMinus,
+	OperatorMul,
+	OperatorDiv,
+	OperatorRem,
 }
 
 impl<'s> Display for TokenType<'s> {
@@ -222,7 +240,6 @@ impl<'s> Display for TokenType<'s> {
 			Self::DirByte => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".byte"),
 			Self::DirHalf => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".half"),
 			Self::DirWord => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".word"),
-			Self::DirString => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".string"),
 			Self::DirRepeat => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".repeat"),
 			Self::DirEqu => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".equ"),
 
@@ -240,6 +257,24 @@ impl<'s> Display for TokenType<'s> {
 			Self::SymRightParen => write!(f, "{:<20} | {:<16}", "SYMBOL", ")"),
 			Self::SymLeftBracket => write!(f, "{:<20} | {:<16}", "SYMBOL", "["),
 			Self::SymRightBracket => write!(f, "{:<20} | {:<16}", "SYMBOL", "]"),
+
+			Self::OperatorOr => write!(f, "{:<20} | {:<16}", "OPERATOR", "|"),
+			Self::OperatorXor => write!(f, "{:<20} | {:<16}", "OPERATOR", "^"),
+			Self::OperatorAnd => write!(f, "{:<20} | {:<16}", "OPERATOR", "&"),
+			Self::OperatorEq => write!(f, "{:<20} | {:<16}", "OPERATOR", "=="),
+			Self::OperatorNeq => write!(f, "{:<20} | {:<16}", "OPERATOR", "!="),
+			Self::OperatorLt => write!(f, "{:<20} | {:<16}", "OPERATOR", "<"),
+			Self::OperatorLte => write!(f, "{:<20} | {:<16}", "OPERATOR", "<="),
+			Self::OperatorGt => write!(f, "{:<20} | {:<16}", "OPERATOR", ">"),
+			Self::OperatorGte => write!(f, "{:<20} | {:<16}", "OPERATOR", ">="),
+			Self::OperatorLsl => write!(f, "{:<20} | {:<16}", "OPERATOR", "<<"),
+			Self::OperatorLsr => write!(f, "{:<20} | {:<16}", "OPERATOR", ">>"),
+			Self::OperatorAsr => write!(f, "{:<20} | {:<16}", "OPERATOR", ">>>"),
+			Self::OperatorPlus => write!(f, "{:<20} | {:<16}", "OPERATOR", "+"),
+			Self::OperatorMinus => write!(f, "{:<20} | {:<16}", "OPERATOR", "-"),
+			Self::OperatorMul => write!(f, "{:<20} | {:<16}", "OPERATOR", "*"),
+			Self::OperatorDiv => write!(f, "{:<20} | {:<16}", "OPERATOR", "/"),
+			Self::OperatorRem => write!(f, "{:<20} | {:<16}", "OPERATOR", "%"),
 		}
 	}
 }
