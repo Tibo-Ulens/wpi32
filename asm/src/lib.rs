@@ -1,3 +1,5 @@
+#![feature(is_ascii_octdigit)]
+
 #[macro_use]
 extern crate log;
 

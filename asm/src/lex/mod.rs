@@ -4,9 +4,7 @@ use std::str::Chars;
 mod token;
 
 use common::{Error, LexError};
-use token::Token;
-
-use self::token::TokenType;
+pub(crate) use token::{Token, TokenType};
 
 pub(crate) struct Lexer<'s> {
 	source:      &'s str,
@@ -225,11 +223,44 @@ impl<'s> Lexer<'s> {
 			"r29" => self.make_token(TokenType::RegR29),
 			"r30" => self.make_token(TokenType::RegR30),
 			"r31" => self.make_token(TokenType::RegR31),
+			"zero" => self.make_token(TokenType::RegR0),
+
+			"ra" => self.make_token(TokenType::RegR1),
+			"sp" => self.make_token(TokenType::RegR2),
+			"gp" => self.make_token(TokenType::RegR3),
+			"tp" => self.make_token(TokenType::RegR4),
+			"fp" => self.make_token(TokenType::RegR8),
+			"a0" => self.make_token(TokenType::RegR10),
+			"a1" => self.make_token(TokenType::RegR11),
+			"a2" => self.make_token(TokenType::RegR12),
+			"a3" => self.make_token(TokenType::RegR13),
+			"a4" => self.make_token(TokenType::RegR14),
+			"a5" => self.make_token(TokenType::RegR15),
+			"a6" => self.make_token(TokenType::RegR16),
+			"a7" => self.make_token(TokenType::RegR17),
+			"s0" => self.make_token(TokenType::RegR8),
+			"s1" => self.make_token(TokenType::RegR9),
+			"s2" => self.make_token(TokenType::RegR18),
+			"s3" => self.make_token(TokenType::RegR19),
+			"s4" => self.make_token(TokenType::RegR20),
+			"s5" => self.make_token(TokenType::RegR21),
+			"s6" => self.make_token(TokenType::RegR22),
+			"s7" => self.make_token(TokenType::RegR23),
+			"s8" => self.make_token(TokenType::RegR24),
+			"s9" => self.make_token(TokenType::RegR25),
+			"s10" => self.make_token(TokenType::RegR26),
+			"s11" => self.make_token(TokenType::RegR27),
+			"t0" => self.make_token(TokenType::RegR5),
+			"t1" => self.make_token(TokenType::RegR6),
+			"t2" => self.make_token(TokenType::RegR7),
+			"t3" => self.make_token(TokenType::RegR28),
+			"t4" => self.make_token(TokenType::RegR29),
+			"t5" => self.make_token(TokenType::RegR30),
+			"t6" => self.make_token(TokenType::RegR31),
 
 			".byte" => self.make_token(TokenType::DirByte),
 			".half" => self.make_token(TokenType::DirHalf),
 			".word" => self.make_token(TokenType::DirWord),
-			".string" => self.make_token(TokenType::DirString),
 			".repeat" => self.make_token(TokenType::DirRepeat),
 			".equ" => self.make_token(TokenType::DirEqu),
 
@@ -252,7 +283,7 @@ impl<'s> Lexer<'s> {
 	/// Keep taking characters while a predicate holds true
 	fn take_while<F>(&mut self, pred: F) -> Result<char, Error>
 	where
-		F: Fn(char) -> bool,
+		F: for<'a> Fn(&'a char) -> bool,
 	{
 		// Return early if the immediately following character is None
 		let mut peek = match self.peek() {
@@ -269,7 +300,7 @@ impl<'s> Lexer<'s> {
 
 		// Columns start at 1
 		let mut i = 1;
-		while pred(peek) {
+		while pred(&peek) {
 			self.next();
 
 			if self.idx >= self.len {
@@ -290,18 +321,52 @@ impl<'s> Lexer<'s> {
 	}
 
 	#[inline(always)]
-	fn is_identifier_start(c: char) -> bool {
+	fn is_identifier_start(c: &char) -> bool {
 		c.is_alphabetic()
-			|| c == '!' || c == '$'
-			|| c == '&' || c == '?'
-			|| c == '^' || c == '_'
-			|| c == '~' || c == '@'
-			|| c == '.'
+			|| *c == '!' || *c == '$'
+			|| *c == '&' || *c == '?'
+			|| *c == '^' || *c == '_'
+			|| *c == '~' || *c == '@'
+			|| *c == '.'
 	}
 
 	#[inline(always)]
-	fn is_identifier(c: char) -> bool {
-		Self::is_identifier_start(c) || c.is_ascii_digit() || c == ':'
+	fn is_identifier(c: &char) -> bool {
+		Self::is_identifier_start(c) || c.is_ascii_digit() || *c == ':'
+	}
+
+	#[inline(always)]
+	fn is_binary_digit(c: &char) -> bool { *c == '0' || *c == '1' }
+
+	/// Attempt to make a number starting from the lexers current position
+	/// in the source
+	///
+	/// Can make decimal, hex, octal, or binary numbers depending on the
+	/// supplied predicate function
+	fn try_make_number<F>(&mut self, pred: F) -> Result<Token<'s>, Error>
+	where
+		F: for<'a> Fn(&'a char) -> bool,
+	{
+		match self.take_while(pred) {
+			Ok(_) => (),
+			Err(e) => return Err(e),
+		}
+
+		let raw = &self.source[self.start..self.idx];
+		let num = raw.parse::<u32>().map_err(|_| {
+			LexError::InvalidNumber {
+				line:     self.line,
+				col:      self.col,
+				span:     raw.len(),
+				src_line: self.get_curr_line().to_string(),
+			}
+		});
+
+		if let Err(e) = num {
+			Err(e.into())
+		} else {
+			Ok(self.make_token(TokenType::LitNum(num.unwrap())))
+		}
 	}
 
 	/// Lex a single token
@@ -370,29 +435,29 @@ impl<'s> Lexer<'s> {
 
 				Ok(self.make_token(TokenType::LitStr(raw)))
 			},
-			n if n.is_ascii_digit() => {
-				match self.take_while(|c| c.is_ascii_digit()) {
-					Ok(_) => (),
-					Err(e) => return Some(Err(e)),
-				}
-
-				let raw = &self.source[self.start..self.idx];
-				let num = raw.parse::<u32>().map_err(|_| {
-					LexError::InvalidNumber {
-						line:     self.line,
-						col:      self.col,
-						span:     raw.len(),
-						src_line: self.get_curr_line().to_string(),
-					}
-				});
-
-				if let Err(e) = num {
-					Err(e.into())
-				} else {
-					Ok(self.make_token(TokenType::LitNum(num.unwrap())))
+			'0' => {
+				let peek = self.peek()?;
+				match peek {
+					'x' => {
+						// Consume hex identifier
+						self.next().unwrap();
+						self.try_make_number(char::is_ascii_hexdigit)
+					},
+					'o' => {
+						// Consume octal identifier
+						self.next().unwrap();
+						self.try_make_number(char::is_ascii_octdigit)
+					},
+					'b' => {
+						// Consume binary identifier
+						self.next().unwrap();
+						self.try_make_number(Self::is_binary_digit)
+					},
+					_ => self.try_make_number(char::is_ascii_digit),
 				}
 			},
-			c if Self::is_identifier_start(c) => {
+			n if n.is_ascii_digit() => self.try_make_number(char::is_ascii_digit),
+			c if Self::is_identifier_start(&c) => {
 				match self.take_while(Self::is_identifier) {
 					Ok(_) => (),
 					Err(e) => return Some(Err(e)),
