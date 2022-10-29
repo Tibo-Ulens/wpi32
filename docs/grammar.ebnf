@@ -3,6 +3,8 @@
 newline = ?r"\n"?;
 whitespace = ?r"\s"?;
 
+comma = { " " | "\t" }, ",", { " " | "\t" };
+
 comment = ";", { ?r"[^\n]*"? };
 
 string = '"', { ?r'[^"]'? | '\"' }, '"';
@@ -105,84 +107,92 @@ register = "r0" | "r1" | "r2" | "r3" | "r4" | "r5" | "r6" | "r7" | "r8" | "r9"
 	| "a0" | "a1" | "a2" | "a3" | "a4" | "a5" | "a6" | "a7";
 
 integer_register_immediate_instruction =
-	( "addi" | "slti" | "sltiu" | "andi" | "ori" | "xori" | "lsli" | "lsri" | "asri" ),
-	register,
-	register,
+	( "addi" | "slti" | "sltiu" | "andi" | "ori" | "xori" | "lsli" | "lsri" | "asri" ), comma,
+	register, comma,
+	register, comma,
 	immediate
 ;
 
 integer_register_register_instruction =
-	( "add" | "slt" | "sltu" | "and" | "or" | "xor" | "lsl" | "lsr" | "asr" | "sub" ),
-	register,
-	register,
+	( "add" | "slt" | "sltu" | "and" | "or" | "xor" | "lsl" | "lsr" | "asr" | "sub" ), comma,
+	register, comma,
+	register, comma,
 	register
 ;
 
-upper_immediate_instruction = ( "lui" | "auipc" ), register, immediate;
+upper_immediate_instruction =
+	( "lui" | "auipc" ), comma,
+	register, comma,
+	immediate
+;
 
-jump_instruction = "jal", register, immediate;
-jump_register_instruction = "jalr", register, register, immediate;
+jump_instruction = "jal", comma, register, comma, immediate;
+jump_register_instruction =
+	"jalr", comma,
+	register, comma,
+	register, comma,
+	immediate;
 
 branch_instruction =
-	( "beq" | "bne" | "blt" | "bltu" | "bge" | "bgeu" ),
-	register,
-	register,
+	( "beq" | "bne" | "blt" | "bltu" | "bge" | "bgeu" ), comma,
+	register, comma,
+	register, comma,
 	immediate
 ;
 
 load_instruction =
-	( "lb" | "lbu" | "lh" | "lhu" | "lw" ),
-	register,
+	( "lb" | "lbu" | "lh" | "lhu" | "lw" ), comma,
+	register, comma,
 	address_calculation
 ;
 store_instruction =
-	( "sb", "sh", "sw" ),
-	register,
+	( "sb", "sh", "sw" ), comma,
+	register, comma,
 	address_calculation
 ;
 
 memory_ordering_instruction =
-	( "fence", ordering_operation, ordering_operation )
+	( "fence", comma, ordering_operation, comma, ordering_operation )
 	| total_store_ordering_instruction;
 ordering_operation = "i" | "o" | "r" | "w";
 total_store_ordering_instruction = "fence.tso";
 
 environment_instruction =
-	( "ecall" | "ebreak" ),
-	register,
+	( "ecall" | "ebreak" ), comma,
+	register, comma,
 	register
 ;
 
 fence_instruction = "fence.i";
 
 csr_register_instruction =
-	( "csrrw"  | "csrrs" | "csrrc" ),
-	register,
-	register,
+	( "csrrw"  | "csrrs" | "csrrc" ), comma,
+	register, comma,
+	register, comma,
 	register
 ;
 csr_immediate_instruction =
-	( "csrrwi"  | "csrrsi" | "csrrci" ),
-	register,
-	immediate,
+	( "csrrwi"  | "csrrsi" | "csrrci" ), comma,
+	register, comma,
+	immediate, comma,
 	register
 ;
 
 multiply_instruction =
-	( "mul" | "mulh" | "mulhu" | "mulhsu" ),
-	register,
-	register,
+	( "mul" | "mulh" | "mulhu" | "mulhsu" ), comma,
+	register, comma,
+	register, comma,
 	register
 ;
 divide_instruction =
-	( "div" | "divu" ),
-	register,
-	register,
+	( "div" | "divu" ), comma,
+	register, comma,
+	register, comma,
 	register
 ;
 remainder_instruction =
-	( "rem" | "remu" ),
-	register,
-	register,
+	( "rem" | "remu" ), comma,
+	register, comma,
+	register, comma,
 	register
 ;
