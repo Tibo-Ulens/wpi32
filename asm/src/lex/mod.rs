@@ -369,6 +369,27 @@ impl<'s> Lexer<'s> {
 		}
 	}
 
+	/// Convert a string with a 2 character escape code into its corresponding character
+	fn escape_string_to_char(&self, string: &str) -> Result<char, Error> {
+		match string {
+			"\\n" => Ok('\n'),
+			"\\r" => Ok('\r'),
+			"\\t" => Ok('\t'),
+			"\\\\" => Ok('\\'),
+			"\\0" => Ok('\0'),
+			"\\'" => Ok('\''),
+			_ => {
+				Err(LexError::InvalidEscape {
+					line:     self.line,
+					col:      self.col + 1,
+					span:     2,
+					src_line: self.get_curr_line().to_string(),
+				}
+				.into())
+			},
+		}
+	}
+
 	/// Lex a single token
 	///
 	/// Returns [`None`] if the iterator has ended, else returns a [`Token`] or an [`Error`]
@@ -411,7 +432,29 @@ impl<'s> Lexer<'s> {
 				let next = self.next()?;
 				let close = self.next()?;
 
-				if close != '\'' {
+				if next == '\\' {
+					let actual_close = self.next()?;
+					if actual_close != '\'' {
+						return Some(Err(LexError::UnexpectedSymbol {
+							line:     self.line,
+							col:      self.col,
+							src_line: self.get_curr_line().to_string(),
+							fnd:      close,
+							ex:       '\'',
+						}
+						.into()));
+					}
+
+					let mut unescaped_str = String::from(next);
+					unescaped_str.push(close);
+
+					let escaped_char = match self.escape_string_to_char(&unescaped_str) {
+						Ok(c) => c,
+						Err(e) => return Some(Err(e)),
+					};
+
+					Ok(self.make_token(TokenType::LitChar(escaped_char)))
+				} else if close != '\'' {
 					Err(LexError::UnexpectedSymbol {
 						line:     self.line,
 						col:      self.col,

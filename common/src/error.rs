@@ -55,4 +55,9 @@ pub enum LexError {
 		make_info_block(*.line, *.col, *.span, .src_line.to_string())
 	)]
 	InvalidNumber { line: usize, col: usize, span: usize, src_line: String },
+	#[error(
+		"\n[{line}:{col}]: invalid escape sequence\n{}",
+		make_info_block(*.line, *.col, *.span, .src_line.to_string())
+	)]
+	InvalidEscape { line: usize, col: usize, span: usize, src_line: String },
 }
