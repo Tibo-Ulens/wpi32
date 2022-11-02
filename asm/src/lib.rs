@@ -8,6 +8,7 @@ use std::io::Read;
 use std::path::Path;
 
 mod lex;
+mod parse;
 
 use common::Error;
 use lex::Lexer;
