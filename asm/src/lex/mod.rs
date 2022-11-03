@@ -1,6 +1,7 @@
 use std::iter::Peekable;
 use std::str::Chars;
 
+mod literal;
 mod token;
 
 use common::{Error, LexError};
@@ -91,44 +92,6 @@ impl<'s> Lexer<'s> {
 			span: self.idx - self.start,
 			source_line: self.get_curr_line(),
 		}
-	}
-
-	/// Read a string until a non-escaped " is encountered
-	fn take_string(&mut self) -> Result<&'s str, Error> {
-		// Return early if the immediately following character is None
-		let mut peek = match self.peek() {
-			Some(p) => *p,
-			None => {
-				return Err(LexError::UnexpectedEof {
-					line:     self.line,
-					col:      self.col,
-					src_line: self.get_curr_line().to_string(),
-				}
-				.into());
-			},
-		};
-
-		let mut i = 0;
-		let mut prev = ' ';
-		while !(peek == '"' && prev != '\\') {
-			self.next();
-
-			if self.idx >= self.len {
-				return Err(LexError::UnexpectedEof {
-					line:     self.line,
-					col:      self.col + i + 1,
-					src_line: self.get_curr_line().to_string(),
-				}
-				.into());
-			}
-
-			prev = peek;
-			// Unwrap is safe as idx < len
-			peek = *self.peek().unwrap();
-			i += 1;
-		}
-
-		Ok(&self.source[self.start + 1..self.start + 1 + i])
 	}
 
 	/// Attempt to match an identifier to a keyword, directive, or identifier,
@@ -300,7 +263,9 @@ impl<'s> Lexer<'s> {
 		// Columns start at 1
 		let mut i = 1;
 		while pred(&peek) {
-			self.next();
+			// Unwrap is safe as the previous iteration of the loop assures
+			// there is a character
+			self.next().unwrap();
 
 			if self.idx >= self.len {
 				return Err(LexError::UnexpectedEof {
@@ -333,67 +298,8 @@ impl<'s> Lexer<'s> {
 		Self::is_identifier_start(c) || c.is_ascii_digit() || *c == ':'
 	}
 
-	#[inline(always)]
-	fn is_binary_digit(c: &char) -> bool { *c == '0' || *c == '1' }
-
-	/// Attempt to make a number starting from the lexers current position
-	/// in the source
-	///
-	/// Can make decimal, hex, octal, or binary numbers depending on the
-	/// supplied predicate function
-	fn try_make_number<F>(&mut self, pred: F) -> Result<Token<'s>, LexError>
-	where
-		F: for<'a> Fn(&'a char) -> bool,
-	{
-		match self.take_while(pred) {
-			Ok(_) => (),
-			Err(e) => return Err(e),
-		}
-
-		let raw = &self.source[self.start..self.idx];
-		let num = if raw.starts_with("0x") {
-			u32::from_str_radix(raw.trim_start_matches("0x"), 16).map_err(|_| {
-				LexError::InvalidNumber {
-					line:     self.line,
-					col:      self.col,
-					span:     raw.len(),
-					src_line: self.get_curr_line().to_string(),
-				}
-			})
-		} else if raw.starts_with("0o") {
-			u32::from_str_radix(raw.trim_start_matches("0o"), 8).map_err(|_| {
-				LexError::InvalidNumber {
-					line:     self.line,
-					col:      self.col,
-					span:     raw.len(),
-					src_line: self.get_curr_line().to_string(),
-				}
-			})
-		} else if raw.starts_with("0b") {
-			u32::from_str_radix(raw.trim_start_matches("0x"), 2).map_err(|_| {
-				LexError::InvalidNumber {
-					line:     self.line,
-					col:      self.col,
-					span:     raw.len(),
-					src_line: self.get_curr_line().to_string(),
-				}
-			})
-		} else {
-			raw.parse::<u32>().map_err(|_| {
-				LexError::InvalidNumber {
-					line:     self.line,
-					col:      self.col,
-					span:     raw.len(),
-					src_line: self.get_curr_line().to_string(),
-				}
-			})
-		};
-
-		if let Err(e) = num { Err(e) } else { Ok(self.make_token(TokenType::LitNum(num.unwrap()))) }
-	}
-
 	/// Convert a string with a 2 character escape code into its corresponding character
-	fn escape_string_to_char(&self, string: &str) -> Result<char, Error> {
+	fn escape_string_to_char(&self, string: &str) -> Result<char, LexError> {
 		match string {
 			"\\n" => Ok('\n'),
 			"\\r" => Ok('\r'),
@@ -407,10 +313,15 @@ impl<'s> Lexer<'s> {
 					col:      self.col + 1,
 					span:     2,
 					src_line: self.get_curr_line().to_string(),
-				}
-				.into())
+				})
 			},
 		}
+	}
+
+	/// Checks whether a character is valid inside any binary, octal, decimal,
+	/// or hexadecimal number, including their radix identifiers (0b, 0o, 0x)
+	fn is_digit_or_radix(c: &char) -> bool {
+		c.is_ascii_hexdigit() || *c == 'x' || *c == 'X' || *c == 'o' || *c == 'O'
 	}
 
 	/// Consume any available whitespace characters, updating the lexers state
@@ -428,7 +339,7 @@ impl<'s> Lexer<'s> {
 			},
 			'\n' => {
 				self.line += 1;
-				self.col = 1;
+				self.col = 0;
 				self.prev_nl = self.idx;
 
 				self.next().unwrap();
@@ -526,76 +437,29 @@ impl<'s> Lexer<'s> {
 				}
 			},
 			'\'' => {
-				let next = self.next()?;
-				let close = self.next()?;
-
-				if next == '\\' {
-					let actual_close = self.next()?;
-					if actual_close != '\'' {
-						return Some(Err(LexError::UnexpectedSymbol {
-							line:     self.line,
-							col:      self.col,
-							src_line: self.get_curr_line().to_string(),
-							fnd:      close,
-							ex:       '\'',
-						}
-						.into()));
-					}
-
-					let mut unescaped_str = String::from(next);
-					unescaped_str.push(close);
-
-					let escaped_char = match self.escape_string_to_char(&unescaped_str) {
-						Ok(c) => c,
-						Err(e) => return Some(Err(e)),
-					};
-
-					Ok(self.make_token(TokenType::LitChar(escaped_char)))
-				} else if close != '\'' {
-					Err(LexError::UnexpectedSymbol {
-						line:     self.line,
-						col:      self.col,
-						src_line: self.get_curr_line().to_string(),
-						fnd:      close,
-						ex:       '\'',
-					})
-				} else {
-					Ok(self.make_token(TokenType::LitChar(next)))
-				}
-			},
-			'"' => {
-				let raw = match self.take_string() {
-					Ok(s) => s,
-					Err(e) => return Some(Err(e)),
+				let raw = match self.try_take_char() {
+					Ok(c) => c,
+					Err(e) => return Some(Err(e.into())),
 				};
 
-				// Skip closing quote
-				self.next()?;
+				Ok(self.make_token(TokenType::LitChar(raw)))
+			},
+			'"' => {
+				let raw = match self.try_take_string() {
+					Ok(s) => s,
+					Err(e) => return Some(Err(e.into())),
+				};
 
 				Ok(self.make_token(TokenType::LitStr(raw)))
 			},
-			'0' => {
-				let peek = self.peek()?;
-				match peek {
-					'x' => {
-						// Consume hex identifier
-						self.next().unwrap();
-						self.try_make_number(char::is_ascii_hexdigit)
-					},
-					'o' => {
-						// Consume octal identifier
-						self.next().unwrap();
-						self.try_make_number(char::is_ascii_octdigit)
-					},
-					'b' => {
-						// Consume binary identifier
-						self.next().unwrap();
-						self.try_make_number(Self::is_binary_digit)
-					},
-					_ => self.try_make_number(char::is_ascii_digit),
-				}
+			n if n.is_ascii_digit() => {
+				let num = match self.try_take_number(Self::is_digit_or_radix) {
+					Ok(n) => n,
+					Err(e) => return Some(Err(e.into())),
+				};
+
+				Ok(self.make_token(TokenType::LitNum(num)))
 			},
-			n if n.is_ascii_digit() => self.try_make_number(char::is_ascii_digit),
 			c if Self::is_identifier_start(&c) => {
 				match self.take_while(Self::is_identifier) {
 					Ok(_) => (),
