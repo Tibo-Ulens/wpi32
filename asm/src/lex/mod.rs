@@ -10,6 +10,7 @@ use common::{Error, LexError};
 pub(crate) use token::{Token, TokenType};
 
 pub(crate) struct Lexer<'s> {
+	source_file: String,
 	source:      &'s str,
 	source_iter: Peekable<Chars<'s>>,
 	len:         usize,
@@ -30,8 +31,9 @@ impl<'s> Iterator for Lexer<'s> {
 }
 
 impl<'s> Lexer<'s> {
-	pub(crate) fn new(source: &'s str) -> Self {
+	pub(crate) fn new(source_file: String, source: &'s str) -> Self {
 		Self {
+			source_file,
 			source,
 			source_iter: source.chars().peekable(),
 			len: source.chars().count(),
@@ -85,6 +87,7 @@ impl<'s> Lexer<'s> {
 			Some(p) => *p,
 			None => {
 				return Err(LexError::UnexpectedEof {
+					src_file: self.source_file.to_owned(),
 					line:     self.line,
 					col:      self.col,
 					src_line: self.get_curr_line().to_string(),
@@ -101,6 +104,7 @@ impl<'s> Lexer<'s> {
 
 			if self.idx >= self.len {
 				return Err(LexError::UnexpectedEof {
+					src_file: self.source_file.to_owned(),
 					line:     self.line,
 					col:      self.col + i,
 					src_line: self.get_curr_line().to_string(),
@@ -130,8 +134,8 @@ impl<'s> Lexer<'s> {
 			},
 			'\n' => {
 				self.line += 1;
-				self.col = 0;
-				self.prev_nl = self.idx;
+				self.col = 1;
+				self.prev_nl = self.idx + 1;
 
 				self.next().unwrap();
 
@@ -171,6 +175,7 @@ impl<'s> Lexer<'s> {
 					'=' => Ok(self.make_token(TokenType::OperatorEq)),
 					c => {
 						Err(LexError::UnexpectedSymbol {
+							src_file: self.source_file.to_owned(),
 							line:     self.line,
 							col:      self.col,
 							src_line: self.get_curr_line().to_string(),
@@ -185,6 +190,7 @@ impl<'s> Lexer<'s> {
 					'=' => Ok(self.make_token(TokenType::OperatorNeq)),
 					c => {
 						Err(LexError::UnexpectedSymbol {
+							src_file: self.source_file.to_owned(),
 							line:     self.line,
 							col:      self.col,
 							src_line: self.get_curr_line().to_string(),
@@ -261,6 +267,7 @@ impl<'s> Lexer<'s> {
 			},
 			c => {
 				Err(LexError::RawUnexpectedSymbol {
+					src_file: self.source_file.to_owned(),
 					line:     self.line,
 					col:      self.col,
 					src_line: self.get_curr_line().to_string(),

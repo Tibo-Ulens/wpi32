@@ -12,6 +12,7 @@ default-members = [
 
 [workspace.dependencies]
 log = "0.4.17"
+ansi_term = "0.12.1"
 
 [package]
 name = "wpi32"
