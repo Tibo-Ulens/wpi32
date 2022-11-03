@@ -65,11 +65,9 @@ impl<'s> Lexer<'s> {
 	}
 
 	/// Peek at the next character
-	#[inline(always)]
 	fn peek(&mut self) -> Option<&char> { self.source_iter.peek() }
 
 	/// Consume and return the next character
-	#[inline(always)]
 	fn next(&mut self) -> Option<char> {
 		self.idx += 1;
 		self.source_iter.next()
@@ -94,7 +92,7 @@ impl<'s> Lexer<'s> {
 		}
 	}
 
-	/// Attempt to match an identifier to a keyword, directive, or identifier,
+	/// Attempt to match an identifier to a keyword, register, or directive,
 	/// or return a new label if a match is not found
 	fn match_identifier(&mut self, id: &'s str) -> Token<'s> {
 		match id {
@@ -287,7 +285,10 @@ impl<'s> Lexer<'s> {
 		Ok(&self.source[self.start..self.idx])
 	}
 
-	#[inline(always)]
+	/// Checks whether a character is a valid identifier start character
+	///
+	/// Identifiers follow the regex
+	/// `[a-zA-Z!$&?^_~@.][a-zA-Z!$&?^_~@.0-9:]*`
 	fn is_identifier_start(c: &char) -> bool {
 		c.is_alphabetic()
 			|| *c == '!' || *c == '$'
@@ -297,7 +298,10 @@ impl<'s> Lexer<'s> {
 			|| *c == '.'
 	}
 
-	#[inline(always)]
+	/// Checks whether a character is a valid identifier character
+	///
+	/// Identifiers follow the regex
+	/// `[a-zA-Z!$&?^_~@.][a-zA-Z!$&?^_~@.0-9:]*`
 	fn is_identifier(c: &char) -> bool {
 		Self::is_identifier_start(c) || c.is_ascii_digit() || *c == ':'
 	}
