@@ -19,7 +19,7 @@ pub fn assemble(input_path: &Path, _output_path: &Path) -> Result<(), Error> {
 
 	let lexer = Lexer::new(&contents);
 	for token in lexer {
-		debug!("{}", token);
+		debug!("{}", token?);
 	}
 
 	Ok(())
