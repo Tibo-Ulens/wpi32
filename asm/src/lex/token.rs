@@ -299,7 +299,7 @@ impl<'s> Display for Token<'s> {
 
 		write!(
 			f,
-			"[{:0>3}:{:0>3}]: {:<32} | {}>>>{}<<<{}",
+			"[{:0>3}:{:0>3}]: {:<32} | {}```{}```{}",
 			self.line, self.col, t, left_arm, center, right_arm
 		)
 	}
