@@ -237,11 +237,11 @@ impl<'s> Display for TokenType<'s> {
 			Self::RegR30 => write!(f, "{:<20} | {:<16}", "REGISTER", "r30"),
 			Self::RegR31 => write!(f, "{:<20} | {:<16}", "REGISTER", "r31"),
 
-			Self::DirByte => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".byte"),
-			Self::DirHalf => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".half"),
-			Self::DirWord => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".word"),
-			Self::DirRepeat => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".repeat"),
-			Self::DirEqu => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".equ"),
+			Self::DirByte => write!(f, "{:<20} | {:<16}", "DIRECTIVE", "$byte"),
+			Self::DirHalf => write!(f, "{:<20} | {:<16}", "DIRECTIVE", "$half"),
+			Self::DirWord => write!(f, "{:<20} | {:<16}", "DIRECTIVE", "$word"),
+			Self::DirRepeat => write!(f, "{:<20} | {:<16}", "DIRECTIVE", "$repeat"),
+			Self::DirEqu => write!(f, "{:<20} | {:<16}", "DIRECTIVE", "$equ"),
 
 			Self::LitStr(s) => write!(f, "{:<20} | {:<16}", "STRING", format!("{:?}", s)),
 			Self::LitChar(c) => write!(f, "{:<20} | {:<16}", "CHAR", format!("{:?}", c)),

@@ -134,11 +134,11 @@ impl<'s> Lexer<'s> {
 			"t5" => self.make_token(TokenType::RegR30),
 			"t6" => self.make_token(TokenType::RegR31),
 
-			".byte" => self.make_token(TokenType::DirByte),
-			".half" => self.make_token(TokenType::DirHalf),
-			".word" => self.make_token(TokenType::DirWord),
-			".repeat" => self.make_token(TokenType::DirRepeat),
-			".equ" => self.make_token(TokenType::DirEqu),
+			"$byte" => self.make_token(TokenType::DirByte),
+			"$half" => self.make_token(TokenType::DirHalf),
+			"$word" => self.make_token(TokenType::DirWord),
+			"$repeat" => self.make_token(TokenType::DirRepeat),
+			"$equ" => self.make_token(TokenType::DirEqu),
 
 			_ => {
 				if id.starts_with('.') {

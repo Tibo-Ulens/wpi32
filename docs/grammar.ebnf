@@ -43,13 +43,13 @@ directive = byte_directive
 
 literal = string | char | immediate;
 
-byte_directive = ".byte", literal, { ",", literal };
-half_directive = ".half", literal, { ",", literal };
-word_directive = ".word", literal, { ",", literal };
+byte_directive = "$byte", literal, { ",", literal };
+half_directive = "$half", literal, { ",", literal };
+word_directive = "$word", literal, { ",", literal };
 
-repeat_directive = ".repeat", immediate, directive;
+repeat_directive = "$repeat", immediate, directive;
 
-equ_directive = ".equ", ( label | local_label ), literal;
+equ_directive = "$equ", ( label | local_label ), literal;
 
 immediate = xor_imm, { "|", xor_imm };
 xor_imm = and_imm, { "^", and_imm};
