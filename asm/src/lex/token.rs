@@ -143,6 +143,9 @@ pub(crate) enum TokenType<'s> {
 	OperatorMul,
 	OperatorDiv,
 	OperatorRem,
+
+	// Comments
+	Comment(&'s str),
 }
 
 impl<'s> Display for TokenType<'s> {
@@ -275,6 +278,8 @@ impl<'s> Display for TokenType<'s> {
 			Self::OperatorMul => write!(f, "{:<20} | {:<16}", "OPERATOR", "*"),
 			Self::OperatorDiv => write!(f, "{:<20} | {:<16}", "OPERATOR", "/"),
 			Self::OperatorRem => write!(f, "{:<20} | {:<16}", "OPERATOR", "%"),
+
+			Self::Comment(cmt) => write!(f, "{:<20} | {:<16}", "COMMENT", format!("{:?}", cmt)),
 		}
 	}
 }

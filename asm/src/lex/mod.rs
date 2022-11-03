@@ -157,6 +157,14 @@ impl<'s> Lexer<'s> {
 		self.start = self.idx;
 
 		let token = match self.next()? {
+			';' => {
+				let comment = match self.take_while(|&c| c != '\n') {
+					Ok(cmt) => cmt,
+					Err(e) => return Some(Err(e.into())),
+				};
+
+				Ok(self.make_token(TokenType::Comment(comment)))
+			},
 			',' => Ok(self.make_token(TokenType::SymComma)),
 			'(' => Ok(self.make_token(TokenType::SymLeftParen)),
 			')' => Ok(self.make_token(TokenType::SymRightParen)),
