@@ -4,6 +4,7 @@ use std::str::Chars;
 mod identifier;
 mod literal;
 mod token;
+mod util;
 
 use common::{Error, LexError};
 pub(crate) use token::{Token, TokenType};
@@ -137,33 +138,6 @@ impl<'s> Lexer<'s> {
 		Ok(&self.source[self.start..self.idx])
 	}
 
-	/// Checks whether a character is a valid identifier start character
-	///
-	/// Identifiers follow the regex
-	/// `[a-zA-Z!$&?^_~@.][a-zA-Z!$&?^_~@.0-9:]*`
-	fn is_identifier_start(c: &char) -> bool {
-		c.is_alphabetic()
-			|| *c == '!' || *c == '$'
-			|| *c == '&' || *c == '?'
-			|| *c == '^' || *c == '_'
-			|| *c == '~' || *c == '@'
-			|| *c == '.'
-	}
-
-	/// Checks whether a character is a valid identifier character
-	///
-	/// Identifiers follow the regex
-	/// `[a-zA-Z!$&?^_~@.][a-zA-Z!$&?^_~@.0-9:]*`
-	fn is_identifier(c: &char) -> bool {
-		Self::is_identifier_start(c) || c.is_ascii_digit() || *c == ':'
-	}
-
-	/// Checks whether a character is valid inside any binary, octal, decimal,
-	/// or hexadecimal number, including their radix identifiers (0b, 0o, 0x)
-	fn is_digit_or_radix(c: &char) -> bool {
-		c.is_ascii_hexdigit() || *c == 'x' || *c == 'X' || *c == 'o' || *c == 'O'
-	}
-
 	/// Consume any available whitespace characters, updating the lexers state
 	/// as it goes along
 	///
@@ -293,15 +267,15 @@ impl<'s> Lexer<'s> {
 				Ok(self.make_token(TokenType::LitStr(raw)))
 			},
 			n if n.is_ascii_digit() => {
-				let num = match self.try_take_number(Self::is_digit_or_radix) {
+				let num = match self.try_take_number(util::is_digit_or_radix) {
 					Ok(n) => n,
 					Err(e) => return Some(Err(e.into())),
 				};
 
 				Ok(self.make_token(TokenType::LitNum(num)))
 			},
-			c if Self::is_identifier_start(&c) => {
-				let raw = match self.take_while(Self::is_identifier) {
+			c if util::is_identifier_start(&c) => {
+				let raw = match self.take_while(util::is_identifier) {
 					Ok(id) => id,
 					Err(e) => return Some(Err(e.into())),
 				};
