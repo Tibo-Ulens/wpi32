@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum TokenType<'s> {
 	// Keywords
 	// RV32I
@@ -108,7 +108,7 @@ pub(crate) enum TokenType<'s> {
 	DirEqu,
 
 	// Literals
-	LitStr(&'s str),
+	LitStr(String),
 	LitChar(char),
 	LitNum(u32),
 
@@ -243,8 +243,8 @@ impl<'s> Display for TokenType<'s> {
 			Self::DirRepeat => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".repeat"),
 			Self::DirEqu => write!(f, "{:<20} | {:<16}", "DIRECTIVE", ".equ"),
 
-			Self::LitStr(s) => write!(f, "{:<20} | {:<16}", "STRING", s),
-			Self::LitChar(c) => write!(f, "{:<20} | {:<16}", "CHAR", c),
+			Self::LitStr(s) => write!(f, "{:<20} | {:<16}", "STRING", format!("{:?}", s)),
+			Self::LitChar(c) => write!(f, "{:<20} | {:<16}", "CHAR", format!("{:?}", c)),
 			Self::LitNum(n) => write!(f, "{:<20} | {:<16}", "NUM", n),
 
 			Self::Label(l) => write!(f, "{:<20} | {:<16}", "LABEL", l),

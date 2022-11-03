@@ -1,7 +1,10 @@
 use std::iter::Peekable;
 use std::str::Chars;
 
+mod identifier;
+mod literal;
 mod token;
+mod util;
 
 use common::{Error, LexError};
 pub(crate) use token::{Token, TokenType};
@@ -21,32 +24,9 @@ pub(crate) struct Lexer<'s> {
 }
 
 impl<'s> Iterator for Lexer<'s> {
-	type Item = Token<'s>;
+	type Item = Result<Token<'s>, Error>;
 
-	fn next(&mut self) -> Option<Self::Item> {
-		match self.lex_token() {
-			None => None,
-			Some(res) => {
-				match res {
-					Ok(t) => Some(t),
-					Err(e) => {
-						// If a lex error occurs, keep searching so it can
-						// print all potential errors, but don't return any
-						// more lexemes
-						error!("{}", e);
-
-						while let Some(res) = self.lex_token() {
-							if let Err(e) = res {
-								error!("{}", e);
-							}
-						}
-
-						None
-					},
-				}
-			},
-		}
-	}
+	fn next(&mut self) -> Option<Self::Item> { self.lex_token() }
 }
 
 impl<'s> Lexer<'s> {
@@ -64,11 +44,9 @@ impl<'s> Lexer<'s> {
 	}
 
 	/// Peek at the next character
-	#[inline(always)]
 	fn peek(&mut self) -> Option<&char> { self.source_iter.peek() }
 
 	/// Consume and return the next character
-	#[inline(always)]
 	fn next(&mut self) -> Option<char> {
 		self.idx += 1;
 		self.source_iter.next()
@@ -93,195 +71,12 @@ impl<'s> Lexer<'s> {
 		}
 	}
 
-	/// Read a string until a non-escaped " is encountered
-	fn take_string(&mut self) -> Result<&'s str, Error> {
-		// Return early if the immediately following character is None
-		let mut peek = match self.peek() {
-			Some(p) => *p,
-			None => {
-				return Err(LexError::UnexpectedEof {
-					line:     self.line,
-					col:      self.col,
-					src_line: self.get_curr_line().to_string(),
-				}
-				.into());
-			},
-		};
-
-		let mut i = 0;
-		let mut prev = ' ';
-		while !(peek == '"' && prev != '\\') {
-			self.next();
-
-			if self.idx >= self.len {
-				return Err(LexError::UnexpectedEof {
-					line:     self.line,
-					col:      self.col + i + 1,
-					src_line: self.get_curr_line().to_string(),
-				}
-				.into());
-			}
-
-			prev = peek;
-			// Unwrap is safe as idx < len
-			peek = *self.peek().unwrap();
-			i += 1;
-		}
-
-		Ok(&self.source[self.start + 1..self.start + 1 + i])
-	}
-
-	/// Attempt to match an identifier to a keyword, directive, or identifier,
-	/// or return a new label if a match is not found
-	fn match_identifier(&mut self, id: &'s str) -> Token<'s> {
-		match id {
-			"add" => self.make_token(TokenType::KwAdd),
-			"addi" => self.make_token(TokenType::KwAddi),
-			"sub" => self.make_token(TokenType::KwSub),
-			"and" => self.make_token(TokenType::KwAnd),
-			"andi" => self.make_token(TokenType::KwAndi),
-			"or" => self.make_token(TokenType::KwOr),
-			"ori" => self.make_token(TokenType::KwOri),
-			"xor" => self.make_token(TokenType::KwXor),
-			"xori" => self.make_token(TokenType::KwXori),
-			"lsl" => self.make_token(TokenType::KwLsl),
-			"lsli" => self.make_token(TokenType::KwLsli),
-			"lsr" => self.make_token(TokenType::KwLsr),
-			"lsri" => self.make_token(TokenType::KwLsri),
-			"asr" => self.make_token(TokenType::KwAsr),
-			"asri" => self.make_token(TokenType::KwAsri),
-			"slt" => self.make_token(TokenType::KwSlt),
-			"slti" => self.make_token(TokenType::KwSlti),
-			"sltu" => self.make_token(TokenType::KwSltu),
-			"sltiu" => self.make_token(TokenType::KwSltiu),
-			"lw" => self.make_token(TokenType::KwLw),
-			"lh" => self.make_token(TokenType::KwLh),
-			"lhu" => self.make_token(TokenType::KwLhu),
-			"lb" => self.make_token(TokenType::KwLb),
-			"lbu" => self.make_token(TokenType::KwLbu),
-			"sw" => self.make_token(TokenType::KwSw),
-			"sh" => self.make_token(TokenType::KwSh),
-			"sb" => self.make_token(TokenType::KwSb),
-			"lui" => self.make_token(TokenType::KwLui),
-			"auipc" => self.make_token(TokenType::KwAuipc),
-			"beq" => self.make_token(TokenType::KwBeq),
-			"bne" => self.make_token(TokenType::KwBne),
-			"blt" => self.make_token(TokenType::KwBlt),
-			"bltu" => self.make_token(TokenType::KwBltu),
-			"bge" => self.make_token(TokenType::KwBge),
-			"bgeu" => self.make_token(TokenType::KwBgeu),
-			"jal" => self.make_token(TokenType::KwJal),
-			"jalr" => self.make_token(TokenType::KwJalr),
-			"ecall" => self.make_token(TokenType::KwEcall),
-			"ebreak" => self.make_token(TokenType::KwEbreak),
-			"fence" => self.make_token(TokenType::KwFence),
-			"fence.i" => self.make_token(TokenType::KwFencei),
-			"csrrw" => self.make_token(TokenType::KwCsrrw),
-			"csrrwi" => self.make_token(TokenType::KwCsrrwi),
-			"csrrs" => self.make_token(TokenType::KwCsrrs),
-			"csrrsi" => self.make_token(TokenType::KwCsrrsi),
-			"csrrc" => self.make_token(TokenType::KwCsrrc),
-			"csrrci" => self.make_token(TokenType::KwCsrrci),
-			"mul" => self.make_token(TokenType::KwMul),
-			"mulh" => self.make_token(TokenType::KwMulh),
-			"mulhu" => self.make_token(TokenType::KwMulhu),
-			"mulhsu" => self.make_token(TokenType::KwMulhsu),
-			"div" => self.make_token(TokenType::KwDiv),
-			"divu" => self.make_token(TokenType::KwDivu),
-			"rem" => self.make_token(TokenType::KwRem),
-			"remu" => self.make_token(TokenType::KwRemu),
-
-			"r0" => self.make_token(TokenType::RegR0),
-			"r1" => self.make_token(TokenType::RegR1),
-			"r2" => self.make_token(TokenType::RegR2),
-			"r3" => self.make_token(TokenType::RegR3),
-			"r4" => self.make_token(TokenType::RegR4),
-			"r5" => self.make_token(TokenType::RegR5),
-			"r6" => self.make_token(TokenType::RegR6),
-			"r7" => self.make_token(TokenType::RegR7),
-			"r8" => self.make_token(TokenType::RegR8),
-			"r9" => self.make_token(TokenType::RegR9),
-			"r10" => self.make_token(TokenType::RegR10),
-			"r11" => self.make_token(TokenType::RegR11),
-			"r12" => self.make_token(TokenType::RegR12),
-			"r13" => self.make_token(TokenType::RegR13),
-			"r14" => self.make_token(TokenType::RegR14),
-			"r15" => self.make_token(TokenType::RegR15),
-			"r16" => self.make_token(TokenType::RegR16),
-			"r17" => self.make_token(TokenType::RegR17),
-			"r18" => self.make_token(TokenType::RegR18),
-			"r19" => self.make_token(TokenType::RegR19),
-			"r20" => self.make_token(TokenType::RegR20),
-			"r21" => self.make_token(TokenType::RegR21),
-			"r22" => self.make_token(TokenType::RegR22),
-			"r23" => self.make_token(TokenType::RegR23),
-			"r24" => self.make_token(TokenType::RegR24),
-			"r25" => self.make_token(TokenType::RegR25),
-			"r26" => self.make_token(TokenType::RegR26),
-			"r27" => self.make_token(TokenType::RegR27),
-			"r28" => self.make_token(TokenType::RegR28),
-			"r29" => self.make_token(TokenType::RegR29),
-			"r30" => self.make_token(TokenType::RegR30),
-			"r31" => self.make_token(TokenType::RegR31),
-			"zero" => self.make_token(TokenType::RegR0),
-
-			"ra" => self.make_token(TokenType::RegR1),
-			"sp" => self.make_token(TokenType::RegR2),
-			"gp" => self.make_token(TokenType::RegR3),
-			"tp" => self.make_token(TokenType::RegR4),
-			"fp" => self.make_token(TokenType::RegR8),
-			"a0" => self.make_token(TokenType::RegR10),
-			"a1" => self.make_token(TokenType::RegR11),
-			"a2" => self.make_token(TokenType::RegR12),
-			"a3" => self.make_token(TokenType::RegR13),
-			"a4" => self.make_token(TokenType::RegR14),
-			"a5" => self.make_token(TokenType::RegR15),
-			"a6" => self.make_token(TokenType::RegR16),
-			"a7" => self.make_token(TokenType::RegR17),
-			"s0" => self.make_token(TokenType::RegR8),
-			"s1" => self.make_token(TokenType::RegR9),
-			"s2" => self.make_token(TokenType::RegR18),
-			"s3" => self.make_token(TokenType::RegR19),
-			"s4" => self.make_token(TokenType::RegR20),
-			"s5" => self.make_token(TokenType::RegR21),
-			"s6" => self.make_token(TokenType::RegR22),
-			"s7" => self.make_token(TokenType::RegR23),
-			"s8" => self.make_token(TokenType::RegR24),
-			"s9" => self.make_token(TokenType::RegR25),
-			"s10" => self.make_token(TokenType::RegR26),
-			"s11" => self.make_token(TokenType::RegR27),
-			"t0" => self.make_token(TokenType::RegR5),
-			"t1" => self.make_token(TokenType::RegR6),
-			"t2" => self.make_token(TokenType::RegR7),
-			"t3" => self.make_token(TokenType::RegR28),
-			"t4" => self.make_token(TokenType::RegR29),
-			"t5" => self.make_token(TokenType::RegR30),
-			"t6" => self.make_token(TokenType::RegR31),
-
-			".byte" => self.make_token(TokenType::DirByte),
-			".half" => self.make_token(TokenType::DirHalf),
-			".word" => self.make_token(TokenType::DirWord),
-			".repeat" => self.make_token(TokenType::DirRepeat),
-			".equ" => self.make_token(TokenType::DirEqu),
-
-			_ => {
-				if id.starts_with('.') {
-					if let Some(stripped) = id.strip_suffix(':') {
-						self.make_token(TokenType::LocalLabelDefine(stripped))
-					} else {
-						self.make_token(TokenType::LocalLabel(id))
-					}
-				} else if let Some(stripped) = id.strip_suffix(':') {
-					self.make_token(TokenType::LabelDefine(stripped))
-				} else {
-					self.make_token(TokenType::Label(id))
-				}
-			},
-		}
-	}
-
 	/// Keep taking characters while a predicate holds true
-	fn take_while<F>(&mut self, pred: F) -> Result<char, Error>
+	///
+	/// Returns the slice of characters that satisfied the predicate, from the
+	/// start of the current token up to the last character that satisfied the
+	/// predicate
+	fn take_while<F>(&mut self, pred: F) -> Result<&'s str, LexError>
 	where
 		F: for<'a> Fn(&'a char) -> bool,
 	{
@@ -293,23 +88,23 @@ impl<'s> Lexer<'s> {
 					line:     self.line,
 					col:      self.col,
 					src_line: self.get_curr_line().to_string(),
-				}
-				.into());
+				});
 			},
 		};
 
 		// Columns start at 1
 		let mut i = 1;
 		while pred(&peek) {
-			self.next();
+			// Unwrap is safe as the previous iteration of the loop assures
+			// there is a character
+			self.next().unwrap();
 
 			if self.idx >= self.len {
 				return Err(LexError::UnexpectedEof {
 					line:     self.line,
 					col:      self.col + i,
 					src_line: self.get_curr_line().to_string(),
-				}
-				.into());
+				});
 			}
 
 			// Unwrap is safe as idx < len
@@ -317,105 +112,32 @@ impl<'s> Lexer<'s> {
 			i += 1;
 		}
 
-		Ok(peek)
+		Ok(&self.source[self.start..self.idx])
 	}
 
-	#[inline(always)]
-	fn is_identifier_start(c: &char) -> bool {
-		c.is_alphabetic()
-			|| *c == '!' || *c == '$'
-			|| *c == '&' || *c == '?'
-			|| *c == '^' || *c == '_'
-			|| *c == '~' || *c == '@'
-			|| *c == '.'
-	}
-
-	#[inline(always)]
-	fn is_identifier(c: &char) -> bool {
-		Self::is_identifier_start(c) || c.is_ascii_digit() || *c == ':'
-	}
-
-	#[inline(always)]
-	fn is_binary_digit(c: &char) -> bool { *c == '0' || *c == '1' }
-
-	/// Attempt to make a number starting from the lexers current position
-	/// in the source
+	/// Consume any available whitespace characters, updating the lexers state
+	/// as it goes along
 	///
-	/// Can make decimal, hex, octal, or binary numbers depending on the
-	/// supplied predicate function
-	fn try_make_number<F>(&mut self, pred: F) -> Result<Token<'s>, Error>
-	where
-		F: for<'a> Fn(&'a char) -> bool,
-	{
-		match self.take_while(pred) {
-			Ok(_) => (),
-			Err(e) => return Err(e),
-		}
+	/// Returns [`None`] if no characters are left in the source iterator
+	fn take_whitespace(&mut self) -> Option<()> {
+		match self.peek()? {
+			' ' | '\t' => {
+				self.col += 1;
 
-		let raw = &self.source[self.start..self.idx];
-		let num = if raw.starts_with("0x") {
-			u32::from_str_radix(raw.trim_start_matches("0x"), 16).map_err(|_| {
-				LexError::InvalidNumber {
-					line:     self.line,
-					col:      self.col,
-					span:     raw.len(),
-					src_line: self.get_curr_line().to_string(),
-				}
-			})
-		} else if raw.starts_with("0o") {
-			u32::from_str_radix(raw.trim_start_matches("0o"), 8).map_err(|_| {
-				LexError::InvalidNumber {
-					line:     self.line,
-					col:      self.col,
-					span:     raw.len(),
-					src_line: self.get_curr_line().to_string(),
-				}
-			})
-		} else if raw.starts_with("0b") {
-			u32::from_str_radix(raw.trim_start_matches("0x"), 2).map_err(|_| {
-				LexError::InvalidNumber {
-					line:     self.line,
-					col:      self.col,
-					span:     raw.len(),
-					src_line: self.get_curr_line().to_string(),
-				}
-			})
-		} else {
-			raw.parse::<u32>().map_err(|_| {
-				LexError::InvalidNumber {
-					line:     self.line,
-					col:      self.col,
-					span:     raw.len(),
-					src_line: self.get_curr_line().to_string(),
-				}
-			})
-		};
+				self.next().unwrap();
 
-		if let Err(e) = num {
-			Err(e.into())
-		} else {
-			Ok(self.make_token(TokenType::LitNum(num.unwrap())))
-		}
-	}
-
-	/// Convert a string with a 2 character escape code into its corresponding character
-	fn escape_string_to_char(&self, string: &str) -> Result<char, Error> {
-		match string {
-			"\\n" => Ok('\n'),
-			"\\r" => Ok('\r'),
-			"\\t" => Ok('\t'),
-			"\\\\" => Ok('\\'),
-			"\\0" => Ok('\0'),
-			"\\'" => Ok('\''),
-			_ => {
-				Err(LexError::InvalidEscape {
-					line:     self.line,
-					col:      self.col + 1,
-					span:     2,
-					src_line: self.get_curr_line().to_string(),
-				}
-				.into())
+				self.take_whitespace()
 			},
+			'\n' => {
+				self.line += 1;
+				self.col = 0;
+				self.prev_nl = self.idx;
+
+				self.next().unwrap();
+
+				self.take_whitespace()
+			},
+			_ => Some(()),
 		}
 	}
 
@@ -423,35 +145,14 @@ impl<'s> Lexer<'s> {
 	///
 	/// Returns [`None`] if the iterator has ended, else returns a [`Token`] or an [`Error`]
 	fn lex_token(&mut self) -> Option<Result<Token<'s>, Error>> {
+		// Consume any leading whitespace
+		self.take_whitespace()?;
+
+		// take_whitespace updates self.idx, so self.start should be updated
+		// accordingly to mark the start of a new token
 		self.start = self.idx;
 
 		let token = match self.next()? {
-			'\n' => {
-				self.line += 1;
-				let mut peek = *self.peek()?;
-				while self.idx < self.len && peek == '\n' {
-					self.next()?;
-					self.line += 1;
-					peek = *self.peek()?;
-				}
-
-				self.col = 1;
-				self.prev_nl = self.idx;
-
-				return self.lex_token();
-			},
-			' ' | '\t' => {
-				self.col += 1;
-
-				let mut peek = *self.peek()?;
-				while self.idx < self.len && (peek == ' ' || peek == '\t') {
-					self.next()?;
-					self.col += 1;
-					peek = *self.peek()?;
-				}
-
-				return self.lex_token();
-			},
 			',' => Ok(self.make_token(TokenType::SymComma)),
 			'(' => Ok(self.make_token(TokenType::SymLeftParen)),
 			')' => Ok(self.make_token(TokenType::SymRightParen)),
@@ -469,14 +170,13 @@ impl<'s> Lexer<'s> {
 				match self.next()? {
 					'=' => Ok(self.make_token(TokenType::OperatorEq)),
 					c => {
-						return Some(Err(LexError::UnexpectedSymbol {
+						Err(LexError::UnexpectedSymbol {
 							line:     self.line,
 							col:      self.col,
 							src_line: self.get_curr_line().to_string(),
 							fnd:      c,
 							ex:       '=',
-						}
-						.into()));
+						})
 					},
 				}
 			},
@@ -484,14 +184,13 @@ impl<'s> Lexer<'s> {
 				match self.next()? {
 					'=' => Ok(self.make_token(TokenType::OperatorNeq)),
 					c => {
-						return Some(Err(LexError::UnexpectedSymbol {
+						Err(LexError::UnexpectedSymbol {
 							line:     self.line,
 							col:      self.col,
 							src_line: self.get_curr_line().to_string(),
 							fnd:      c,
 							ex:       '=',
-						}
-						.into()));
+						})
 					},
 				}
 			},
@@ -529,84 +228,34 @@ impl<'s> Lexer<'s> {
 				}
 			},
 			'\'' => {
-				let next = self.next()?;
-				let close = self.next()?;
-
-				if next == '\\' {
-					let actual_close = self.next()?;
-					if actual_close != '\'' {
-						return Some(Err(LexError::UnexpectedSymbol {
-							line:     self.line,
-							col:      self.col,
-							src_line: self.get_curr_line().to_string(),
-							fnd:      close,
-							ex:       '\'',
-						}
-						.into()));
-					}
-
-					let mut unescaped_str = String::from(next);
-					unescaped_str.push(close);
-
-					let escaped_char = match self.escape_string_to_char(&unescaped_str) {
-						Ok(c) => c,
-						Err(e) => return Some(Err(e)),
-					};
-
-					Ok(self.make_token(TokenType::LitChar(escaped_char)))
-				} else if close != '\'' {
-					Err(LexError::UnexpectedSymbol {
-						line:     self.line,
-						col:      self.col,
-						src_line: self.get_curr_line().to_string(),
-						fnd:      close,
-						ex:       '\'',
-					}
-					.into())
-				} else {
-					Ok(self.make_token(TokenType::LitChar(next)))
-				}
-			},
-			'"' => {
-				let raw = match self.take_string() {
-					Ok(s) => s,
-					Err(e) => return Some(Err(e)),
+				let raw = match self.try_take_char() {
+					Ok(c) => c,
+					Err(e) => return Some(Err(e.into())),
 				};
 
-				// Skip closing quote
-				self.next()?;
+				Ok(self.make_token(TokenType::LitChar(raw)))
+			},
+			'"' => {
+				let raw = match self.try_take_string() {
+					Ok(s) => s,
+					Err(e) => return Some(Err(e.into())),
+				};
 
 				Ok(self.make_token(TokenType::LitStr(raw)))
 			},
-			'0' => {
-				let peek = self.peek()?;
-				match peek {
-					'x' => {
-						// Consume hex identifier
-						self.next().unwrap();
-						self.try_make_number(char::is_ascii_hexdigit)
-					},
-					'o' => {
-						// Consume octal identifier
-						self.next().unwrap();
-						self.try_make_number(char::is_ascii_octdigit)
-					},
-					'b' => {
-						// Consume binary identifier
-						self.next().unwrap();
-						self.try_make_number(Self::is_binary_digit)
-					},
-					_ => self.try_make_number(char::is_ascii_digit),
-				}
-			},
-			n if n.is_ascii_digit() => self.try_make_number(char::is_ascii_digit),
-			c if Self::is_identifier_start(&c) => {
-				match self.take_while(Self::is_identifier) {
-					Ok(_) => (),
-					Err(e) => return Some(Err(e)),
-				}
+			n if n.is_ascii_digit() => {
+				let num = match self.try_take_number(util::is_digit_or_radix) {
+					Ok(n) => n,
+					Err(e) => return Some(Err(e.into())),
+				};
 
-				let raw = &self.source[self.start..self.idx];
+				Ok(self.make_token(TokenType::LitNum(num)))
+			},
+			c if util::is_identifier_start(&c) => {
+				let raw = match self.take_while(util::is_identifier) {
+					Ok(id) => id,
+					Err(e) => return Some(Err(e.into())),
+				};
 
 				Ok(self.match_identifier(raw))
 			},
@@ -616,12 +265,16 @@ impl<'s> Lexer<'s> {
 					col:      self.col,
 					src_line: self.get_curr_line().to_string(),
 					fnd:      c,
-				}
-				.into())
+				})
 			},
 		};
 
+		// New column = previous column + length of the token
 		self.col += self.idx - self.start;
+
+		// Token is Result<Token, LexError>, convert it to
+		// Result<Token, Error>
+		let token = token.map_err(|e| e.into());
 
 		Some(token)
 	}
