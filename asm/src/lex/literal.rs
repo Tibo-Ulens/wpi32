@@ -157,12 +157,11 @@ impl<'s> Lexer<'s> {
 	where
 		F: for<'a> Fn(&'a char) -> bool,
 	{
-		match self.take_while(pred) {
-			Ok(_) => (),
+		let raw = match self.take_while(pred) {
+			Ok(n) => n,
 			Err(e) => return Err(e),
-		}
+		};
 
-		let raw = &self.source[self.start..self.idx];
 		let num = if raw.starts_with("0x") {
 			u32::from_str_radix(raw.trim_start_matches("0x"), 16).map_err(|_| {
 				LexError::InvalidNumber {

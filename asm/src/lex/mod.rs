@@ -244,7 +244,11 @@ impl<'s> Lexer<'s> {
 	}
 
 	/// Keep taking characters while a predicate holds true
-	fn take_while<F>(&mut self, pred: F) -> Result<char, LexError>
+	///
+	/// Returns the slice of characters that satisfied the predicate, from the
+	/// start of the current token up to the last character that satisfied the
+	/// predicate
+	fn take_while<F>(&mut self, pred: F) -> Result<&'s str, LexError>
 	where
 		F: for<'a> Fn(&'a char) -> bool,
 	{
@@ -280,7 +284,7 @@ impl<'s> Lexer<'s> {
 			i += 1;
 		}
 
-		Ok(peek)
+		Ok(&self.source[self.start..self.idx])
 	}
 
 	#[inline(always)]
@@ -461,12 +465,10 @@ impl<'s> Lexer<'s> {
 				Ok(self.make_token(TokenType::LitNum(num)))
 			},
 			c if Self::is_identifier_start(&c) => {
-				match self.take_while(Self::is_identifier) {
-					Ok(_) => (),
+				let raw = match self.take_while(Self::is_identifier) {
+					Ok(id) => id,
 					Err(e) => return Some(Err(e.into())),
-				}
-
-				let raw = &self.source[self.start..self.idx];
+				};
 
 				Ok(self.match_identifier(raw))
 			},
