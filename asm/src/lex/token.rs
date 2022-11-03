@@ -120,6 +120,7 @@ pub(crate) enum TokenType<'s> {
 
 	// Symbols
 	SymComma,
+	SymNewline,
 	SymLeftParen,
 	SymRightParen,
 	SymLeftBracket,
@@ -256,6 +257,7 @@ impl<'s> Display for TokenType<'s> {
 			Self::LocalLabelDefine(ll) => write!(f, "{:<20} | {:<16}", "LOCAL_LABEL_DEFINE", ll),
 
 			Self::SymComma => write!(f, "{:<20} | {:<16}", "SYMBOL", ","),
+			Self::SymNewline => write!(f, "{:<20} | {:<16}", "SYMBOL", "\\n"),
 			Self::SymLeftParen => write!(f, "{:<20} | {:<16}", "SYMBOL", "("),
 			Self::SymRightParen => write!(f, "{:<20} | {:<16}", "SYMBOL", ")"),
 			Self::SymLeftBracket => write!(f, "{:<20} | {:<16}", "SYMBOL", "["),
@@ -301,11 +303,8 @@ impl<'s> Display for Token<'s> {
 		let right_arm = &self.source_line[start + self.span..];
 
 		let t = self.t.to_string();
+		let annotated_src = format!("{}```{}```{}", left_arm, center, right_arm);
 
-		write!(
-			f,
-			"[{:0>3}:{:0>3}]: {:<32} | {}```{}```{}",
-			self.line, self.col, t, left_arm, center, right_arm
-		)
+		write!(f, "[{:0>3}:{:0>3}]: {:<32} | {:?}", self.line, self.col, t, annotated_src)
 	}
 }

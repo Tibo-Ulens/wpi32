@@ -59,7 +59,7 @@ impl<'s> Lexer<'s> {
 		let next_nl =
 			self.source[self.prev_nl..].find('\n').unwrap_or(self.source.len()) + self.prev_nl;
 
-		&self.source[self.prev_nl..next_nl]
+		&self.source[self.prev_nl..=next_nl]
 	}
 
 	/// Make a token given the lexers current state
@@ -132,15 +132,6 @@ impl<'s> Lexer<'s> {
 
 				self.take_whitespace()
 			},
-			'\n' => {
-				self.line += 1;
-				self.col = 1;
-				self.prev_nl = self.idx + 1;
-
-				self.next().unwrap();
-
-				self.take_whitespace()
-			},
 			_ => Some(()),
 		}
 	}
@@ -157,6 +148,19 @@ impl<'s> Lexer<'s> {
 		self.start = self.idx;
 
 		let token = match self.next()? {
+			'\n' => {
+				// Token must be made before updating state so the it has
+				// correct line and col values
+				let token = self.make_token(TokenType::SymNewline);
+
+				self.line += 1;
+				// 0 instead of 1 because col gets incremented at the end of
+				// the match
+				self.col = 0;
+				self.prev_nl = self.idx;
+
+				Ok(token)
+			},
 			';' => {
 				let comment = match self.take_while(|&c| c != '\n') {
 					Ok(cmt) => cmt,
