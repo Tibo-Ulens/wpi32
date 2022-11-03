@@ -353,14 +353,43 @@ impl<'s> Lexer<'s> {
 		}
 
 		let raw = &self.source[self.start..self.idx];
-		let num = raw.parse::<u32>().map_err(|_| {
-			LexError::InvalidNumber {
-				line:     self.line,
-				col:      self.col,
-				span:     raw.len(),
-				src_line: self.get_curr_line().to_string(),
-			}
-		});
+		let num = if raw.starts_with("0x") {
+			u32::from_str_radix(raw.trim_start_matches("0x"), 16).map_err(|_| {
+				LexError::InvalidNumber {
+					line:     self.line,
+					col:      self.col,
+					span:     raw.len(),
+					src_line: self.get_curr_line().to_string(),
+				}
+			})
+		} else if raw.starts_with("0o") {
+			u32::from_str_radix(raw.trim_start_matches("0o"), 8).map_err(|_| {
+				LexError::InvalidNumber {
+					line:     self.line,
+					col:      self.col,
+					span:     raw.len(),
+					src_line: self.get_curr_line().to_string(),
+				}
+			})
+		} else if raw.starts_with("0b") {
+			u32::from_str_radix(raw.trim_start_matches("0x"), 2).map_err(|_| {
+				LexError::InvalidNumber {
+					line:     self.line,
+					col:      self.col,
+					span:     raw.len(),
+					src_line: self.get_curr_line().to_string(),
+				}
+			})
+		} else {
+			raw.parse::<u32>().map_err(|_| {
+				LexError::InvalidNumber {
+					line:     self.line,
+					col:      self.col,
+					span:     raw.len(),
+					src_line: self.get_curr_line().to_string(),
+				}
+			})
+		};
 
 		if let Err(e) = num {
 			Err(e.into())
@@ -428,6 +457,77 @@ impl<'s> Lexer<'s> {
 			')' => Ok(self.make_token(TokenType::SymRightParen)),
 			'[' => Ok(self.make_token(TokenType::SymLeftBracket)),
 			']' => Ok(self.make_token(TokenType::SymRightBracket)),
+			'|' => Ok(self.make_token(TokenType::OperatorOr)),
+			'^' => Ok(self.make_token(TokenType::OperatorXor)),
+			'&' => Ok(self.make_token(TokenType::OperatorAnd)),
+			'+' => Ok(self.make_token(TokenType::OperatorPlus)),
+			'-' => Ok(self.make_token(TokenType::OperatorMinus)),
+			'*' => Ok(self.make_token(TokenType::OperatorMul)),
+			'/' => Ok(self.make_token(TokenType::OperatorDiv)),
+			'%' => Ok(self.make_token(TokenType::OperatorRem)),
+			'=' => {
+				match self.next()? {
+					'=' => Ok(self.make_token(TokenType::OperatorEq)),
+					c => {
+						return Some(Err(LexError::UnexpectedSymbol {
+							line:     self.line,
+							col:      self.col,
+							src_line: self.get_curr_line().to_string(),
+							fnd:      c,
+							ex:       '=',
+						}
+						.into()));
+					},
+				}
+			},
+			'!' => {
+				match self.next()? {
+					'=' => Ok(self.make_token(TokenType::OperatorNeq)),
+					c => {
+						return Some(Err(LexError::UnexpectedSymbol {
+							line:     self.line,
+							col:      self.col,
+							src_line: self.get_curr_line().to_string(),
+							fnd:      c,
+							ex:       '=',
+						}
+						.into()));
+					},
+				}
+			},
+			'<' => {
+				match self.peek()? {
+					'=' => {
+						self.next()?;
+						Ok(self.make_token(TokenType::OperatorLte))
+					},
+					'<' => {
+						self.next()?;
+						Ok(self.make_token(TokenType::OperatorLsl))
+					},
+					_ => Ok(self.make_token(TokenType::OperatorLt)),
+				}
+			},
+			'>' => {
+				match self.peek()? {
+					'=' => {
+						self.next()?;
+						Ok(self.make_token(TokenType::OperatorGte))
+					},
+					'>' => {
+						self.next()?;
+
+						match self.peek()? {
+							'>' => {
+								self.next()?;
+								Ok(self.make_token(TokenType::OperatorAsr))
+							},
+							_ => Ok(self.make_token(TokenType::OperatorLsr)),
+						}
+					},
+					_ => Ok(self.make_token(TokenType::OperatorGt)),
+				}
+			},
 			'\'' => {
 				let next = self.next()?;
 				let close = self.next()?;
