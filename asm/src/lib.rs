@@ -17,7 +17,7 @@ pub fn assemble(input_path: &Path, _output_path: &Path) -> Result<(), Error> {
 	let mut contents = String::new();
 	file.read_to_string(&mut contents)?;
 
-	let lexer = Lexer::new(&contents);
+	let lexer = Lexer::new(input_path.to_string_lossy().to_string(), &contents);
 	for token in lexer {
 		debug!("{}", token?);
 	}
