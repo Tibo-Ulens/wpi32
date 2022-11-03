@@ -302,26 +302,6 @@ impl<'s> Lexer<'s> {
 		Self::is_identifier_start(c) || c.is_ascii_digit() || *c == ':'
 	}
 
-	/// Convert a string with a 2 character escape code into its corresponding character
-	fn escape_string_to_char(&self, string: &str) -> Result<char, LexError> {
-		match string {
-			"\\n" => Ok('\n'),
-			"\\r" => Ok('\r'),
-			"\\t" => Ok('\t'),
-			"\\\\" => Ok('\\'),
-			"\\0" => Ok('\0'),
-			"\\'" => Ok('\''),
-			_ => {
-				Err(LexError::InvalidEscape {
-					line:     self.line,
-					col:      self.col + 1,
-					span:     2,
-					src_line: self.get_curr_line().to_string(),
-				})
-			},
-		}
-	}
-
 	/// Checks whether a character is valid inside any binary, octal, decimal,
 	/// or hexadecimal number, including their radix identifiers (0b, 0o, 0x)
 	fn is_digit_or_radix(c: &char) -> bool {
