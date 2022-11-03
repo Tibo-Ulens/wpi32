@@ -281,7 +281,7 @@ impl<'s> Lexer<'s> {
 	}
 
 	/// Keep taking characters while a predicate holds true
-	fn take_while<F>(&mut self, pred: F) -> Result<char, Error>
+	fn take_while<F>(&mut self, pred: F) -> Result<char, LexError>
 	where
 		F: for<'a> Fn(&'a char) -> bool,
 	{
@@ -293,8 +293,7 @@ impl<'s> Lexer<'s> {
 					line:     self.line,
 					col:      self.col,
 					src_line: self.get_curr_line().to_string(),
-				}
-				.into());
+				});
 			},
 		};
 
@@ -308,8 +307,7 @@ impl<'s> Lexer<'s> {
 					line:     self.line,
 					col:      self.col + i,
 					src_line: self.get_curr_line().to_string(),
-				}
-				.into());
+				});
 			}
 
 			// Unwrap is safe as idx < len
@@ -343,7 +341,7 @@ impl<'s> Lexer<'s> {
 	///
 	/// Can make decimal, hex, octal, or binary numbers depending on the
 	/// supplied predicate function
-	fn try_make_number<F>(&mut self, pred: F) -> Result<Token<'s>, Error>
+	fn try_make_number<F>(&mut self, pred: F) -> Result<Token<'s>, LexError>
 	where
 		F: for<'a> Fn(&'a char) -> bool,
 	{
@@ -391,11 +389,7 @@ impl<'s> Lexer<'s> {
 			})
 		};
 
-		if let Err(e) = num {
-			Err(e.into())
-		} else {
-			Ok(self.make_token(TokenType::LitNum(num.unwrap())))
-		}
+		if let Err(e) = num { Err(e) } else { Ok(self.make_token(TokenType::LitNum(num.unwrap()))) }
 	}
 
 	/// Convert a string with a 2 character escape code into its corresponding character
@@ -474,14 +468,13 @@ impl<'s> Lexer<'s> {
 				match self.next()? {
 					'=' => Ok(self.make_token(TokenType::OperatorEq)),
 					c => {
-						return Some(Err(LexError::UnexpectedSymbol {
+						Err(LexError::UnexpectedSymbol {
 							line:     self.line,
 							col:      self.col,
 							src_line: self.get_curr_line().to_string(),
 							fnd:      c,
 							ex:       '=',
-						}
-						.into()));
+						})
 					},
 				}
 			},
@@ -489,14 +482,13 @@ impl<'s> Lexer<'s> {
 				match self.next()? {
 					'=' => Ok(self.make_token(TokenType::OperatorNeq)),
 					c => {
-						return Some(Err(LexError::UnexpectedSymbol {
+						Err(LexError::UnexpectedSymbol {
 							line:     self.line,
 							col:      self.col,
 							src_line: self.get_curr_line().to_string(),
 							fnd:      c,
 							ex:       '=',
-						}
-						.into()));
+						})
 					},
 				}
 			},
@@ -566,8 +558,7 @@ impl<'s> Lexer<'s> {
 						src_line: self.get_curr_line().to_string(),
 						fnd:      close,
 						ex:       '\'',
-					}
-					.into())
+					})
 				} else {
 					Ok(self.make_token(TokenType::LitChar(next)))
 				}
@@ -608,7 +599,7 @@ impl<'s> Lexer<'s> {
 			c if Self::is_identifier_start(&c) => {
 				match self.take_while(Self::is_identifier) {
 					Ok(_) => (),
-					Err(e) => return Some(Err(e)),
+					Err(e) => return Some(Err(e.into())),
 				}
 
 				let raw = &self.source[self.start..self.idx];
@@ -621,13 +612,16 @@ impl<'s> Lexer<'s> {
 					col:      self.col,
 					src_line: self.get_curr_line().to_string(),
 					fnd:      c,
-				}
-				.into())
+				})
 			},
 		};
 
 		// New column = previous column + length of the token
 		self.col += self.idx - self.start;
+
+		// Token is Result<Token, LexError>, convert it to
+		// Result<Token, Error>
+		let token = token.map_err(|e| e.into());
 
 		Some(token)
 	}
