@@ -419,39 +419,44 @@ impl<'s> Lexer<'s> {
 		}
 	}
 
+	/// Consume any available whitespace characters, updating the lexers state
+	/// as it goes along
+	///
+	/// Returns [`None`] if no characters are left in the source iterator
+	fn take_whitespace(&mut self) -> Option<()> {
+		match self.peek()? {
+			' ' | '\t' => {
+				self.col += 1;
+
+				self.next().unwrap();
+
+				self.take_whitespace()
+			},
+			'\n' => {
+				self.line += 1;
+				self.col = 1;
+				self.prev_nl = self.idx;
+
+				self.next().unwrap();
+
+				self.take_whitespace()
+			},
+			_ => Some(()),
+		}
+	}
+
 	/// Lex a single token
 	///
 	/// Returns [`None`] if the iterator has ended, else returns a [`Token`] or an [`Error`]
 	fn lex_token(&mut self) -> Option<Result<Token<'s>, Error>> {
+		// Consume any leading whitespace
+		self.take_whitespace()?;
+
+		// take_whitespace updates self.idx, so self.start should be updated
+		// accordingly to mark the start of a new token
 		self.start = self.idx;
 
 		let token = match self.next()? {
-			'\n' => {
-				self.line += 1;
-				let mut peek = *self.peek()?;
-				while self.idx < self.len && peek == '\n' {
-					self.next()?;
-					self.line += 1;
-					peek = *self.peek()?;
-				}
-
-				self.col = 1;
-				self.prev_nl = self.idx;
-
-				return self.lex_token();
-			},
-			' ' | '\t' => {
-				self.col += 1;
-
-				let mut peek = *self.peek()?;
-				while self.idx < self.len && (peek == ' ' || peek == '\t') {
-					self.next()?;
-					self.col += 1;
-					peek = *self.peek()?;
-				}
-
-				return self.lex_token();
-			},
 			',' => Ok(self.make_token(TokenType::SymComma)),
 			'(' => Ok(self.make_token(TokenType::SymLeftParen)),
 			')' => Ok(self.make_token(TokenType::SymRightParen)),
@@ -621,6 +626,7 @@ impl<'s> Lexer<'s> {
 			},
 		};
 
+		// New column = previous column + length of the token
 		self.col += self.idx - self.start;
 
 		Some(token)
