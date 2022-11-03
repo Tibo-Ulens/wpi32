@@ -24,32 +24,9 @@ pub(crate) struct Lexer<'s> {
 }
 
 impl<'s> Iterator for Lexer<'s> {
-	type Item = Token<'s>;
+	type Item = Result<Token<'s>, Error>;
 
-	fn next(&mut self) -> Option<Self::Item> {
-		match self.lex_token() {
-			None => None,
-			Some(res) => {
-				match res {
-					Ok(t) => Some(t),
-					Err(e) => {
-						// If a lex error occurs, keep searching so it can
-						// print all potential errors, but don't return any
-						// more lexemes
-						error!("{}", e);
-
-						while let Some(res) = self.lex_token() {
-							if let Err(e) = res {
-								error!("{}", e);
-							}
-						}
-
-						None
-					},
-				}
-			},
-		}
-	}
+	fn next(&mut self) -> Option<Self::Item> { self.lex_token() }
 }
 
 impl<'s> Lexer<'s> {
