@@ -1,0 +1,25 @@
+name: fmt-and-lint
+on:
+    push:
+        paths:
+          - "**/*.rs"
+jobs:
+    fmt-and-lint:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v3
+          - name: "install rust toolchain"
+            uses: actions-rs/toolchain@v1
+            with:
+                profile: minimal
+                components: rustfmt, clippy
+          - name: "check formatting"
+            env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            working-directory: .
+            run: cargo fmt -- --check
+          - name: "check linting"
+            env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            working-directory: .
+            run: cargo clippy -q --workspace --all-features -- -D warnings
