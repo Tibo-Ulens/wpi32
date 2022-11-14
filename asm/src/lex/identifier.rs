@@ -51,6 +51,7 @@ impl<'s> Lexer<'s> {
 			"ecall" => self.make_token(TokenType::KwEcall),
 			"ebreak" => self.make_token(TokenType::KwEbreak),
 			"fence" => self.make_token(TokenType::KwFence),
+			"fence.tso" => self.make_token(TokenType::KwFenceTso),
 			"fence.i" => self.make_token(TokenType::KwFencei),
 			"csrrw" => self.make_token(TokenType::KwCsrrw),
 			"csrrwi" => self.make_token(TokenType::KwCsrrwi),

@@ -44,6 +44,7 @@ pub(crate) enum TokenType<'s> {
 	KwEcall,
 	KwEbreak,
 	KwFence,
+	KwFenceTso,
 
 	// Zifencei
 	KwFencei,
@@ -110,7 +111,7 @@ pub(crate) enum TokenType<'s> {
 	// Literals
 	LitStr(String),
 	LitChar(char),
-	LitNum(u32),
+	LitNum(isize),
 
 	// Labels
 	Label(&'s str),
@@ -192,6 +193,7 @@ impl<'s> Display for TokenType<'s> {
 			Self::KwEcall => write!(f, "{:<20} | {:<16}", "KEYWORD", "ecall"),
 			Self::KwEbreak => write!(f, "{:<20} | {:<16}", "KEYWORD", "ebreak"),
 			Self::KwFence => write!(f, "{:<20} | {:<16}", "KEYWORD", "fence"),
+			Self::KwFenceTso => write!(f, "{:<20} | {:<16}", "KEYWORD", "fence.tso"),
 			Self::KwFencei => write!(f, "{:<20} | {:<16}", "KEYWORD", "fence.i"),
 			Self::KwCsrrw => write!(f, "{:<20} | {:<16}", "KEYWORD", "csrrw"),
 			Self::KwCsrrwi => write!(f, "{:<20} | {:<16}", "KEYWORD", "csrrwi"),

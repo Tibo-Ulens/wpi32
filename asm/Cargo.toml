@@ -11,3 +11,5 @@ publish = false
 common = { path="../common" }
 
 log = { workspace=true }
+
+tinyvec = "1.6.0"
