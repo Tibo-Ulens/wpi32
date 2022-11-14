@@ -1,12 +1,6 @@
-//! AST type definitions
+//! AST root type definitions
 
-mod immediate;
-mod instruction;
-mod register;
-
-pub(crate) use immediate::*;
-pub(crate) use instruction::*;
-pub(crate) use register::*;
+use super::{Immediate, Instruction};
 
 #[derive(Clone, Debug)]
 pub(crate) struct Root<'s> {

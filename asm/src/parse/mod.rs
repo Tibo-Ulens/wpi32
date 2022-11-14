@@ -1,8 +1,16 @@
 use std::iter::Peekable;
 
-pub(crate) mod ast;
-
 use common::Error;
+
+mod immediate;
+mod instruction;
+mod register;
+mod root;
+
+pub(crate) use immediate::*;
+pub(crate) use instruction::*;
+pub(crate) use register::*;
+pub(crate) use root::*;
 
 use crate::lex::{Lexer, Token};
 
