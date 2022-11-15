@@ -12,4 +12,4 @@ common = { path="../common" }
 
 log = { workspace=true }
 
-tinyvec = "1.6.0"
+bitflags = "1.3.2"

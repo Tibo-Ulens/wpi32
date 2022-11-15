@@ -1,6 +1,6 @@
 //! AST instruction type definitions
 
-use tinyvec::ArrayVec;
+use bitflags::bitflags;
 
 use super::{Immediate, Register};
 
@@ -59,8 +59,8 @@ pub(crate) enum Instruction<'s> {
 	Sw { dest: Register, addr: Address<'s> },
 
 	// Memory Ordering
-	Fence { pred: ArrayVec<[OrderingTarget; 4]>, succ: ArrayVec<[OrderingTarget; 4]> },
-	FenceTso { pred: ArrayVec<[OrderingTarget; 4]>, succ: ArrayVec<[OrderingTarget; 4]> },
+	Fence { pred: OrderingTarget, succ: OrderingTarget },
+	FenceTso { pred: OrderingTarget, succ: OrderingTarget },
 
 	// System Interaction
 	ECall,
@@ -111,14 +111,11 @@ pub(crate) enum OffsetOperator {
 	Minus,
 }
 
-#[derive(Clone, Debug)]
-pub(crate) enum OrderingTarget {
-	I,
-	O,
-	R,
-	W,
-}
-
-impl Default for OrderingTarget {
-	fn default() -> Self { Self::I }
+bitflags! {
+	pub(crate) struct OrderingTarget: u8 {
+		const I = 0b0000_0001;
+		const O = 0b0000_0010;
+		const R = 0b0000_0100;
+		const W = 0b0000_1000;
+	}
 }
