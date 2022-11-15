@@ -9,7 +9,7 @@ pub(crate) struct Root<'s> {
 
 #[derive(Clone, Debug)]
 pub(crate) struct Line<'s> {
-	pub(crate) stmt: Statement<'s>,
+	pub(crate) stmt: Option<Statement<'s>>,
 	pub(crate) cmnt: Option<&'s str>,
 }
 

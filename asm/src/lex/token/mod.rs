@@ -343,7 +343,7 @@ impl<'s> Display for TokenType<'s> {
 			Self::OperatorDiv => write!(f, "/"),
 			Self::OperatorRem => write!(f, "%"),
 
-			Self::Comment(cmt) => write!(f, "; {:?}", cmt),
+			Self::Comment(cmt) => write!(f, "COMMENT ({:?})", cmt),
 		}
 	}
 }

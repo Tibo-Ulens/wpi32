@@ -30,8 +30,7 @@ local_label_define = local_label, ":";
 (* Syntactical grammar *)
 
 root = { line };
-line = { whitespace }, [ annotated_statement ], newline;
-annotated_statement = statement, [ comment ];
+line = { whitespace }, [ statement ], [ comment ], newline;
 statement = label_define
 	| local_label_define
 	| directive

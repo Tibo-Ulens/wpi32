@@ -28,7 +28,9 @@ pub fn assemble(input_path: &Path, _output_path: &Path) -> Result<(), Error> {
 	}
 
 	let mut parser = Parser::new(&src_file, &tokens);
-	let _ast_root = parser.parse()?;
+	let ast_root = parser.parse()?;
+
+	debug!("{:?}", ast_root);
 
 	Ok(())
 }

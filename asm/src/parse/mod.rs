@@ -44,7 +44,7 @@ impl<'l, 's> Parser<'l, 's> {
 	/// Peek at the next token in the stream
 	fn peek(&self) -> Result<&'l Token<'s>, ParseError> {
 		if self.idx < self.len - 1 {
-			Ok(&self.stream[self.idx + 1])
+			Ok(&self.stream[self.idx])
 		} else {
 			let srcf = self.source_file.to_owned();
 			let prev = self.prev();
@@ -100,26 +100,36 @@ impl<'l, 's> Parser<'l, 's> {
 		Ok(Root { lines })
 	}
 
-	fn tryparse_statement<'r>(&'r mut self) -> Result<Statement<'s>, ParseError> {
+	fn tryparse_statement<'r>(&'r mut self) -> Result<Option<Statement<'s>>, ParseError> {
 		let peek = self.peek()?;
 		match &peek.t {
 			TokenType::LabelDefine(ld) => {
 				self.next().unwrap();
-				Ok(Statement::LabelDefine(ld))
+				Ok(Some(Statement::LabelDefine(ld)))
 			},
 			TokenType::LocalLabelDefine(lld) => {
 				self.next().unwrap();
-				Ok(Statement::LocalLabelDefine(lld))
+				Ok(Some(Statement::LocalLabelDefine(lld)))
 			},
-			TokenType::Dir(_) => Ok(Statement::Directive(self.tryparse_directive()?)),
-			TokenType::Inst(_) => Ok(Statement::Instruction(self.tryparse_instruction()?)),
-			_ => todo!(),
+			TokenType::Dir(_) => Ok(Some(Statement::Directive(self.tryparse_directive()?))),
+			TokenType::Inst(_) => Ok(Some(Statement::Instruction(self.tryparse_instruction()?))),
+			TokenType::SymNewline => Ok(None),
+			TokenType::Comment(_) => Ok(None),
+			t => {
+				debug!("\n\nNOT YET IMPLEMENTED: {:?}", t);
+				todo!()
+			},
 		}
 	}
 
 	fn tryparse_comment<'r>(&'r mut self) -> Result<Option<&'s str>, ParseError> {
 		let peek = self.peek()?;
-		if let TokenType::Comment(c) = peek.t { Ok(Some(c)) } else { Ok(None) }
+		if let TokenType::Comment(c) = peek.t {
+			self.next().unwrap();
+			Ok(Some(c))
+		} else {
+			Ok(None)
+		}
 	}
 
 	fn tryparse_directive<'r>(&'r mut self) -> Result<Directive<'s>, ParseError> { todo!() }
