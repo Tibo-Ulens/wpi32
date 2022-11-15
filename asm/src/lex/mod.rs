@@ -7,13 +7,13 @@ mod token;
 mod util;
 
 use common::{Error, LexError};
-pub(crate) use token::{Token, TokenType};
+pub(crate) use token::{RegisterToken, Token, TokenType};
 
 pub(crate) struct Lexer<'s> {
-	source_file: String,
-	source:      &'s str,
-	source_iter: Peekable<Chars<'s>>,
-	len:         usize,
+	pub(crate) source_file: String,
+	source:                 &'s str,
+	source_iter:            Peekable<Chars<'s>>,
+	len:                    usize,
 
 	start: usize,
 	idx:   usize,
@@ -31,9 +31,9 @@ impl<'s> Iterator for Lexer<'s> {
 }
 
 impl<'s> Lexer<'s> {
-	pub(crate) fn new(source_file: String, source: &'s str) -> Self {
+	pub(crate) fn new(src_file: &str, source: &'s str) -> Self {
 		Self {
-			source_file,
+			source_file: src_file.to_owned(),
 			source,
 			source_iter: source.chars().peekable(),
 			len: source.chars().count(),

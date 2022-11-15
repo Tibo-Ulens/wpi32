@@ -1,3 +1,3 @@
 mod error;
 
-pub use error::{Error, LexError};
+pub use error::*;

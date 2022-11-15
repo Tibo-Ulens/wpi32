@@ -9,19 +9,14 @@ pub(crate) struct Root<'s> {
 
 #[derive(Clone, Debug)]
 pub(crate) struct Line<'s> {
-	annotated_stmt: AnnotatedStatement<'s>,
-}
-
-#[derive(Clone, Debug)]
-pub(crate) struct AnnotatedStatement<'s> {
-	stmt: Statement<'s>,
-	cmnt: Option<&'s str>,
+	pub(crate) stmt: Statement<'s>,
+	pub(crate) cmnt: Option<&'s str>,
 }
 
 #[derive(Clone, Debug)]
 pub(crate) enum Statement<'s> {
-	LabelDefine { label: &'s str },
-	LocalLabelDefine { label: &'s str },
+	LabelDefine(&'s str),
+	LocalLabelDefine(&'s str),
 	Directive(Directive<'s>),
 	Instruction(Instruction<'s>),
 }

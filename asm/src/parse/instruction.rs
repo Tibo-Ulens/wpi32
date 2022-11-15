@@ -2,61 +2,62 @@
 
 use bitflags::bitflags;
 
-use super::{Immediate, Register};
+use super::Immediate;
+use crate::lex::RegisterToken;
 
 #[derive(Clone, Debug)]
 pub(crate) enum Instruction<'s> {
-	// Integer Register Immediate
-	Addi { dest: Register, src: Register, imm: Immediate<'s> },
-	Slti { dest: Register, src: Register, imm: Immediate<'s> },
-	Sltiu { dest: Register, src: Register, imm: Immediate<'s> },
-	Andi { dest: Register, src: Register, imm: Immediate<'s> },
-	Ori { dest: Register, src: Register, imm: Immediate<'s> },
-	Xori { dest: Register, src: Register, imm: Immediate<'s> },
-	Lsli { dest: Register, src: Register, imm: Immediate<'s> },
-	Lsri { dest: Register, src: Register, imm: Immediate<'s> },
-	Asri { dest: Register, src: Register, imm: Immediate<'s> },
+	// Integer RegisterToken Immediate
+	Addi { dest: RegisterToken, src: RegisterToken, imm: Immediate<'s> },
+	Slti { dest: RegisterToken, src: RegisterToken, imm: Immediate<'s> },
+	Sltiu { dest: RegisterToken, src: RegisterToken, imm: Immediate<'s> },
+	Andi { dest: RegisterToken, src: RegisterToken, imm: Immediate<'s> },
+	Ori { dest: RegisterToken, src: RegisterToken, imm: Immediate<'s> },
+	Xori { dest: RegisterToken, src: RegisterToken, imm: Immediate<'s> },
+	Lsli { dest: RegisterToken, src: RegisterToken, imm: Immediate<'s> },
+	Lsri { dest: RegisterToken, src: RegisterToken, imm: Immediate<'s> },
+	Asri { dest: RegisterToken, src: RegisterToken, imm: Immediate<'s> },
 
-	// Integer Register Register
-	Add { dest: Register, src1: Register, src2: Register },
-	Slt { dest: Register, src1: Register, src2: Register },
-	Sltu { dest: Register, src1: Register, src2: Register },
-	And { dest: Register, src1: Register, src2: Register },
-	Or { dest: Register, src1: Register, src2: Register },
-	Xor { dest: Register, src1: Register, src2: Register },
-	Lsl { dest: Register, src1: Register, src2: Register },
-	Lsr { dest: Register, src1: Register, src2: Register },
-	Asr { dest: Register, src1: Register, src2: Register },
-	Sub { dest: Register, src1: Register, src2: Register },
+	// Integer RegisterToken RegisterToken
+	Add { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	Slt { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	Sltu { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	And { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	Or { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	Xor { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	Lsl { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	Lsr { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	Asr { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	Sub { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
 
 	// Upper Immediate
-	Lui { dest: Register, imm: Immediate<'s> },
-	Auipc { dest: Register, imm: Immediate<'s> },
+	Lui { dest: RegisterToken, imm: Immediate<'s> },
+	Auipc { dest: RegisterToken, imm: Immediate<'s> },
 
 	// Jump
-	Jmp { dest: Register, offset: Immediate<'s> },
-	// Jump Register
-	JmpReg { dest: Register, base: Register, offset: Immediate<'s> },
+	Jmp { dest: RegisterToken, offset: Immediate<'s> },
+	// Jump RegisterToken
+	JmpReg { dest: RegisterToken, base: RegisterToken, offset: Immediate<'s> },
 
 	// Conditional Branch
-	Beq { src1: Register, src2: Register, offset: Immediate<'s> },
-	Bne { src1: Register, src2: Register, offset: Immediate<'s> },
-	Blt { src1: Register, src2: Register, offset: Immediate<'s> },
-	Bltu { src1: Register, src2: Register, offset: Immediate<'s> },
-	Bge { src1: Register, src2: Register, offset: Immediate<'s> },
-	Bgeu { src1: Register, src2: Register, offset: Immediate<'s> },
+	Beq { src1: RegisterToken, src2: RegisterToken, offset: Immediate<'s> },
+	Bne { src1: RegisterToken, src2: RegisterToken, offset: Immediate<'s> },
+	Blt { src1: RegisterToken, src2: RegisterToken, offset: Immediate<'s> },
+	Bltu { src1: RegisterToken, src2: RegisterToken, offset: Immediate<'s> },
+	Bge { src1: RegisterToken, src2: RegisterToken, offset: Immediate<'s> },
+	Bgeu { src1: RegisterToken, src2: RegisterToken, offset: Immediate<'s> },
 
 	// Load
-	Lb { dest: Register, addr: Address<'s> },
-	Lbu { dest: Register, addr: Address<'s> },
-	Lh { dest: Register, addr: Address<'s> },
-	Lhu { dest: Register, addr: Address<'s> },
-	Lw { dest: Register, addr: Address<'s> },
-	Lwu { dest: Register, addr: Address<'s> },
+	Lb { dest: RegisterToken, addr: Address<'s> },
+	Lbu { dest: RegisterToken, addr: Address<'s> },
+	Lh { dest: RegisterToken, addr: Address<'s> },
+	Lhu { dest: RegisterToken, addr: Address<'s> },
+	Lw { dest: RegisterToken, addr: Address<'s> },
+	Lwu { dest: RegisterToken, addr: Address<'s> },
 	// Store
-	Sb { dest: Register, addr: Address<'s> },
-	Sh { dest: Register, addr: Address<'s> },
-	Sw { dest: Register, addr: Address<'s> },
+	Sb { dest: RegisterToken, addr: Address<'s> },
+	Sh { dest: RegisterToken, addr: Address<'s> },
+	Sw { dest: RegisterToken, addr: Address<'s> },
 
 	// Memory Ordering
 	Fence { pred: OrderingTarget, succ: OrderingTarget },
@@ -69,33 +70,33 @@ pub(crate) enum Instruction<'s> {
 	// Instruction Fetch Fencing
 	FenceI,
 
-	// CSR Register
-	CsrRw { dest: Register, src: Register, target: Immediate<'s> },
-	CsrRs { dest: Register, src: Register, target: Immediate<'s> },
-	CsrRc { dest: Register, src: Register, target: Immediate<'s> },
+	// CSR RegisterToken
+	CsrRw { dest: RegisterToken, src: RegisterToken, target: Immediate<'s> },
+	CsrRs { dest: RegisterToken, src: RegisterToken, target: Immediate<'s> },
+	CsrRc { dest: RegisterToken, src: RegisterToken, target: Immediate<'s> },
 	// CSR Immediate
-	CsrRwi { dest: Register, src: Immediate<'s>, target: Immediate<'s> },
-	CsrRsi { dest: Register, src: Immediate<'s>, target: Immediate<'s> },
-	CsrRci { dest: Register, src: Immediate<'s>, target: Immediate<'s> },
+	CsrRwi { dest: RegisterToken, src: Immediate<'s>, target: Immediate<'s> },
+	CsrRsi { dest: RegisterToken, src: Immediate<'s>, target: Immediate<'s> },
+	CsrRci { dest: RegisterToken, src: Immediate<'s>, target: Immediate<'s> },
 
 	// Multiply
-	Mul { dest: Register, src1: Register, src2: Register },
-	MulH { dest: Register, src1: Register, src2: Register },
-	MulHU { dest: Register, src1: Register, src2: Register },
-	MulHSU { dest: Register, src1: Register, src2: Register },
+	Mul { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	MulH { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	MulHU { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	MulHSU { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
 
 	// Divide
-	Div { dest: Register, src1: Register, src2: Register },
-	DivU { dest: Register, src1: Register, src2: Register },
+	Div { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	DivU { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
 
 	// Remainder
-	Rem { dest: Register, src1: Register, src2: Register },
-	RemU { dest: Register, src1: Register, src2: Register },
+	Rem { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
+	RemU { dest: RegisterToken, src1: RegisterToken, src2: RegisterToken },
 }
 
 #[derive(Clone, Debug)]
 pub(crate) struct Address<'s> {
-	base:   Register,
+	base:   RegisterToken,
 	offset: Option<AddrOffset<'s>>,
 }
 

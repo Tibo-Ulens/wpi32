@@ -11,17 +11,24 @@ mod lex;
 mod parse;
 
 use common::Error;
-use lex::Lexer;
+use lex::{Lexer, Token};
+use parse::Parser;
 
 pub fn assemble(input_path: &Path, _output_path: &Path) -> Result<(), Error> {
+	let src_file = input_path.to_string_lossy().to_string();
 	let mut file = File::open(input_path)?;
 	let mut contents = String::new();
 	file.read_to_string(&mut contents)?;
 
-	let lexer = Lexer::new(input_path.to_string_lossy().to_string(), &contents);
-	for token in lexer {
-		debug!("{}", token?);
+	let lexer = Lexer::new(&src_file, &contents);
+	let tokens: Vec<Token> = lexer.into_iter().collect::<Result<Vec<Token>, Error>>()?;
+
+	for token in &tokens {
+		debug!("{:?}", token);
 	}
+
+	let mut parser = Parser::new(&src_file, &tokens);
+	let _ast_root = parser.parse()?;
 
 	Ok(())
 }
