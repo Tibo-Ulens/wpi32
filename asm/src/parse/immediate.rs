@@ -1,6 +1,7 @@
 //! AST immediate type definitions
 
 use std::fmt::{Display, Formatter, Result};
+use std::ops::Deref;
 
 use crate::lex::{OperatorToken, TokenType};
 
@@ -48,37 +49,43 @@ pub(crate) struct AndImmediate<'s> {
 
 #[derive(Clone, Debug)]
 pub(crate) struct EqImmediate<'s> {
-	op:  TokenType<'s>,
+	op:  EqOp,
 	lhs: OrdImmediate<'s>,
 	rhs: Option<OrdImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
 pub(crate) struct OrdImmediate<'s> {
-	op:  TokenType<'s>,
+	op:  OrdOp,
 	lhs: ShiftImmediate<'s>,
 	rhs: Option<ShiftImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
 pub(crate) struct ShiftImmediate<'s> {
-	op:  TokenType<'s>,
+	op:  ShiftOp,
 	lhs: AddSubImmediate<'s>,
 	rhs: Option<AddSubImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
 pub(crate) struct AddSubImmediate<'s> {
-	op:  TokenType<'s>,
+	op:  AddSubOp,
 	lhs: MulDivRemImmediate<'s>,
 	rhs: Option<MulDivRemImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
 pub(crate) struct MulDivRemImmediate<'s> {
-	op:  TokenType<'s>,
-	lhs: Operand<'s>,
-	rhs: Option<Operand<'s>>,
+	op:  MulDivRemOp,
+	lhs: UnaryImmediate<'s>,
+	rhs: Option<UnaryImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct UnaryImmediate<'s> {
+	op:  Option<UnaryOp>,
+	rhs: Operand<'s>,
 }
 
 #[derive(Clone, Debug)]
@@ -99,6 +106,8 @@ pub(crate) struct ShiftOp(OperatorToken);
 pub(crate) struct AddSubOp(OperatorToken);
 #[derive(Clone, Debug)]
 pub(crate) struct MulDivRemOp(OperatorToken);
+#[derive(Clone, Debug)]
+pub(crate) struct UnaryOp(OperatorToken);
 
 impl<'s> From<TokenType<'s>> for EqOp {
 	fn from(value: TokenType<'s>) -> Self {
@@ -107,6 +116,12 @@ impl<'s> From<TokenType<'s>> for EqOp {
 			_ => unimplemented!(),
 		}
 	}
+}
+
+impl Deref for EqOp {
+	type Target = OperatorToken;
+
+	fn deref(&self) -> &Self::Target { &self.0 }
 }
 
 impl<'s> From<TokenType<'s>> for OrdOp {
@@ -121,6 +136,12 @@ impl<'s> From<TokenType<'s>> for OrdOp {
 	}
 }
 
+impl Deref for OrdOp {
+	type Target = OperatorToken;
+
+	fn deref(&self) -> &Self::Target { &self.0 }
+}
+
 impl<'s> From<TokenType<'s>> for ShiftOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
@@ -130,6 +151,12 @@ impl<'s> From<TokenType<'s>> for ShiftOp {
 			_ => unimplemented!(),
 		}
 	}
+}
+
+impl Deref for ShiftOp {
+	type Target = OperatorToken;
+
+	fn deref(&self) -> &Self::Target { &self.0 }
 }
 
 impl<'s> From<TokenType<'s>> for AddSubOp {
@@ -143,6 +170,12 @@ impl<'s> From<TokenType<'s>> for AddSubOp {
 	}
 }
 
+impl Deref for AddSubOp {
+	type Target = OperatorToken;
+
+	fn deref(&self) -> &Self::Target { &self.0 }
+}
+
 impl<'s> From<TokenType<'s>> for MulDivRemOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
@@ -152,6 +185,30 @@ impl<'s> From<TokenType<'s>> for MulDivRemOp {
 			_ => unimplemented!(),
 		}
 	}
+}
+
+impl Deref for MulDivRemOp {
+	type Target = OperatorToken;
+
+	fn deref(&self) -> &Self::Target { &self.0 }
+}
+
+impl<'s> From<TokenType<'s>> for UnaryOp {
+	fn from(value: TokenType<'s>) -> Self {
+		match value {
+			TokenType::Op(o @ OperatorToken::Plus)
+			| TokenType::Op(o @ OperatorToken::Minus)
+			| TokenType::Op(o @ OperatorToken::LogicNot)
+			| TokenType::Op(o @ OperatorToken::BitNot) => Self(o),
+			_ => unimplemented!(),
+		}
+	}
+}
+
+impl Deref for UnaryOp {
+	type Target = OperatorToken;
+
+	fn deref(&self) -> &Self::Target { &self.0 }
 }
 
 // Display impls that flatten the deeply nested structur of [`Immediate`]s into
@@ -230,7 +287,7 @@ impl<'s> Display for AndImmediate<'s> {
 impl<'s> Display for EqImmediate<'s> {
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
 		if let Some(rhs) = &self.rhs {
-			write!(f, "{} {} {}", self.lhs, self.op, rhs)
+			write!(f, "{} {} {}", self.lhs, *self.op, rhs)
 		} else {
 			write!(f, "{}", self.lhs)
 		}
@@ -240,7 +297,7 @@ impl<'s> Display for EqImmediate<'s> {
 impl<'s> Display for OrdImmediate<'s> {
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
 		if let Some(rhs) = &self.rhs {
-			write!(f, "{} {} {}", self.lhs, self.op, rhs)
+			write!(f, "{} {} {}", self.lhs, *self.op, rhs)
 		} else {
 			write!(f, "{}", self.lhs)
 		}
@@ -250,7 +307,7 @@ impl<'s> Display for OrdImmediate<'s> {
 impl<'s> Display for ShiftImmediate<'s> {
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
 		if let Some(rhs) = &self.rhs {
-			write!(f, "{} {} {}", self.lhs, self.op, rhs)
+			write!(f, "{} {} {}", self.lhs, *self.op, rhs)
 		} else {
 			write!(f, "{}", self.lhs)
 		}
@@ -260,7 +317,7 @@ impl<'s> Display for ShiftImmediate<'s> {
 impl<'s> Display for AddSubImmediate<'s> {
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
 		if let Some(rhs) = &self.rhs {
-			write!(f, "{} {} {}", self.lhs, self.op, rhs)
+			write!(f, "{} {} {}", self.lhs, *self.op, rhs)
 		} else {
 			write!(f, "{}", self.lhs)
 		}
@@ -270,9 +327,19 @@ impl<'s> Display for AddSubImmediate<'s> {
 impl<'s> Display for MulDivRemImmediate<'s> {
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
 		if let Some(rhs) = &self.rhs {
-			write!(f, "{} {} {}", self.lhs, self.op, rhs)
+			write!(f, "{} {} {}", self.lhs, *self.op, rhs)
 		} else {
 			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for UnaryImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(op) = &self.op {
+			write!(f, "{} {}", op.deref(), self.rhs)
+		} else {
+			write!(f, "{}", self.rhs)
 		}
 	}
 }

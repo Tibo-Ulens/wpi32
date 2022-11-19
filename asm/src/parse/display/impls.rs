@@ -6,12 +6,13 @@ use crate::parse::{
 	Identifier,
 	Immediate,
 	Instruction,
+	LabelId,
 	Line,
 	Literal,
 	OffsetOperator,
 	OrderingTarget,
 	Root,
-	Statement, LabelId,
+	Statement,
 };
 
 impl<'s> ToNode for Root<'s> {
@@ -54,14 +55,14 @@ impl<'s> ToNode for LabelId<'s> {
 			Self::LabelDefine(id) => {
 				Node {
 					prefixes: vec![],
-					repr: "Label".to_string(),
+					repr:     "Label".to_string(),
 					children: vec![id.to_node()],
 				}
 			},
 			Self::LocalLabelDefine(id) => {
 				Node {
 					prefixes: vec![],
-					repr: "LocalLabel".to_string(),
+					repr:     "LocalLabel".to_string(),
 					children: vec![id.to_node()],
 				}
 			},

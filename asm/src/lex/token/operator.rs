@@ -1,15 +1,15 @@
 use std::fmt::{Display, Formatter, Result};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum OperatorToken {
 	TernStart,
 	TernAlt,
 	LogicOr,
 	LogicXor,
 	LogicAnd,
-	Or,
-	Xor,
-	And,
+	BitOr,
+	BitXor,
+	BitAnd,
 	Eq,
 	Neq,
 	Lt,
@@ -24,6 +24,8 @@ pub(crate) enum OperatorToken {
 	Mul,
 	Div,
 	Rem,
+	LogicNot,
+	BitNot,
 }
 
 impl Display for OperatorToken {
@@ -34,9 +36,9 @@ impl Display for OperatorToken {
 			Self::LogicOr => write!(f, "||"),
 			Self::LogicXor => write!(f, "^^"),
 			Self::LogicAnd => write!(f, "&&"),
-			Self::Or => write!(f, "|"),
-			Self::Xor => write!(f, "^"),
-			Self::And => write!(f, "&"),
+			Self::BitOr => write!(f, "|"),
+			Self::BitXor => write!(f, "^"),
+			Self::BitAnd => write!(f, "&"),
 			Self::Eq => write!(f, "=="),
 			Self::Neq => write!(f, "!="),
 			Self::Lt => write!(f, "<"),
@@ -51,6 +53,8 @@ impl Display for OperatorToken {
 			Self::Mul => write!(f, "*"),
 			Self::Div => write!(f, "/"),
 			Self::Rem => write!(f, "%"),
+			Self::LogicNot => write!(f, "!"),
+			Self::BitNot => write!(f, "~"),
 		}
 	}
 }

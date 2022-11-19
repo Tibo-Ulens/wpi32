@@ -178,20 +178,29 @@ impl<'s> Lexer<'s> {
 			':' => Ok(self.make_token(TokenType::Op(OperatorToken::TernAlt))),
 			'|' => {
 				match self.peek()? {
-					'|' => Ok(self.make_token(TokenType::Op(OperatorToken::LogicOr))),
-					_ => Ok(self.make_token(TokenType::Op(OperatorToken::Or))),
+					'|' => {
+						self.next().unwrap(); // Unwrap is safe as peek is some
+						Ok(self.make_token(TokenType::Op(OperatorToken::LogicOr)))
+					},
+					_ => Ok(self.make_token(TokenType::Op(OperatorToken::BitOr))),
 				}
 			},
 			'^' => {
 				match self.peek()? {
-					'^' => Ok(self.make_token(TokenType::Op(OperatorToken::LogicXor))),
-					_ => Ok(self.make_token(TokenType::Op(OperatorToken::Xor))),
+					'^' => {
+						self.next().unwrap(); // Unwrap is safe as peek is some
+						Ok(self.make_token(TokenType::Op(OperatorToken::LogicXor)))
+					},
+					_ => Ok(self.make_token(TokenType::Op(OperatorToken::BitXor))),
 				}
 			},
 			'&' => {
 				match self.peek()? {
-					'&' => Ok(self.make_token(TokenType::Op(OperatorToken::LogicAnd))),
-					_ => Ok(self.make_token(TokenType::Op(OperatorToken::And))),
+					'&' => {
+						self.next().unwrap(); // Unwrap is safe as peek is some
+						Ok(self.make_token(TokenType::Op(OperatorToken::LogicAnd)))
+					},
+					_ => Ok(self.make_token(TokenType::Op(OperatorToken::BitAnd))),
 				}
 			},
 			'+' => Ok(self.make_token(TokenType::Op(OperatorToken::Plus))),
@@ -215,20 +224,15 @@ impl<'s> Lexer<'s> {
 				}
 			},
 			'!' => {
-				match self.next()? {
-					'=' => Ok(self.make_token(TokenType::Op(OperatorToken::Neq))),
-					c => {
-						Err(LexError::UnexpectedSymbol {
-							src_file: self.source_file.to_string(),
-							line:     self.line,
-							col:      self.col,
-							src_line: self.get_curr_line().to_string(),
-							fnd:      c,
-							ex:       '=',
-						})
+				match self.peek()? {
+					'=' => {
+						self.next().unwrap();
+						Ok(self.make_token(TokenType::Op(OperatorToken::Neq)))
 					},
+					_ => Ok(self.make_token(TokenType::Op(OperatorToken::LogicNot))),
 				}
 			},
+			'~' => Ok(self.make_token(TokenType::Op(OperatorToken::BitNot))),
 			'<' => {
 				match self.peek()? {
 					'=' => {

@@ -177,9 +177,9 @@ impl<'s> Debug for TokenType<'s> {
 			Self::Op(OperatorToken::LogicOr) => write!(f, "{:<20} | {:16}", "OPERATOR", "||"),
 			Self::Op(OperatorToken::LogicXor) => write!(f, "{:<20} | {:16}", "OPERATOR", "^^"),
 			Self::Op(OperatorToken::LogicAnd) => write!(f, "{:<20} | {:16}", "OPERATOR", "&&"),
-			Self::Op(OperatorToken::Or) => write!(f, "{:<20} | {:<16}", "OPERATOR", "|"),
-			Self::Op(OperatorToken::Xor) => write!(f, "{:<20} | {:<16}", "OPERATOR", "^"),
-			Self::Op(OperatorToken::And) => write!(f, "{:<20} | {:<16}", "OPERATOR", "&"),
+			Self::Op(OperatorToken::BitOr) => write!(f, "{:<20} | {:<16}", "OPERATOR", "|"),
+			Self::Op(OperatorToken::BitXor) => write!(f, "{:<20} | {:<16}", "OPERATOR", "^"),
+			Self::Op(OperatorToken::BitAnd) => write!(f, "{:<20} | {:<16}", "OPERATOR", "&"),
 			Self::Op(OperatorToken::Eq) => write!(f, "{:<20} | {:<16}", "OPERATOR", "=="),
 			Self::Op(OperatorToken::Neq) => write!(f, "{:<20} | {:<16}", "OPERATOR", "!="),
 			Self::Op(OperatorToken::Lt) => write!(f, "{:<20} | {:<16}", "OPERATOR", "<"),
@@ -194,6 +194,8 @@ impl<'s> Debug for TokenType<'s> {
 			Self::Op(OperatorToken::Mul) => write!(f, "{:<20} | {:<16}", "OPERATOR", "*"),
 			Self::Op(OperatorToken::Div) => write!(f, "{:<20} | {:<16}", "OPERATOR", "/"),
 			Self::Op(OperatorToken::Rem) => write!(f, "{:<20} | {:<16}", "OPERATOR", "%"),
+			Self::Op(OperatorToken::LogicNot) => write!(f, "{:<20} | {:<16}", "OPERATOR", "!"),
+			Self::Op(OperatorToken::BitNot) => write!(f, "{:<20} | {:<16}", "OPERATOR", "~"),
 
 			Self::Comment(cmt) => write!(f, "{:<20} | {:<16}", "COMMENT", format!("{:?}", cmt)),
 		}
