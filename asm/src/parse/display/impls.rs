@@ -11,7 +11,7 @@ use crate::parse::{
 	OffsetOperator,
 	OrderingTarget,
 	Root,
-	Statement,
+	Statement, LabelId,
 };
 
 impl<'s> ToNode for Root<'s> {
@@ -27,6 +27,10 @@ impl<'s> ToNode for Root<'s> {
 impl<'s> ToNode for Line<'s> {
 	fn to_node(&self) -> Node {
 		let mut children = vec![];
+
+		if let Some(labl) = &self.labl {
+			children.push(labl.to_node());
+		}
 
 		if let Some(stmt) = &self.stmt {
 			children.push(stmt.to_node());
@@ -44,23 +48,30 @@ impl<'s> ToNode for Line<'s> {
 	}
 }
 
+impl<'s> ToNode for LabelId<'s> {
+	fn to_node(&self) -> Node {
+		match self {
+			Self::LabelDefine(id) => {
+				Node {
+					prefixes: vec![],
+					repr: "Label".to_string(),
+					children: vec![id.to_node()],
+				}
+			},
+			Self::LocalLabelDefine(id) => {
+				Node {
+					prefixes: vec![],
+					repr: "LocalLabel".to_string(),
+					children: vec![id.to_node()],
+				}
+			},
+		}
+	}
+}
+
 impl<'s> ToNode for Statement<'s> {
 	fn to_node(&self) -> Node {
 		match self {
-			Self::LabelDefine(ld) => {
-				Node {
-					prefixes: vec!["Statement".to_string()],
-					repr:     "LabelDefine".to_string(),
-					children: vec![ld.to_node()],
-				}
-			},
-			Self::LocalLabelDefine(lld) => {
-				Node {
-					prefixes: vec!["Statement".to_string()],
-					repr:     "LocalLabelDefine".to_string(),
-					children: vec![lld.to_node()],
-				}
-			},
 			Self::Directive(dir) => dir.to_node().add_prefix("Statement"),
 			Self::Instruction(inst) => inst.to_node().add_prefix("Statement"),
 		}

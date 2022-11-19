@@ -9,16 +9,21 @@ pub(crate) struct Root<'s> {
 
 #[derive(Clone, Debug)]
 pub(crate) struct Line<'s> {
+	pub(crate) labl: Option<LabelId<'s>>,
 	pub(crate) stmt: Option<Statement<'s>>,
 	pub(crate) cmnt: Option<&'s str>,
 }
 
 #[derive(Clone, Debug)]
 pub(crate) enum Statement<'s> {
-	LabelDefine(Identifier<'s>),
-	LocalLabelDefine(Identifier<'s>),
 	Directive(Directive<'s>),
 	Instruction(Instruction<'s>),
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum LabelId<'l> {
+	LabelDefine(Identifier<'l>),
+	LocalLabelDefine(Identifier<'l>),
 }
 
 #[derive(Clone, Debug)]

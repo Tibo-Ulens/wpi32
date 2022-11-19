@@ -30,11 +30,13 @@ local_label_define = local_label, ":";
 (* Syntactical grammar *)
 
 root = { line };
-line = { whitespace }, [ statement ], [ comment ], newline;
-statement = label_define
-	| local_label_define
-	| directive
-	| instruction;
+line = { whitespace },
+	[ label_define | local_label_define ],
+	[ statement ],
+	[ comment ],
+	newline;
+
+statement = directive | instruction;
 
 directive = byte_directive
 	| half_directive

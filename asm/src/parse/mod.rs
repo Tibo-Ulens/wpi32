@@ -90,28 +90,36 @@ impl<'l, 's> Parser<'l, 's> {
 		let mut lines = vec![];
 
 		while self.peek().is_ok() {
+			let labl = self.tryparse_label()?;
 			let stmt = self.tryparse_statement()?;
 			let cmnt = self.tryparse_comment()?;
 
 			self.expect(TokenType::SymNewline)?;
 
-			lines.push(Line { stmt, cmnt });
+			lines.push(Line { labl, stmt, cmnt });
 		}
 
 		Ok(Root { lines })
 	}
 
-	fn tryparse_statement<'r>(&'r mut self) -> Result<Option<Statement<'s>>, ParseError> {
+	fn tryparse_label<'r>(&'r mut self) -> Result<Option<LabelId<'s>>, ParseError> {
 		let peek = self.peek()?;
-		match &peek.t {
+		match peek.t {
 			TokenType::LabelDefine(ld) => {
 				self.next().unwrap();
-				Ok(Some(Statement::LabelDefine(Identifier(ld))))
+				Ok(Some(LabelId::LabelDefine(Identifier(ld))))
 			},
 			TokenType::LocalLabelDefine(lld) => {
 				self.next().unwrap();
-				Ok(Some(Statement::LocalLabelDefine(Identifier(lld))))
+				Ok(Some(LabelId::LocalLabelDefine(Identifier(lld))))
 			},
+			_ => Ok(None),
+		}
+	}
+
+	fn tryparse_statement<'r>(&'r mut self) -> Result<Option<Statement<'s>>, ParseError> {
+		let peek = self.peek()?;
+		match &peek.t {
 			TokenType::Dir(_) => Ok(Some(Statement::Directive(self.tryparse_directive()?))),
 			TokenType::Inst(_) => Ok(Some(Statement::Instruction(self.tryparse_instruction()?))),
 			TokenType::SymNewline => Ok(None),
