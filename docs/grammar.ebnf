@@ -52,7 +52,11 @@ repeat_directive = "$repeat", immediate, directive;
 
 equ_directive = "$equ", ( label | local_label ), literal;
 
-immediate = xor_imm, { "|", xor_imm };
+immediate = logicor_imm, { "?", logicor_imm, ":", logicor_imm };
+logicor_imm = logicxor_imm, { "||", logicxor_imm };
+logicxor_imm = logicand_imm, { "^^", logicand_imm };
+logicand_imm = or_imm, { "&&", or_imm };
+or_imm = xor_imm, { "|", xor_imm };
 xor_imm = and_imm, { "^", and_imm};
 and_imm = eq_imm, { "&", eq_imm};
 eq_imm = ord_imm, { ( "==", ord_imm ) | ( "!=", ord_imm ) };

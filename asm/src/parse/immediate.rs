@@ -2,10 +2,34 @@
 
 use std::fmt::{Display, Formatter, Result};
 
-use crate::lex::TokenType;
+use crate::lex::{OperatorToken, TokenType};
 
 #[derive(Clone, Debug)]
 pub(crate) struct Immediate<'s> {
+	lhs: LogicOrImmediate<'s>,
+	rhs: Option<(LogicOrImmediate<'s>, LogicOrImmediate<'s>)>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct LogicOrImmediate<'s> {
+	lhs: LogicXorImmediate<'s>,
+	rhs: Option<LogicXorImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct LogicXorImmediate<'s> {
+	lhs: LogicAndImmediate<'s>,
+	rhs: Option<LogicAndImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct LogicAndImmediate<'s> {
+	lhs: OrImmediate<'s>,
+	rhs: Option<OrImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct OrImmediate<'s> {
 	lhs: XorImmediate<'s>,
 	rhs: Option<XorImmediate<'s>>,
 }
@@ -66,59 +90,65 @@ pub(crate) enum Operand<'s> {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct EqOp<'s>(TokenType<'s>);
+pub(crate) struct EqOp(OperatorToken);
 #[derive(Clone, Debug)]
-pub(crate) struct OrdOp<'s>(TokenType<'s>);
+pub(crate) struct OrdOp(OperatorToken);
 #[derive(Clone, Debug)]
-pub(crate) struct ShiftOp<'s>(TokenType<'s>);
+pub(crate) struct ShiftOp(OperatorToken);
 #[derive(Clone, Debug)]
-pub(crate) struct AddSubOp<'s>(TokenType<'s>);
+pub(crate) struct AddSubOp(OperatorToken);
 #[derive(Clone, Debug)]
-pub(crate) struct MulDivRemOp<'s>(TokenType<'s>);
+pub(crate) struct MulDivRemOp(OperatorToken);
 
-impl<'s> From<TokenType<'s>> for EqOp<'s> {
+impl<'s> From<TokenType<'s>> for EqOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
-			TokenType::OperatorEq | TokenType::OperatorNeq => Self(value),
+			TokenType::Op(o @ OperatorToken::Eq) | TokenType::Op(o @ OperatorToken::Neq) => Self(o),
 			_ => unimplemented!(),
 		}
 	}
 }
 
-impl<'s> From<TokenType<'s>> for OrdOp<'s> {
+impl<'s> From<TokenType<'s>> for OrdOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
-			TokenType::OperatorGt
-			| TokenType::OperatorGte
-			| TokenType::OperatorLt
-			| TokenType::OperatorLte => Self(value),
+			TokenType::Op(o @ OperatorToken::Gt)
+			| TokenType::Op(o @ OperatorToken::Gte)
+			| TokenType::Op(o @ OperatorToken::Lt)
+			| TokenType::Op(o @ OperatorToken::Lte) => Self(o),
 			_ => unimplemented!(),
 		}
 	}
 }
 
-impl<'s> From<TokenType<'s>> for ShiftOp<'s> {
+impl<'s> From<TokenType<'s>> for ShiftOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
-			TokenType::OperatorLsl | TokenType::OperatorLsr | TokenType::OperatorAsr => Self(value),
+			TokenType::Op(o @ OperatorToken::Lsl)
+			| TokenType::Op(o @ OperatorToken::Lsr)
+			| TokenType::Op(o @ OperatorToken::Asr) => Self(o),
 			_ => unimplemented!(),
 		}
 	}
 }
 
-impl<'s> From<TokenType<'s>> for AddSubOp<'s> {
+impl<'s> From<TokenType<'s>> for AddSubOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
-			TokenType::OperatorPlus | TokenType::OperatorMinus => Self(value),
+			TokenType::Op(o @ OperatorToken::Plus) | TokenType::Op(o @ OperatorToken::Minus) => {
+				Self(o)
+			},
 			_ => unimplemented!(),
 		}
 	}
 }
 
-impl<'s> From<TokenType<'s>> for MulDivRemOp<'s> {
+impl<'s> From<TokenType<'s>> for MulDivRemOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
-			TokenType::OperatorMul | TokenType::OperatorDiv | TokenType::OperatorRem => Self(value),
+			TokenType::Op(o @ OperatorToken::Mul)
+			| TokenType::Op(o @ OperatorToken::Div)
+			| TokenType::Op(o @ OperatorToken::Rem) => Self(o),
 			_ => unimplemented!(),
 		}
 	}
@@ -128,6 +158,46 @@ impl<'s> From<TokenType<'s>> for MulDivRemOp<'s> {
 // a (hopefully) easy to read string
 
 impl<'s> Display for Immediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(rhs) = &self.rhs {
+			write!(f, "{} ? {} : {}", self.lhs, rhs.0, rhs.1)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for LogicOrImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(rhs) = &self.rhs {
+			write!(f, "{} || {}", self.lhs, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for LogicXorImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(rhs) = &self.rhs {
+			write!(f, "{} ^^ {}", self.lhs, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for LogicAndImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(rhs) = &self.rhs {
+			write!(f, "{} && {}", self.lhs, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for OrImmediate<'s> {
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
 		if let Some(rhs) = &self.rhs {
 			write!(f, "{} | {}", self.lhs, rhs)
