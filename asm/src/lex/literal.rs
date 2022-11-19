@@ -19,7 +19,7 @@ impl<'s> Lexer<'s> {
 			"\\'" => Ok('\''),
 			_ => {
 				Err(LexError::InvalidEscape {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + 1,
 					span:     2,
@@ -70,7 +70,7 @@ impl<'s> Lexer<'s> {
 			Some(c) => c,
 			None => {
 				return Err(LexError::UnexpectedEof {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + 1,
 					src_line: self.get_curr_line().to_string(),
@@ -83,7 +83,7 @@ impl<'s> Lexer<'s> {
 				Some(c) => c,
 				None => {
 					return Err(LexError::UnexpectedEof {
-						src_file: self.source_file.to_owned(),
+						src_file: self.source_file.to_string(),
 						line:     self.line,
 						col:      self.col + 2,
 						src_line: self.get_curr_line().to_string(),
@@ -95,7 +95,7 @@ impl<'s> Lexer<'s> {
 				Some(c) => c,
 				None => {
 					return Err(LexError::UnexpectedEof {
-						src_file: self.source_file.to_owned(),
+						src_file: self.source_file.to_string(),
 						line:     self.line,
 						col:      self.col + 3,
 						src_line: self.get_curr_line().to_string(),
@@ -105,7 +105,7 @@ impl<'s> Lexer<'s> {
 
 			if close != '\'' {
 				return Err(LexError::UnexpectedSymbol {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + 3,
 					src_line: self.get_curr_line().to_string(),
@@ -124,7 +124,7 @@ impl<'s> Lexer<'s> {
 			Some(c) => c,
 			None => {
 				return Err(LexError::UnexpectedEof {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + 2,
 					src_line: self.get_curr_line().to_string(),
@@ -134,7 +134,7 @@ impl<'s> Lexer<'s> {
 
 		if close != '\'' {
 			return Err(LexError::UnexpectedSymbol {
-				src_file: self.source_file.to_owned(),
+				src_file: self.source_file.to_string(),
 				line:     self.line,
 				col:      self.col + 2,
 				src_line: self.get_curr_line().to_string(),
@@ -162,7 +162,7 @@ impl<'s> Lexer<'s> {
 			Some(c) => *c,
 			None => {
 				return Err(LexError::UnexpectedEof {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + 1,
 					src_line: self.get_curr_line().to_string(),
@@ -180,7 +180,7 @@ impl<'s> Lexer<'s> {
 
 			if self.idx >= self.len {
 				return Err(LexError::UnexpectedEof {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + i + 2,
 					src_line: self.get_curr_line().to_string(),
@@ -222,7 +222,7 @@ impl<'s> Lexer<'s> {
 		let num = if raw.starts_with("0x") {
 			isize::from_str_radix(raw.trim_start_matches("0x"), 16).map_err(|_| {
 				LexError::InvalidNumber {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col,
 					span:     raw.len(),
@@ -232,7 +232,7 @@ impl<'s> Lexer<'s> {
 		} else if raw.starts_with("0o") {
 			isize::from_str_radix(raw.trim_start_matches("0o"), 8).map_err(|_| {
 				LexError::InvalidNumber {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col,
 					span:     raw.len(),
@@ -242,7 +242,7 @@ impl<'s> Lexer<'s> {
 		} else if raw.starts_with("0b") {
 			isize::from_str_radix(raw.trim_start_matches("0b"), 2).map_err(|_| {
 				LexError::InvalidNumber {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col,
 					span:     raw.len(),
@@ -252,7 +252,7 @@ impl<'s> Lexer<'s> {
 		} else {
 			raw.parse::<isize>().map_err(|_| {
 				LexError::InvalidNumber {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col,
 					span:     raw.len(),

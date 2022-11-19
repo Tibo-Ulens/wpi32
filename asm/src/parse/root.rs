@@ -15,19 +15,22 @@ pub(crate) struct Line<'s> {
 
 #[derive(Clone, Debug)]
 pub(crate) enum Statement<'s> {
-	LabelDefine(&'s str),
-	LocalLabelDefine(&'s str),
+	LabelDefine(Identifier<'s>),
+	LocalLabelDefine(Identifier<'s>),
 	Directive(Directive<'s>),
 	Instruction(Instruction<'s>),
 }
+
+#[derive(Clone, Debug)]
+pub(crate) struct Identifier<'i>(pub(crate) &'i str);
 
 #[derive(Clone, Debug)]
 pub(crate) enum Directive<'d> {
 	Byte { data: Vec<Literal<'d>> },
 	Half { data: Vec<Literal<'d>> },
 	Word { data: Vec<Literal<'d>> },
-	Repeat { amount: usize, argument: Box<Directive<'d>> },
-	Equ { name: &'d str, value: Literal<'d> },
+	Repeat { amount: Literal<'d>, argument: Box<Directive<'d>> },
+	Equ { id: Identifier<'d>, value: Literal<'d> },
 }
 
 #[derive(Clone, Debug)]

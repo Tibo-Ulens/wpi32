@@ -33,7 +33,7 @@ impl<'s> Iterator for Lexer<'s> {
 impl<'s> Lexer<'s> {
 	pub(crate) fn new(src_file: &str, source: &'s str) -> Self {
 		Self {
-			source_file: src_file.to_owned(),
+			source_file: src_file.to_string(),
 			source,
 			source_iter: source.chars().peekable(),
 			len: source.chars().count(),
@@ -87,7 +87,7 @@ impl<'s> Lexer<'s> {
 			Some(p) => *p,
 			None => {
 				return Err(LexError::UnexpectedEof {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col,
 					src_line: self.get_curr_line().to_string(),
@@ -104,7 +104,7 @@ impl<'s> Lexer<'s> {
 
 			if self.idx >= self.len {
 				return Err(LexError::UnexpectedEof {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + i,
 					src_line: self.get_curr_line().to_string(),
@@ -187,7 +187,7 @@ impl<'s> Lexer<'s> {
 					'=' => Ok(self.make_token(TokenType::OperatorEq)),
 					c => {
 						Err(LexError::UnexpectedSymbol {
-							src_file: self.source_file.to_owned(),
+							src_file: self.source_file.to_string(),
 							line:     self.line,
 							col:      self.col,
 							src_line: self.get_curr_line().to_string(),
@@ -202,7 +202,7 @@ impl<'s> Lexer<'s> {
 					'=' => Ok(self.make_token(TokenType::OperatorNeq)),
 					c => {
 						Err(LexError::UnexpectedSymbol {
-							src_file: self.source_file.to_owned(),
+							src_file: self.source_file.to_string(),
 							line:     self.line,
 							col:      self.col,
 							src_line: self.get_curr_line().to_string(),
@@ -279,7 +279,7 @@ impl<'s> Lexer<'s> {
 			},
 			c => {
 				Err(LexError::RawUnexpectedSymbol {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col,
 					src_line: self.get_curr_line().to_string(),

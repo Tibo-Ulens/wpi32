@@ -34,10 +34,10 @@ pub(crate) enum Instruction<'s> {
 	Lui { dest: RegisterToken, imm: Immediate<'s> },
 	Auipc { dest: RegisterToken, imm: Immediate<'s> },
 
-	// Jump
-	Jmp { dest: RegisterToken, offset: Immediate<'s> },
-	// Jump RegisterToken
-	JmpReg { dest: RegisterToken, base: RegisterToken, offset: Immediate<'s> },
+	// Jump and link
+	Jal { dest: RegisterToken, offset: Immediate<'s> },
+	// Jump and link register
+	Jalr { dest: RegisterToken, base: RegisterToken, offset: Immediate<'s> },
 
 	// Conditional Branch
 	Beq { src1: RegisterToken, src2: RegisterToken, offset: Immediate<'s> },
@@ -96,14 +96,14 @@ pub(crate) enum Instruction<'s> {
 
 #[derive(Clone, Debug)]
 pub(crate) struct Address<'s> {
-	base:   RegisterToken,
-	offset: Option<AddrOffset<'s>>,
+	pub(crate) base:   RegisterToken,
+	pub(crate) offset: Option<AddrOffset<'s>>,
 }
 
 #[derive(Clone, Debug)]
 pub(crate) struct AddrOffset<'s> {
-	op:  OffsetOperator,
-	imm: Immediate<'s>,
+	pub(crate) op:  OffsetOperator,
+	pub(crate) imm: Immediate<'s>,
 }
 
 #[derive(Clone, Debug)]

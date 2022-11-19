@@ -1,5 +1,6 @@
 use common::{Error, ParseError};
 
+mod display;
 mod immediate;
 mod instruction;
 mod root;
@@ -20,7 +21,7 @@ pub(crate) struct Parser<'l, 's: 'l> {
 
 impl<'l, 's> Parser<'l, 's> {
 	pub(crate) fn new(src_file: &str, stream: &'l [Token<'s>]) -> Self {
-		Self { stream, source_file: src_file.to_owned(), len: stream.len(), idx: 0 }
+		Self { stream, source_file: src_file.to_string(), len: stream.len(), idx: 0 }
 	}
 
 	/// Return the next token in the stream
@@ -29,14 +30,14 @@ impl<'l, 's> Parser<'l, 's> {
 			self.idx += 1;
 			Ok(&self.stream[self.idx - 1])
 		} else {
-			let srcf = self.source_file.to_owned();
+			let srcf = self.source_file.to_string();
 			let prev = self.prev();
 
 			Err(ParseError::UnexpectedEof {
 				src_file: srcf,
 				line:     prev.line,
 				col:      prev.col,
-				src_line: prev.source_line.to_owned(),
+				src_line: prev.source_line.to_string(),
 			})
 		}
 	}
@@ -46,14 +47,14 @@ impl<'l, 's> Parser<'l, 's> {
 		if self.idx < self.len - 1 {
 			Ok(&self.stream[self.idx])
 		} else {
-			let srcf = self.source_file.to_owned();
+			let srcf = self.source_file.to_string();
 			let prev = self.prev();
 
 			Err(ParseError::UnexpectedEof {
 				src_file: srcf,
 				line:     prev.line,
 				col:      prev.col,
-				src_line: prev.source_line.to_owned(),
+				src_line: prev.source_line.to_string(),
 			})
 		}
 	}
@@ -70,7 +71,7 @@ impl<'l, 's> Parser<'l, 's> {
 			Ok(())
 		} else {
 			let repr = next_type.to_string();
-			let srcf = self.source_file.to_owned();
+			let srcf = self.source_file.to_string();
 			let prev = self.prev();
 
 			Err(ParseError::UnexpectedToken {
@@ -78,7 +79,7 @@ impl<'l, 's> Parser<'l, 's> {
 				line:     prev.line,
 				col:      prev.col,
 				span:     prev.span,
-				src_line: prev.source_line.to_owned(),
+				src_line: prev.source_line.to_string(),
 				fnd:      repr,
 				ex:       t.to_string(),
 			})
@@ -105,11 +106,11 @@ impl<'l, 's> Parser<'l, 's> {
 		match &peek.t {
 			TokenType::LabelDefine(ld) => {
 				self.next().unwrap();
-				Ok(Some(Statement::LabelDefine(ld)))
+				Ok(Some(Statement::LabelDefine(Identifier(ld))))
 			},
 			TokenType::LocalLabelDefine(lld) => {
 				self.next().unwrap();
-				Ok(Some(Statement::LocalLabelDefine(lld)))
+				Ok(Some(Statement::LocalLabelDefine(Identifier(lld))))
 			},
 			TokenType::Dir(_) => Ok(Some(Statement::Directive(self.tryparse_directive()?))),
 			TokenType::Inst(_) => Ok(Some(Statement::Instruction(self.tryparse_instruction()?))),
