@@ -148,7 +148,7 @@ impl<'s> Lexer<'s> {
 					"$RES_HALVES" => Ok(self.make_token(TokenType::Dir(DirToken::ResHalves))),
 					"$RES_WORDS" => Ok(self.make_token(TokenType::Dir(DirToken::ResWords))),
 					"$REPEAT" => Ok(self.make_token(TokenType::Dir(DirToken::Repeat))),
-					"$EQU" => Ok(self.make_token(TokenType::Dir(DirToken::Equ))),
+					"$DEFINE" => Ok(self.make_token(TokenType::Dir(DirToken::Define))),
 					_ => {
 						Err(LexError::InvalidDirective {
 							src_file: self.source_file.clone(),

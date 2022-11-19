@@ -53,14 +53,14 @@ label_id = label_define | local_label_define;
 (* text section *)
 
 text_line = { whitespace },
-	[ annotated_text_line | raw_text_line ]
+	[ label_id ],
+	[ text_statement ],
 	[ comment ],
 	newline;
 
-annotated_text_line = label_id,
-	[ equ_directive | text_repeat_directive | instruction ];
-raw_text_line = [ text_repeat_directive | instruction ];
+text_statement = [ text_directive | instruction ];
 
+text_directive = text_repeat_directive | define_directive;
 text_repeat_directive = "$REPEAT", immediate, instruction;
 
 (* /text section *)
@@ -68,17 +68,15 @@ text_repeat_directive = "$REPEAT", immediate, instruction;
 
 data_line = { whitespace },
 	[ label_id ],
-	[ annotated_data_line | raw_data_line ],
+	[ data_directive ],
 	[ comment ]
 	newline;
-
-annotated_data_line = label_id, [ equ_directive, data_directive ];
-raw_data_line = [ data_directive ];
 
 data_directive = bytes_directive
 	| halves_directive
 	| words_directive
-	| data_repeat_directive;
+	| data_repeat_directive
+	| define_directive;
 
 bytes_directive = "$BYTES", literal, { comma, literal };
 halves_directive = "$HALVES", literal, { comma, literal };
@@ -90,17 +88,15 @@ data_repeat_directive = "$REPEAT", immediate, data_directive;
 
 bss_line = { whitespace },
 	[ label_id ],
-	[ annotated_bss_line | raw_bss_line ],
+	[ bss_directive ],
 	[ comment ]
 	newline;
-
-annotated_bss_line = label_id, [ equ_directive, bss_directive ];
-raw_bss_line = [ bss_directive ];
 
 bss_directive = res_bytes_directive
 	| res_halves_directive
 	| res_words_directive
-	| bss_repeat_directive;
+	| bss_repeat_directive
+	| define_directive;
 
 res_bytes_directive = "$RES_BYTES", number, { comma, number };
 res_halves_directive = "$RES_HALVES", number, { comma, number };
@@ -109,7 +105,7 @@ bss_repeat_directive = "$REPEAT", immediate, bss_directive;
 
 (* /bss section *)
 
-equ_directive = "$EQU", literal;
+define_directive = "$DEFINE", ( label | local_label ), literal;
 
 literal = string | char | immediate;
 

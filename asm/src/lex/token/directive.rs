@@ -10,7 +10,7 @@ pub(crate) enum DirToken {
 	ResHalves,
 	ResWords,
 	Repeat,
-	Equ,
+	Define,
 }
 
 impl Display for DirToken {
@@ -24,7 +24,7 @@ impl Display for DirToken {
 			Self::ResHalves => write!(f, "$RES_HALVES"),
 			Self::ResWords => write!(f, "$RES_WORDS"),
 			Self::Repeat => write!(f, "$REPEAT"),
-			Self::Equ => write!(f, "$EQU"),
+			Self::Define => write!(f, "$DEFINE"),
 		}
 	}
 }

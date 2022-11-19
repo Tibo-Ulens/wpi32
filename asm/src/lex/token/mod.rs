@@ -168,7 +168,7 @@ impl<'s> Debug for TokenType<'s> {
 			Self::Dir(DirToken::Repeat) => {
 				write!(f, "{:<20} | {:<16}", "DIRECTIVE", "$repeat")
 			},
-			Self::Dir(DirToken::Equ) => write!(f, "{:<20} | {:<16}", "DIRECTIVE", "$equ"),
+			Self::Dir(DirToken::Define) => write!(f, "{:<20} | {:<16}", "DIRECTIVE", "$DEFINE"),
 
 			Self::LitStr(s) => write!(f, "{:<20} | {:<16}", "STRING", format!("{:?}", s)),
 			Self::LitChar(c) => write!(f, "{:<20} | {:<16}", "CHAR", format!("{:?}", c)),
