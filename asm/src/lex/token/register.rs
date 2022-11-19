@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum RegisterToken {
+pub(crate) enum RegToken {
 	R0,
 	R1,
 	R2,
@@ -36,7 +36,7 @@ pub(crate) enum RegisterToken {
 	R31,
 }
 
-impl Display for RegisterToken {
+impl Display for RegToken {
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
 		match self {
 			Self::R0 => write!(f, "r0"),

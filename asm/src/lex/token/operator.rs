@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum OperatorToken {
+pub(crate) enum OpToken {
 	TernStart,
 	TernAlt,
 	LogicOr,
@@ -28,7 +28,7 @@ pub(crate) enum OperatorToken {
 	BitNot,
 }
 
-impl Display for OperatorToken {
+impl Display for OpToken {
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
 		match self {
 			Self::TernStart => write!(f, "?"),

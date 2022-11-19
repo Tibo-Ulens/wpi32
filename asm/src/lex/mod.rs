@@ -7,7 +7,7 @@ mod token;
 mod util;
 
 use common::{Error, LexError};
-pub(crate) use token::{OperatorToken, RegisterToken, Token, TokenType};
+pub(crate) use token::{OpToken, RegToken, Token, TokenType};
 
 pub(crate) struct Lexer<'s> {
 	pub(crate) source_file: String,
@@ -174,43 +174,43 @@ impl<'s> Lexer<'s> {
 			')' => Ok(self.make_token(TokenType::SymRightParen)),
 			'[' => Ok(self.make_token(TokenType::SymLeftBracket)),
 			']' => Ok(self.make_token(TokenType::SymRightBracket)),
-			'?' => Ok(self.make_token(TokenType::Op(OperatorToken::TernStart))),
-			':' => Ok(self.make_token(TokenType::Op(OperatorToken::TernAlt))),
+			'?' => Ok(self.make_token(TokenType::Op(OpToken::TernStart))),
+			':' => Ok(self.make_token(TokenType::Op(OpToken::TernAlt))),
 			'|' => {
 				match self.peek()? {
 					'|' => {
 						self.next().unwrap(); // Unwrap is safe as peek is some
-						Ok(self.make_token(TokenType::Op(OperatorToken::LogicOr)))
+						Ok(self.make_token(TokenType::Op(OpToken::LogicOr)))
 					},
-					_ => Ok(self.make_token(TokenType::Op(OperatorToken::BitOr))),
+					_ => Ok(self.make_token(TokenType::Op(OpToken::BitOr))),
 				}
 			},
 			'^' => {
 				match self.peek()? {
 					'^' => {
 						self.next().unwrap(); // Unwrap is safe as peek is some
-						Ok(self.make_token(TokenType::Op(OperatorToken::LogicXor)))
+						Ok(self.make_token(TokenType::Op(OpToken::LogicXor)))
 					},
-					_ => Ok(self.make_token(TokenType::Op(OperatorToken::BitXor))),
+					_ => Ok(self.make_token(TokenType::Op(OpToken::BitXor))),
 				}
 			},
 			'&' => {
 				match self.peek()? {
 					'&' => {
 						self.next().unwrap(); // Unwrap is safe as peek is some
-						Ok(self.make_token(TokenType::Op(OperatorToken::LogicAnd)))
+						Ok(self.make_token(TokenType::Op(OpToken::LogicAnd)))
 					},
-					_ => Ok(self.make_token(TokenType::Op(OperatorToken::BitAnd))),
+					_ => Ok(self.make_token(TokenType::Op(OpToken::BitAnd))),
 				}
 			},
-			'+' => Ok(self.make_token(TokenType::Op(OperatorToken::Plus))),
-			'-' => Ok(self.make_token(TokenType::Op(OperatorToken::Minus))),
-			'*' => Ok(self.make_token(TokenType::Op(OperatorToken::Mul))),
-			'/' => Ok(self.make_token(TokenType::Op(OperatorToken::Div))),
-			'%' => Ok(self.make_token(TokenType::Op(OperatorToken::Rem))),
+			'+' => Ok(self.make_token(TokenType::Op(OpToken::Plus))),
+			'-' => Ok(self.make_token(TokenType::Op(OpToken::Minus))),
+			'*' => Ok(self.make_token(TokenType::Op(OpToken::Mul))),
+			'/' => Ok(self.make_token(TokenType::Op(OpToken::Div))),
+			'%' => Ok(self.make_token(TokenType::Op(OpToken::Rem))),
 			'=' => {
 				match self.next()? {
-					'=' => Ok(self.make_token(TokenType::Op(OperatorToken::Eq))),
+					'=' => Ok(self.make_token(TokenType::Op(OpToken::Eq))),
 					c => {
 						Err(LexError::UnexpectedSymbol {
 							src_file: self.source_file.to_string(),
@@ -227,30 +227,30 @@ impl<'s> Lexer<'s> {
 				match self.peek()? {
 					'=' => {
 						self.next().unwrap();
-						Ok(self.make_token(TokenType::Op(OperatorToken::Neq)))
+						Ok(self.make_token(TokenType::Op(OpToken::Neq)))
 					},
-					_ => Ok(self.make_token(TokenType::Op(OperatorToken::LogicNot))),
+					_ => Ok(self.make_token(TokenType::Op(OpToken::LogicNot))),
 				}
 			},
-			'~' => Ok(self.make_token(TokenType::Op(OperatorToken::BitNot))),
+			'~' => Ok(self.make_token(TokenType::Op(OpToken::BitNot))),
 			'<' => {
 				match self.peek()? {
 					'=' => {
 						self.next()?;
-						Ok(self.make_token(TokenType::Op(OperatorToken::Lte)))
+						Ok(self.make_token(TokenType::Op(OpToken::Lte)))
 					},
 					'<' => {
 						self.next()?;
-						Ok(self.make_token(TokenType::Op(OperatorToken::Lsl)))
+						Ok(self.make_token(TokenType::Op(OpToken::Lsl)))
 					},
-					_ => Ok(self.make_token(TokenType::Op(OperatorToken::Lt))),
+					_ => Ok(self.make_token(TokenType::Op(OpToken::Lt))),
 				}
 			},
 			'>' => {
 				match self.peek()? {
 					'=' => {
 						self.next()?;
-						Ok(self.make_token(TokenType::Op(OperatorToken::Gte)))
+						Ok(self.make_token(TokenType::Op(OpToken::Gte)))
 					},
 					'>' => {
 						self.next()?;
@@ -258,12 +258,12 @@ impl<'s> Lexer<'s> {
 						match self.peek()? {
 							'>' => {
 								self.next()?;
-								Ok(self.make_token(TokenType::Op(OperatorToken::Asr)))
+								Ok(self.make_token(TokenType::Op(OpToken::Asr)))
 							},
-							_ => Ok(self.make_token(TokenType::Op(OperatorToken::Lsr))),
+							_ => Ok(self.make_token(TokenType::Op(OpToken::Lsr))),
 						}
 					},
-					_ => Ok(self.make_token(TokenType::Op(OperatorToken::Gt))),
+					_ => Ok(self.make_token(TokenType::Op(OpToken::Gt))),
 				}
 			},
 			'\'' => {
@@ -296,7 +296,7 @@ impl<'s> Lexer<'s> {
 					Err(e) => return Some(Err(e.into())),
 				};
 
-				Ok(self.match_identifier(raw))
+				self.match_identifier(raw)
 			},
 			c => {
 				Err(LexError::RawUnexpectedSymbol {

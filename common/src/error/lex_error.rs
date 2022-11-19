@@ -39,6 +39,14 @@ pub enum LexError {
 		span:     usize,
 		src_line: String,
 	},
+	InvalidDirective {
+		src_file: String,
+		line:     usize,
+		col:      usize,
+		span:     usize,
+		src_line: String,
+		dir:      String,
+	},
 }
 
 impl Display for LexError {
@@ -49,7 +57,7 @@ impl Display for LexError {
 			},
 			Self::UnexpectedSymbol { src_file, line, col, src_line, fnd, ex } => {
 				make_info_block(
-					&format!("found unexpected symbol {:?}, expected {:?}", fnd, ex),
+					&format!("found unexpected symbol '{:?}', expected '{:?}'", fnd, ex),
 					src_file,
 					*line,
 					*col,
@@ -59,7 +67,7 @@ impl Display for LexError {
 			},
 			Self::RawUnexpectedSymbol { src_file, line, col, src_line, fnd } => {
 				make_info_block(
-					&format!("found unexpected symbol {:?}", fnd),
+					&format!("found unexpected symbol '{:?}'", fnd),
 					src_file,
 					*line,
 					*col,
@@ -72,6 +80,16 @@ impl Display for LexError {
 			},
 			Self::InvalidEscape { src_file, line, col, span, src_line } => {
 				make_info_block("invalid escape sequence", src_file, *line, *col, *span, src_line)
+			},
+			Self::InvalidDirective { src_file, line, col, span, src_line, dir } => {
+				make_info_block(
+					&format!("invalid directive '{:?}'", dir),
+					src_file,
+					*line,
+					*col,
+					*span,
+					src_line,
+				)
 			},
 		};
 

@@ -3,7 +3,7 @@
 use std::fmt::{Display, Formatter, Result};
 use std::ops::Deref;
 
-use crate::lex::{OperatorToken, TokenType};
+use crate::lex::{OpToken, TokenType};
 
 #[derive(Clone, Debug)]
 pub(crate) struct Immediate<'s> {
@@ -97,29 +97,29 @@ pub(crate) enum Operand<'s> {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct EqOp(OperatorToken);
+pub(crate) struct EqOp(OpToken);
 #[derive(Clone, Debug)]
-pub(crate) struct OrdOp(OperatorToken);
+pub(crate) struct OrdOp(OpToken);
 #[derive(Clone, Debug)]
-pub(crate) struct ShiftOp(OperatorToken);
+pub(crate) struct ShiftOp(OpToken);
 #[derive(Clone, Debug)]
-pub(crate) struct AddSubOp(OperatorToken);
+pub(crate) struct AddSubOp(OpToken);
 #[derive(Clone, Debug)]
-pub(crate) struct MulDivRemOp(OperatorToken);
+pub(crate) struct MulDivRemOp(OpToken);
 #[derive(Clone, Debug)]
-pub(crate) struct UnaryOp(OperatorToken);
+pub(crate) struct UnaryOp(OpToken);
 
 impl<'s> From<TokenType<'s>> for EqOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
-			TokenType::Op(o @ OperatorToken::Eq) | TokenType::Op(o @ OperatorToken::Neq) => Self(o),
+			TokenType::Op(o @ OpToken::Eq) | TokenType::Op(o @ OpToken::Neq) => Self(o),
 			_ => unimplemented!(),
 		}
 	}
 }
 
 impl Deref for EqOp {
-	type Target = OperatorToken;
+	type Target = OpToken;
 
 	fn deref(&self) -> &Self::Target { &self.0 }
 }
@@ -127,17 +127,17 @@ impl Deref for EqOp {
 impl<'s> From<TokenType<'s>> for OrdOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
-			TokenType::Op(o @ OperatorToken::Gt)
-			| TokenType::Op(o @ OperatorToken::Gte)
-			| TokenType::Op(o @ OperatorToken::Lt)
-			| TokenType::Op(o @ OperatorToken::Lte) => Self(o),
+			TokenType::Op(o @ OpToken::Gt)
+			| TokenType::Op(o @ OpToken::Gte)
+			| TokenType::Op(o @ OpToken::Lt)
+			| TokenType::Op(o @ OpToken::Lte) => Self(o),
 			_ => unimplemented!(),
 		}
 	}
 }
 
 impl Deref for OrdOp {
-	type Target = OperatorToken;
+	type Target = OpToken;
 
 	fn deref(&self) -> &Self::Target { &self.0 }
 }
@@ -145,16 +145,16 @@ impl Deref for OrdOp {
 impl<'s> From<TokenType<'s>> for ShiftOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
-			TokenType::Op(o @ OperatorToken::Lsl)
-			| TokenType::Op(o @ OperatorToken::Lsr)
-			| TokenType::Op(o @ OperatorToken::Asr) => Self(o),
+			TokenType::Op(o @ OpToken::Lsl)
+			| TokenType::Op(o @ OpToken::Lsr)
+			| TokenType::Op(o @ OpToken::Asr) => Self(o),
 			_ => unimplemented!(),
 		}
 	}
 }
 
 impl Deref for ShiftOp {
-	type Target = OperatorToken;
+	type Target = OpToken;
 
 	fn deref(&self) -> &Self::Target { &self.0 }
 }
@@ -162,16 +162,14 @@ impl Deref for ShiftOp {
 impl<'s> From<TokenType<'s>> for AddSubOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
-			TokenType::Op(o @ OperatorToken::Plus) | TokenType::Op(o @ OperatorToken::Minus) => {
-				Self(o)
-			},
+			TokenType::Op(o @ OpToken::Plus) | TokenType::Op(o @ OpToken::Minus) => Self(o),
 			_ => unimplemented!(),
 		}
 	}
 }
 
 impl Deref for AddSubOp {
-	type Target = OperatorToken;
+	type Target = OpToken;
 
 	fn deref(&self) -> &Self::Target { &self.0 }
 }
@@ -179,16 +177,16 @@ impl Deref for AddSubOp {
 impl<'s> From<TokenType<'s>> for MulDivRemOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
-			TokenType::Op(o @ OperatorToken::Mul)
-			| TokenType::Op(o @ OperatorToken::Div)
-			| TokenType::Op(o @ OperatorToken::Rem) => Self(o),
+			TokenType::Op(o @ OpToken::Mul)
+			| TokenType::Op(o @ OpToken::Div)
+			| TokenType::Op(o @ OpToken::Rem) => Self(o),
 			_ => unimplemented!(),
 		}
 	}
 }
 
 impl Deref for MulDivRemOp {
-	type Target = OperatorToken;
+	type Target = OpToken;
 
 	fn deref(&self) -> &Self::Target { &self.0 }
 }
@@ -196,17 +194,17 @@ impl Deref for MulDivRemOp {
 impl<'s> From<TokenType<'s>> for UnaryOp {
 	fn from(value: TokenType<'s>) -> Self {
 		match value {
-			TokenType::Op(o @ OperatorToken::Plus)
-			| TokenType::Op(o @ OperatorToken::Minus)
-			| TokenType::Op(o @ OperatorToken::LogicNot)
-			| TokenType::Op(o @ OperatorToken::BitNot) => Self(o),
+			TokenType::Op(o @ OpToken::Plus)
+			| TokenType::Op(o @ OpToken::Minus)
+			| TokenType::Op(o @ OpToken::LogicNot)
+			| TokenType::Op(o @ OpToken::BitNot) => Self(o),
 			_ => unimplemented!(),
 		}
 	}
 }
 
 impl Deref for UnaryOp {
-	type Target = OperatorToken;
+	type Target = OpToken;
 
 	fn deref(&self) -> &Self::Target { &self.0 }
 }

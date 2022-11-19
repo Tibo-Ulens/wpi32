@@ -3,16 +3,9 @@
 /// Checks whether a character is a valid identifier start character
 ///
 /// Identifiers follow the regex
-/// `[a-zA-Z!$?_~@.][a-zA-Z!$?_~@.0-9:]*`
+/// `[a-zA-Z$?_@.][a-zA-Z$?_@.0-9:]*`
 pub(super) fn is_identifier_start(c: &char) -> bool {
-	c.is_alphabetic()
-		|| *c == '!'
-		|| *c == '$'
-		|| *c == '?'
-		|| *c == '_'
-		|| *c == '~'
-		|| *c == '@'
-		|| *c == '.'
+	c.is_alphabetic() || *c == '$' || *c == '?' || *c == '_' || *c == '@' || *c == '.'
 }
 
 /// Checks whether a character is a valid identifier character

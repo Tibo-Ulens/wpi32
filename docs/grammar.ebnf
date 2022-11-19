@@ -1,3 +1,10 @@
+(*
+	THIS IS ONLY A LOOSE REFERENCE
+
+	IT WILL CONTAIN MISTAKES AND WILL NOT MATCH THE IMPLEMENTATION GRAMMAR
+	ONE FOR ONE
+*)
+
 (* Lexical grammar *)
 
 newline = ?r"\n"?;
@@ -29,30 +36,82 @@ local_label_define = local_label, ":";
 
 (* Syntactical grammar *)
 
-root = { line };
-line = { whitespace },
-	[ label_define | local_label_define ],
-	[ statement ],
+root = { section };
+section = text_section | data_section | bss_section;
+
+text_section = text_header, { text_line };
+text_header = "$SECTION", "TEXT", newline;
+
+data_section = data_header, { data_line };
+data_header = "$SECTION", "DATA", newline;
+
+bss_section = bss_header, { bss_line };
+bss_header = "$SECTION", "BSS", newline;
+
+label_id = label_define | local_label_define;
+
+(* text section *)
+
+text_line = { whitespace },
+	[ annotated_text_line | raw_text_line ]
 	[ comment ],
 	newline;
 
-statement = directive | instruction;
+annotated_text_line = label_id,
+	[ equ_directive | text_repeat_directive | instruction ];
+raw_text_line = [ text_repeat_directive | instruction ];
 
-directive = byte_directive
-	| half_directive
-	| word_directive
-	| repeat_directive
-	| equ_directive;
+text_repeat_directive = "$REPEAT", immediate, instruction;
+
+(* /text section *)
+(* data section *)
+
+data_line = { whitespace },
+	[ label_id ],
+	[ annotated_data_line | raw_data_line ],
+	[ comment ]
+	newline;
+
+annotated_data_line = label_id, [ equ_directive, data_directive ];
+raw_data_line = [ data_directive ];
+
+data_directive = bytes_directive
+	| halves_directive
+	| words_directive
+	| data_repeat_directive;
+
+bytes_directive = "$BYTES", literal, { comma, literal };
+halves_directive = "$HALVES", literal, { comma, literal };
+words_directive = "$WORDS", literal, { comma, literal };
+data_repeat_directive = "$REPEAT", immediate, data_directive;
+
+(* /data section *)
+(* bss section *)
+
+bss_line = { whitespace },
+	[ label_id ],
+	[ annotated_bss_line | raw_bss_line ],
+	[ comment ]
+	newline;
+
+annotated_bss_line = label_id, [ equ_directive, bss_directive ];
+raw_bss_line = [ bss_directive ];
+
+bss_directive = res_bytes_directive
+	| res_halves_directive
+	| res_words_directive
+	| bss_repeat_directive;
+
+res_bytes_directive = "$RES_BYTES", number, { comma, number };
+res_halves_directive = "$RES_HALVES", number, { comma, number };
+res_words_directive = "$RES_WORDS", number, { comma, number };
+bss_repeat_directive = "$REPEAT", immediate, bss_directive;
+
+(* /bss section *)
+
+equ_directive = "$EQU", literal;
 
 literal = string | char | immediate;
-
-byte_directive = "$byte", literal, { ",", literal };
-half_directive = "$half", literal, { ",", literal };
-word_directive = "$word", literal, { ",", literal };
-
-repeat_directive = "$repeat", immediate, directive;
-
-equ_directive = "$equ", ( label | local_label ), literal;
 
 immediate = logicor_imm, { "?", logicor_imm, ":", logicor_imm };
 logicor_imm = logicxor_imm, { "||", logicxor_imm };

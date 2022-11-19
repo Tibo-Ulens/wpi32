@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum InstructionToken {
+pub(crate) enum InstToken {
 	Add,
 	Addi,
 	Sub,
@@ -60,7 +60,7 @@ pub(crate) enum InstructionToken {
 	Remu,
 }
 
-impl Display for InstructionToken {
+impl Display for InstToken {
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
 		match self {
 			Self::Add => write!(f, "add"),

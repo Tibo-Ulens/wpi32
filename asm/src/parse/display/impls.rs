@@ -1,5 +1,5 @@
 use super::{Node, ToNode};
-use crate::lex::RegisterToken;
+use crate::lex::RegToken;
 use crate::parse::{
 	Address,
 	Directive,
@@ -775,7 +775,7 @@ impl<'s> ToNode for Instruction<'s> {
 	}
 }
 
-impl ToNode for RegisterToken {
+impl ToNode for RegToken {
 	fn to_node(&self) -> Node {
 		Node {
 			prefixes: vec!["Register".to_string()],
