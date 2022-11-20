@@ -1,10 +1,11 @@
+//! Implementations of `From<T> for Node` for all AST types
+
 use super::Node;
 use crate::lex::RegToken;
 use crate::parse::ast::{
 	Address,
 	ConstDirective,
-	Directive,
-	Identifier,
+	DataDirective,
 	Immediate,
 	Instruction,
 	LabelId,
@@ -82,11 +83,11 @@ impl<'s> From<&Section<'s>> for Node {
 			children: value.lines.iter().map(|l| l.into()).collect(),
 		};
 
-		Node {
-			prefixes: vec![],
-			repr:     "Section".to_string(),
-			children: vec![Node::from(&value.name).add_prefix("Name"), lines],
-		}
+		let mut children = vec![];
+		children.push(Node { prefixes: vec![], repr: "Name".to_string(), children: vec![] });
+		children.push(lines);
+
+		Node { prefixes: vec![], repr: "Section".to_string(), children }
 	}
 }
 
@@ -151,70 +152,60 @@ impl<'s> From<&LabelId<'s>> for Node {
 impl<'s> From<&Statement<'s>> for Node {
 	fn from(value: &Statement) -> Self {
 		match value {
-			Statement::Directive(dir) => Node::from(dir).add_prefix("Statement"),
+			Statement::DataDirective(dir) => Node::from(dir).add_prefix("Statement"),
 			Statement::Instruction(inst) => Node::from(inst).add_prefix("Statement"),
 		}
 	}
 }
 
-impl<'s> From<&Identifier<'s>> for Node {
-	fn from(value: &Identifier) -> Self {
-		Node {
-			prefixes: vec!["Identifier".to_string()],
-			repr:     value.0.to_string(),
-			children: vec![],
-		}
-	}
-}
-
-impl<'s> From<&Directive<'s>> for Node {
-	fn from(value: &Directive) -> Self {
+impl<'s> From<&DataDirective<'s>> for Node {
+	fn from(value: &DataDirective) -> Self {
 		match value {
-			Directive::Bytes { data } => {
+			DataDirective::Bytes { data } => {
 				Node {
-					prefixes: vec!["Directive".to_string()],
+					prefixes: vec!["DataDirective".to_string()],
 					repr:     "Bytes".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			Directive::Halves { data } => {
+			DataDirective::Halves { data } => {
 				Node {
-					prefixes: vec!["Directive".to_string()],
+					prefixes: vec!["DataDirective".to_string()],
 					repr:     "Halves".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			Directive::Words { data } => {
+			DataDirective::Words { data } => {
 				Node {
-					prefixes: vec!["Directive".to_string()],
+					prefixes: vec!["DataDirective".to_string()],
 					repr:     "Words".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			Directive::ResBytes { data } => {
+			DataDirective::ResBytes { data } => {
 				Node {
-					prefixes: vec!["Directive".to_string()],
+					prefixes: vec!["DataDirective".to_string()],
 					repr:     "ResBytes".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			Directive::ResHalves { data } => {
+			DataDirective::ResHalves { data } => {
 				Node {
-					prefixes: vec!["Directive".to_string()],
+					prefixes: vec!["DataDirective".to_string()],
 					repr:     "ResHalves".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			Directive::ResWords { data } => {
+			DataDirective::ResWords { data } => {
 				Node {
-					prefixes: vec!["Directive".to_string()],
+					prefixes: vec!["DataDirective".to_string()],
 					repr:     "ResWords".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			Directive::Repeat { amount, argument } => {
+			DataDirective::Repeat { amount, argument } => {
 				Node {
-					prefixes: vec!["Directive".to_string()],
+					prefixes: vec!["DataDirective".to_string()],
 					repr:     "Repeat".to_string(),
 					children: vec![
 						Node::from(amount).add_prefix("Amount"),
@@ -879,7 +870,7 @@ impl<'s> From<&Address<'s>> for Node {
 			vec![
 				Node::from(&value.base).add_prefix("Base"),
 				Node::from(&offset.op).add_prefix("Op"),
-				Node::from(&offset.imm).add_prefix("Imm"),
+				Node::from(&offset.offset).add_prefix("Offset"),
 			]
 		} else {
 			vec![Node::from(&value.base).add_prefix("Base")]

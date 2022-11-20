@@ -1,5 +1,8 @@
+//! Register Tokens
+
 use std::fmt::{Display, Formatter, Result};
 
+/// A tokentype to identify registers
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum RegToken {
 	R0,

@@ -1,5 +1,8 @@
+//! Operator Tokens
+
 use std::fmt::{Display, Formatter, Result};
 
+/// A tokentype to identify operators
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum OpToken {
 	TernStart,

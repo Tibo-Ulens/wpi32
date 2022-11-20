@@ -5,9 +5,17 @@ use bitflags::bitflags;
 use super::Immediate;
 use crate::lex::RegToken;
 
+/// An assembly instruction
+///
+/// Most instructions contain some form of [register](RegToken) specifier
+/// and/or an [`Immediate`] </br>
+/// The load and store instructions contain [`Address`] calculations </br>
+/// Fence instructions use [`OrderingTarget`]s
+///
+/// *EBNF not given as it is too chonky, look at the docs folder for grammar*
 #[derive(Clone, Debug)]
 pub(crate) enum Instruction<'s> {
-	// Integer RegisterToken Immediate
+	// Integer Register Immediate
 	Addi { dest: RegToken, src: RegToken, imm: Immediate<'s> },
 	Slti { dest: RegToken, src: RegToken, imm: Immediate<'s> },
 	Sltiu { dest: RegToken, src: RegToken, imm: Immediate<'s> },
@@ -18,7 +26,7 @@ pub(crate) enum Instruction<'s> {
 	Lsri { dest: RegToken, src: RegToken, imm: Immediate<'s> },
 	Asri { dest: RegToken, src: RegToken, imm: Immediate<'s> },
 
-	// Integer RegisterToken RegisterToken
+	// Integer Register Register
 	Add { dest: RegToken, src1: RegToken, src2: RegToken },
 	Slt { dest: RegToken, src1: RegToken, src2: RegToken },
 	Sltu { dest: RegToken, src1: RegToken, src2: RegToken },
@@ -94,18 +102,37 @@ pub(crate) enum Instruction<'s> {
 	RemU { dest: RegToken, src1: RegToken, src2: RegToken },
 }
 
+/// An address calculation for use in load/store instructions
+///
+/// Contains a base [register](RegToken) and an optional [offset](AddrOffset)
+///
+/// ```ebnf
+/// address_calculation = "[", register, [ address_offset ] "]";
+/// ```
 #[derive(Clone, Debug)]
 pub(crate) struct Address<'s> {
 	pub(crate) base:   RegToken,
 	pub(crate) offset: Option<AddrOffset<'s>>,
 }
 
+/// An offset for a specific [`Address`]
+///
+/// Contains an [operator](OffsetOperator) and some (offset)[Immediate}]
+///
+/// ```ebnf
+/// address_offset = "+" | "-", immediate;
+/// ```
 #[derive(Clone, Debug)]
 pub(crate) struct AddrOffset<'s> {
-	pub(crate) op:  OffsetOperator,
-	pub(crate) imm: Immediate<'s>,
+	pub(crate) op:     OffsetOperator,
+	pub(crate) offset: Immediate<'s>,
 }
 
+/// The operator used in [`Address`]es with an offset
+///
+/// Can be either "+" or "-"
+///
+/// See [`AddrOffset`] for grammar
 #[derive(Clone, Debug)]
 pub(crate) enum OffsetOperator {
 	Plus,
@@ -113,6 +140,20 @@ pub(crate) enum OffsetOperator {
 }
 
 bitflags! {
+	/// A target operation for a fence-type instruction
+	///
+	/// These targets specify what kinds of operations the fence instruction
+	/// should synchronise against
+	///
+	/// Can be one of
+	///  - `I`: input instruction
+	///  - `O`: output instruction
+	///  - `R`: read instruction
+	///  - `w`: write instruction
+	///
+	/// ```ebnf
+	/// ordering_operation = [ "i" ], [ "o" ], [ "r" ], [ "w" ];
+	/// ```
 	pub(crate) struct OrderingTarget: u8 {
 		const I = 0b0000_0001;
 		const O = 0b0000_0010;

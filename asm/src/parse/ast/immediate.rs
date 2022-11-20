@@ -5,6 +5,12 @@ use std::ops::Deref;
 
 use crate::lex::{OpToken, TokenType};
 
+/// An immediate value
+///
+/// This can range from a single number to a complex expression referencing
+/// labels and constants
+///
+/// *EBNF not given as it is too chonky, look at the docs folder for grammar*
 #[derive(Clone, Debug)]
 pub(crate) struct Immediate<'s> {
 	lhs: LogicOrImmediate<'s>,

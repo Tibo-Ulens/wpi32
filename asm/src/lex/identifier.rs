@@ -1,8 +1,12 @@
-//! Lexer functions handling the recognition of:
-//!  - Keywords
-//!  - Registers
-//!  - Directives
-//!  - Labels and Labeldefines
+//! [`Lexer`] functions to process identifiers
+//!
+//! Handles the recognition of:
+//!  - Instructions ([`InstToken`])
+//!  - Registers ([`RegToken`])
+//!  - Directives ([`DirToken`])
+//!  - Section Names ([`TokenType::Section`])
+//!  - Labels and LabelDefines ([`TokenType::Label`], [`TokenType::LocalLabel`],
+//!    [`TokenType::LabelDefine`], [`TokenType::LocalLabelDefine`])
 
 use common::LexError;
 
@@ -10,8 +14,8 @@ use super::token::{DirToken, InstToken, RegToken};
 use super::{Lexer, Token, TokenType};
 
 impl<'s> Lexer<'s> {
-	/// Attempt to match an identifier to a keyword, register, or directive,
-	/// or return a new label if a match is not found
+	/// Attempt to match an identifier to an instruction, register, section
+	/// name, or directive, or return a new label if a match is not found
 	pub(super) fn match_identifier(&mut self, id: &'s str) -> Result<Token<'s>, LexError> {
 		match id {
 			"add" => Ok(self.make_token(TokenType::Inst(InstToken::Add))),

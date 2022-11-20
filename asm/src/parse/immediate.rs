@@ -1,4 +1,4 @@
-//! Parser functions to parse immediate expressions
+//! [`Parser`] functions to parse [`Immediate`] expressions
 
 use common::ParseError;
 

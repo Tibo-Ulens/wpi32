@@ -1,3 +1,23 @@
+//! # Lexer
+//!
+//! The lexer is responsible for converting the input text file from a raw
+//! string of characters into a stream of [`Token`]s that are easier to work
+//! with, as well as handling any possible escape sequences, whitespace, and
+//! (some) bracket matching, and recognizing lexicographical errors
+//!
+//! ### Usage
+//! ```rust
+//! let src_file_name = "/foo/bar/baz.asm";
+//! let src_file_path = PathBuf::from(&src_file_name);
+//!
+//! let mut file = File::open(src_file_path)?;
+//! let mut contents = String::new();
+//! file.read_to_string(&mut contents)?;
+//!
+//! let lexer = Lexer::new(&src_file_path_name, &contents);
+//! let tokens: Vec<Token> = lexer.into_iter().collect::<Result<Vec<Token>, Error>>()?;
+//! ```
+
 use std::iter::Peekable;
 use std::str::Chars;
 
@@ -9,6 +29,14 @@ mod util;
 use common::{Error, LexError};
 pub(crate) use token::*;
 
+/// Main Lexer type
+///
+/// Wraps all internal state during lexing and provides a namespace for all
+/// lexer-related functions
+///
+/// ### Lifetimes
+///  - `'s`: The lifetime of the reference to the source code string, needed as (most) tokens
+///    containing string literals will contain references instead of owned data
 pub(crate) struct Lexer<'s> {
 	pub(crate) source_file: String,
 	source:                 &'s str,
@@ -45,16 +73,20 @@ impl<'s> Lexer<'s> {
 		}
 	}
 
-	/// Peek at the next character
+	/// Peek at the next [`char`]
+	///
+	/// Returns [`None`] if no characters are left
 	fn peek(&mut self) -> Option<&char> { self.source_iter.peek() }
 
-	/// Consume and return the next character
+	/// Consume and return the next [`char`]
+	///
+	/// Returns [`None`] if no characters are left
 	fn next(&mut self) -> Option<char> {
 		self.idx += 1;
 		self.source_iter.next()
 	}
 
-	/// Get the current working line of source code
+	/// Get a reference to the current working line of source code
 	fn get_curr_line(&self) -> &'s str {
 		let next_nl =
 			self.source[self.prev_nl..].find('\n').unwrap_or(self.source.len()) + self.prev_nl;
@@ -62,7 +94,7 @@ impl<'s> Lexer<'s> {
 		&self.source[self.prev_nl..=next_nl]
 	}
 
-	/// Make a token given the lexers current state
+	/// Make a [`Token`] given the [`Lexer`]s current state and a [`TokenType`]
 	fn make_token(&self, t: TokenType<'s>) -> Token<'s> {
 		Token {
 			t,
@@ -76,8 +108,8 @@ impl<'s> Lexer<'s> {
 	/// Keep taking characters while a predicate holds true
 	///
 	/// Returns the slice of characters that satisfied the predicate, from the
-	/// start of the current token up to the last character that satisfied the
-	/// predicate
+	/// start of the current token up to, and including, the last character
+	/// that satisfied the predicate
 	fn take_while<F>(&mut self, pred: F) -> Result<&'s str, LexError>
 	where
 		F: for<'a> Fn(&'a char) -> bool,
@@ -119,15 +151,16 @@ impl<'s> Lexer<'s> {
 		Ok(&self.source[self.start..self.idx])
 	}
 
-	/// Consume any available whitespace characters, updating the lexers state
-	/// as it goes along
+	/// Consume any available whitespace characters, updating the [`Lexer`]s
+	/// state as it goes along
 	///
-	/// Returns [`None`] if no characters are left in the source iterator
+	/// Returns [`None`] if no characters are left
 	fn take_whitespace(&mut self) -> Option<()> {
 		match self.peek()? {
 			' ' | '\t' => {
 				self.col += 1;
 
+				// Unwrap is safe as peek is some
 				self.next().unwrap();
 
 				self.take_whitespace()
@@ -136,9 +169,10 @@ impl<'s> Lexer<'s> {
 		}
 	}
 
-	/// Lex a single token
+	/// Lex a single [`Token`]
 	///
-	/// Returns [`None`] if the iterator has ended, else returns a [`Token`] or an [`Error`]
+	/// Returns [`None`] if the iterator has ended </br>
+	/// Returns [`Error`] if a lexical error was found
 	fn lex_token(&mut self) -> Option<Result<Token<'s>, Error>> {
 		// Consume any leading whitespace
 		self.take_whitespace()?;
@@ -226,7 +260,7 @@ impl<'s> Lexer<'s> {
 			'!' => {
 				match self.peek()? {
 					'=' => {
-						self.next().unwrap();
+						self.next().unwrap(); // Unwrap is safe as peek is some
 						Ok(self.make_token(TokenType::Op(OpToken::Neq)))
 					},
 					_ => Ok(self.make_token(TokenType::Op(OpToken::LogicNot))),

@@ -1,3 +1,10 @@
+//! # Lexer Tokens
+//!
+//! Tokens or lexemes are the datatype returned by the [`Lexer`](super::Lexer)
+//!
+//! Tokens represent a fundamental 'chunk' of information in the language with
+//! a specific name and an (optional) value
+
 use std::fmt::{Debug, Display};
 
 mod directive;
@@ -10,27 +17,36 @@ pub(crate) use instruction::InstToken;
 pub(crate) use operator::OpToken;
 pub(crate) use register::RegToken;
 
+/// All possible types of token
+///
+/// ### Lifetimes
+///  - `'s`: The lifetime of the reference to the source code string, needed to store any potential
+///    string references in identifiers
 #[derive(Clone, PartialEq, Eq)]
 pub(crate) enum TokenType<'s> {
+	/// An instruction (see also [`InstToken`])
 	Inst(InstToken),
+	/// A Register (see also [`RegToken`])
 	Reg(RegToken),
+	/// A directive (see also [`DirToken`])
 	Dir(DirToken),
 
-	// Literals
 	LitStr(String),
 	LitChar(char),
 	LitNum(isize),
 
-	// Sections
+	/// A section identifier
 	Section(&'s str),
 
-	// Labels
+	/// A label reference
 	Label(&'s str),
+	/// A label definition
 	LabelDefine(&'s str),
+	/// A local label reference
 	LocalLabel(&'s str),
+	/// A local label definition
 	LocalLabelDefine(&'s str),
 
-	// Symbols
 	SymComma,
 	SymNewline,
 	SymLeftParen,
@@ -38,9 +54,9 @@ pub(crate) enum TokenType<'s> {
 	SymLeftBracket,
 	SymRightBracket,
 
+	/// An operand (see also [`OpToken`])
 	Op(OpToken),
 
-	// Comments
 	Comment(&'s str),
 }
 
@@ -255,12 +271,25 @@ impl<'s> Display for TokenType<'s> {
 	}
 }
 
+/// A single lexical token
+///
+/// Contains a token type and (optional) value, as well as information about
+/// its position in the source code
+///
+/// ### Lifetimes
+///  - `'s`: The lifetime of the reference to the source code string, needed to keep a reference to
+///    the source line for this token and to store any potential references in its [`TokenType`]
 #[derive(Clone, Debug)]
 pub(crate) struct Token<'s> {
+	/// The type of this token
 	pub(crate) t:           TokenType<'s>,
+	/// The line number of this token
 	pub(crate) line:        usize,
+	/// The column number of this token
 	pub(crate) col:         usize,
+	/// The length (in characters) of this token
 	pub(crate) span:        usize,
+	/// The line of source code containing this token
 	pub(crate) source_line: &'s str,
 }
 

@@ -40,7 +40,8 @@ root = [ preamble ], { section };
 preamble = { preamble_line };
 section = section_header, { line };
 
-preamble_line = { whitespace },
+preamble_line =
+	{ whitespace },
 	[ const_directive ],
 	[ comment ],
 	newline;
@@ -48,16 +49,18 @@ preamble_line = { whitespace },
 section_header = "#SECTION", section_name, newline;
 section_name = ".TEXT" | ".DATA" | ".BSS";
 
-line = { whitespace },
-	[ labeled_statement | statement ],
+line =
+	{ whitespace },
+	[ line_content ],
 	[ comment ],
 	newline;
 
-label_id = label_define | local_label_define;
+line_content = labeled_statement | statement;
 labeled_statement = label_id, [ const_directive | statement ];
-statement = directive | instruction;
+label_id = label_define | local_label_define;
+statement = data_directive | instruction;
 
-directive =
+data_directive =
 	bytes_directive,
 	halves_directive
 	words_directive,
@@ -74,7 +77,7 @@ res_bytes_directive = "#RES_BYTES", number, { comma, number };
 res_halves_directive = "#RES_HALVES", number, { comma, number };
 res_words_directive = "#RES_WORDS", number, { comma, number };
 
-repeat_directive = "#REPEAT", immediate, [ directive | instruction ];
+repeat_directive = "#REPEAT", immediate, [ data_directive | instruction ];
 const_directive = "#CONST", literal;
 
 literal = string | char | immediate;
@@ -87,33 +90,43 @@ or_imm = xor_imm, { "|", xor_imm };
 xor_imm = and_imm, { "^", and_imm};
 and_imm = eq_imm, { "&", eq_imm};
 eq_imm = ord_imm, { ( "==", ord_imm ) | ( "!=", ord_imm ) };
-ord_imm = ord_imm, {
-	("<", shift_imm )
-	| ( "<=", shift_imm)
-	| ( ">", shift_imm )
-	| ( ">=", shift_imm )
-};
-shift_imm = addsub_imm, {
-	( "<<", addsub_imm )
-	| ( ">>", addsub_imm )
-	| ( ">>>", addsub_imm )
-};
-addsub_imm = muldivrem_imm, {
-	( "+", muldivrem_imm )
-	| ( "-", muldivrem_imm )
-};
-muldivrem_imm = unary_imm, {
-	( "*", unary_imm )
-	| ( "/", unary_imm )
-	| ( "%", unary_imm )
-};
+ord_imm =
+	ord_imm,
+	{
+		("<", shift_imm )
+		| ( "<=", shift_imm)
+		| ( ">", shift_imm )
+		| ( ">=", shift_imm )
+	};
+shift_imm =
+	addsub_imm,
+	{
+		( "<<", addsub_imm )
+		| ( ">>", addsub_imm )
+		| ( ">>>", addsub_imm )
+	};
+addsub_imm =
+	muldivrem_imm,
+	{
+		( "+", muldivrem_imm )
+		| ( "-", muldivrem_imm )
+	};
+muldivrem_imm =
+	unary_imm,
+	{
+		( "*", unary_imm )
+		| ( "/", unary_imm )
+		| ( "%", unary_imm )
+	};
 unary_imm = [ "+" | "-" | "!" | "~" ], operand;
 
 operand = label | local_label | number | ( "(", immediate, ")" );
 
-address_calculation = "[", register, "+" | "-", immediate, "]";
+address_calculation = "[", register, [ address_offset ] "]";
+address_offset = "+" | "-", immediate;
 
-instruction = integer_register_immediate_instruction
+instruction =
+	integer_register_immediate_instruction
 	| integer_register_register_instruction
 	| upper_immediate_instruction
 	| jump_instruction
@@ -130,10 +143,11 @@ instruction = integer_register_immediate_instruction
 	| divide_instruction
 	| remainder_instruction;
 
-register = "r0" | "r1" | "r2" | "r3" | "r4" | "r5" | "r6" | "r7" | "r8" | "r9"
-	| "r10" | "r11" | "r12" | "r13" | "r14" | "r15" | "r16" | "r17" | "r18"
-	| "r19" | "r20" | "r21" | "r22" | "r23" | "r24" | "r25" | "r26" | "r27"
-	| "r28" | "r29" | "r30" | "r31"
+register =
+	"r0" | "r1" | "r2" | "r3" | "r4" | "r5" | "r6" | "r7" | "r8" | "r9" | "r10"
+	| "r11" | "r12" | "r13" | "r14" | "r15" | "r16" | "r17" | "r18" | "r19"
+	| "r20" | "r21" | "r22" | "r23" | "r24" | "r25" | "r26" | "r27" | "r28"
+	 "r29" | "r30" | "r31"
 	| "zero" | "ra" | "sp" | "gp" | "tp" | "fp"
 	| "t0" | "t1" | "t2" | "t3" | "t4" | "t5" | "t6"
 	| "s0" | "s1" | "s2" | "s3" | "s4" | "s5" | "s6" | "s7" | "s8" | "s9"
@@ -144,23 +158,21 @@ integer_register_immediate_instruction =
 	( "addi" | "slti" | "sltiu" | "andi" | "ori" | "xori" | "lsli" | "lsri" | "asri" ), whitespace,
 	register, comma,
 	register, comma,
-	immediate
-;
+	immediate;
 
 integer_register_register_instruction =
 	( "add" | "slt" | "sltu" | "and" | "or" | "xor" | "lsl" | "lsr" | "asr" | "sub" ), whitespace,
 	register, comma,
 	register, comma,
-	register
-;
+	register;
 
 upper_immediate_instruction =
 	( "lui" | "auipc" ), whitespace,
 	register, comma,
-	immediate
-;
+	immediate;
 
 jump_instruction = "jal", comma, register, comma, immediate;
+
 jump_register_instruction =
 	"jalr", whitespace,
 	register, comma,
@@ -171,19 +183,17 @@ branch_instruction =
 	( "beq" | "bne" | "blt" | "bltu" | "bge" | "bgeu" ), whitespace,
 	register, comma,
 	register, comma,
-	immediate
-;
+	immediate;
 
 load_instruction =
 	( "lb" | "lbu" | "lh" | "lhu" | "lw" ), whitespace,
 	register, comma,
-	address_calculation
-;
+	address_calculation;
+
 store_instruction =
 	( "sb", "sh", "sw" ), whitespace,
 	register, comma,
-	address_calculation
-;
+	address_calculation;
 
 memory_ordering_instruction =
 	( "fence", whitespace, ordering_operation, comma, ordering_operation )
@@ -199,30 +209,28 @@ csr_register_instruction =
 	( "csrrw"  | "csrrs" | "csrrc" ), whitespace,
 	register, comma,
 	register, comma,
-	register
-;
+	register;
+
 csr_immediate_instruction =
 	( "csrrwi"  | "csrrsi" | "csrrci" ), whitespace,
 	register, comma,
 	immediate, comma,
-	register
-;
+	register;
 
 multiply_instruction =
 	( "mul" | "mulh" | "mulhu" | "mulhsu" ), whitespace,
 	register, comma,
 	register, comma,
-	register
-;
+	register;
+
 divide_instruction =
 	( "div" | "divu" ), whitespace,
 	register, comma,
 	register, comma,
-	register
-;
+	register;
+
 remainder_instruction =
 	( "rem" | "remu" ), whitespace,
 	register, comma,
 	register, comma,
-	register
-;
+	register;

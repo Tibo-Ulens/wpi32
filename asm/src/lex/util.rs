@@ -1,4 +1,4 @@
-//! Simple utility functions for the [`Lexer`](crate::lex::Lexer)
+//! Simple utility functions for the [`Lexer`](super::Lexer)
 
 /// Checks whether a character is a valid identifier start character
 ///

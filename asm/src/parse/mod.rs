@@ -1,3 +1,26 @@
+//! # Parser
+//!
+//! The parser is responsible for converting the stream of [`Token`]s produces
+//! by the [`Lexer`](crate::lex::Lexer) into a structured abstract syntax tree
+//! (see [`ast`]) as well as recognizing syntax errors
+//!
+//! ### usage
+//! ```rust
+//! let src_file_name = "/foo/bar/baz.asm";
+//! let src_file_path = PathBuf::from(&src_file_name);
+//!
+//! let mut file = File::open(src_file_path)?;
+//! let mut contents = String::new();
+//!
+//! file.read_to_string(&mut contents)?;
+//!
+//! let lexer = Lexer::new(&src_file_name, &contents);
+//! let tokens: Vec<Token> = lexer.into_iter().collect::<Result<Vec<Token>, Error>>()?;
+//!
+//! let mut parser = Parser::new(&src_file_name, &tokens);
+//! let ast_root = parser.parse()?;
+//! ```
+
 use std::assert_matches::assert_matches;
 
 use common::{Error, ParseError};
@@ -8,8 +31,7 @@ mod immediate;
 
 use self::ast::{
 	ConstDirective,
-	Directive,
-	Identifier,
+	DataDirective,
 	Instruction,
 	LabelId,
 	Line,
@@ -22,6 +44,14 @@ use self::ast::{
 };
 use crate::lex::{DirToken, OpToken, Token, TokenType};
 
+/// Main parser type
+///
+/// Wraps all internal state during parsing and provides a namespace for all
+/// parser-related functions
+///
+/// ### Lifetimes
+///  - `'s`: The lifetime of the reference to the source code string, needed as (most) tokens
+///    containing string literals will contain references instead of owned data
 pub(crate) struct Parser<'s> {
 	stream: &'s [Token<'s>],
 
@@ -217,7 +247,7 @@ impl<'s> Parser<'s> {
 
 		let peek = self.peek()?;
 		let name = match peek.t {
-			TokenType::Section(s) => Identifier(s),
+			TokenType::Section(s) => s,
 			_ => {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
@@ -305,7 +335,7 @@ impl<'s> Parser<'s> {
 	fn tryparse_statement<'r>(&'r mut self) -> Result<Option<Statement<'s>>, ParseError> {
 		let peek = self.peek()?;
 		match &peek.t {
-			TokenType::Dir(_) => Ok(Some(Statement::Directive(self.parse_directive()?))),
+			TokenType::Dir(_) => Ok(Some(Statement::DataDirective(self.parse_datadirective()?))),
 			TokenType::Inst(_) => Ok(Some(Statement::Instruction(self.parse_instruction()?))),
 			TokenType::SymNewline => Ok(None),
 			TokenType::Comment(_) => Ok(None),
@@ -333,7 +363,7 @@ impl<'s> Parser<'s> {
 	///  - [`#REPEAT`](DirToken::Repeat)
 	///
 	/// Assumes the current [`Token`] has [`TokenType`] [`TokenType::Dir`]
-	fn parse_directive<'r>(&'r mut self) -> Result<Directive<'s>, ParseError> { todo!() }
+	fn parse_datadirective<'r>(&'r mut self) -> Result<DataDirective<'s>, ParseError> { todo!() }
 
 	/// Parse any valid [`Instruction`]
 	///

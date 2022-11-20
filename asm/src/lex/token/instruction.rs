@@ -1,5 +1,8 @@
+//! Instruction Tokens
+
 use std::fmt::{Display, Formatter, Result};
 
+/// A tokentype to identify instructions
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum InstToken {
 	Add,

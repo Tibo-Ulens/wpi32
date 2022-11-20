@@ -1,4 +1,6 @@
-//! Lexer functions handling the recognition of:
+//! [`Lexer`] functions to process literals
+//!
+//! handles the recognition of:
 //!  - characters (for [`LitChar`](crate::lex::TokenType::LitChar))
 //!  - string (for [`LitStr`](crate::lex::TokenType::LitStr))
 //!  - numbers (for [`LitNum`](crate::lex::TokenType::LitNum))
