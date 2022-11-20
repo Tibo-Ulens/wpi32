@@ -1,5 +1,4 @@
 #![feature(is_ascii_octdigit)]
-#![feature(type_alias_impl_trait)]
 #![feature(let_chains)]
 #![feature(assert_matches)]
 
