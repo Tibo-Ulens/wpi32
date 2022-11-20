@@ -310,7 +310,7 @@ impl<'s> Parser<'s> {
 			TokenType::SymNewline => Ok(None),
 			TokenType::Comment(_) => Ok(None),
 			_ => {
-				return Err(ParseError::UnexpectedToken {
+				Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
 					line:     peek.line,
 					col:      peek.col,
@@ -318,7 +318,7 @@ impl<'s> Parser<'s> {
 					src_line: peek.source_line.to_string(),
 					fnd:      peek.t.to_string(),
 					ex:       "DIRECTIVE or INSTRUCTION or COMMENT or NEWLINE".to_string(),
-				});
+				})
 			},
 		}
 	}

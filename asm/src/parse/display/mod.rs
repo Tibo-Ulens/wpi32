@@ -8,12 +8,6 @@ use ptree::{Style, TreeItem};
 
 mod impls;
 
-/// Converting to a type-erased AST [`Node`]
-trait ToNode {
-	/// Perform the conversion
-	fn to_node(&self) -> Node;
-}
-
 /// Type-erased AST node
 ///
 /// This is needed as [`ptree`](https://docs.rs/ptree/latest/ptree/) only lets

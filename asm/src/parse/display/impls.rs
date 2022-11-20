@@ -1,4 +1,4 @@
-use super::{Node, ToNode};
+use super::Node;
 use crate::lex::RegToken;
 use crate::parse::ast::{
 	Address,
@@ -19,17 +19,17 @@ use crate::parse::ast::{
 	Statement,
 };
 
-impl<'s> ToNode for Root<'s> {
-	fn to_node(&self) -> Node {
+impl<'s> From<&Root<'s>> for Node {
+	fn from(value: &Root) -> Self {
 		let preamble_lines = Node {
 			prefixes: vec![],
 			repr:     "Preamble".to_string(),
-			children: self.preamble.iter().map(|l| l.to_node()).collect(),
+			children: value.preamble.iter().map(|l| l.into()).collect(),
 		};
 		let sections = Node {
 			prefixes: vec![],
 			repr:     "Sections".to_string(),
-			children: self.sections.iter().map(|s| s.to_node()).collect(),
+			children: value.sections.iter().map(|s| s.into()).collect(),
 		};
 
 		Node {
@@ -40,15 +40,15 @@ impl<'s> ToNode for Root<'s> {
 	}
 }
 
-impl<'s> ToNode for PreambleLine<'s> {
-	fn to_node(&self) -> Node {
+impl<'s> From<&PreambleLine<'s>> for Node {
+	fn from(value: &PreambleLine) -> Self {
 		let mut children = vec![];
 
-		if let Some(constdir) = &self.constdir {
-			children.push(constdir.to_node());
+		if let Some(constdir) = &value.constdir {
+			children.push(constdir.into());
 		}
 
-		if let Some(comment) = self.comment {
+		if let Some(comment) = value.comment {
 			children.push(Node {
 				prefixes: vec!["Comment".to_string()],
 				repr:     format!("{:?}", comment),
@@ -64,43 +64,43 @@ impl<'s> ToNode for PreambleLine<'s> {
 	}
 }
 
-impl<'s> ToNode for ConstDirective<'s> {
-	fn to_node(&self) -> Node {
+impl<'s> From<&ConstDirective<'s>> for Node {
+	fn from(value: &ConstDirective) -> Self {
 		Node {
 			prefixes: vec!["Directive".to_string()],
 			repr:     "Const".to_string(),
-			children: vec![self.value.to_node().add_prefix("Value")],
+			children: vec![Node::from(&value.value).add_prefix("Value")],
 		}
 	}
 }
 
-impl<'s> ToNode for Section<'s> {
-	fn to_node(&self) -> Node {
+impl<'s> From<&Section<'s>> for Node {
+	fn from(value: &Section) -> Self {
 		let lines = Node {
 			prefixes: vec![],
 			repr:     "Lines".to_string(),
-			children: self.lines.iter().map(|l| l.to_node()).collect(),
+			children: value.lines.iter().map(|l| l.into()).collect(),
 		};
 
 		Node {
 			prefixes: vec![],
 			repr:     "Section".to_string(),
-			children: vec![self.name.to_node().add_prefix("Name"), lines],
+			children: vec![Node::from(&value.name).add_prefix("Name"), lines],
 		}
 	}
 }
 
-impl<'s> ToNode for Line<'s> {
-	fn to_node(&self) -> Node {
+impl<'s> From<&Line<'s>> for Node {
+	fn from(value: &Line) -> Self {
 		let mut children = vec![];
 
-		if let Some(content) = &self.content {
+		if let Some(content) = &value.content {
 			match content {
 				LineContent::LabeledStatement { label, stmt } => {
 					let stmt_children = if let Some(stmt) = stmt {
-						vec![label.to_node(), stmt.to_node()]
+						vec![label.into(), stmt.into()]
 					} else {
-						vec![label.to_node()]
+						vec![label.into()]
 					};
 
 					children.push(Node {
@@ -109,11 +109,13 @@ impl<'s> ToNode for Line<'s> {
 						children: stmt_children,
 					});
 				},
-				LineContent::Statement(stmt) => children.push(stmt.to_node().add_prefix("Content")),
+				LineContent::Statement(stmt) => {
+					children.push(Node::from(stmt).add_prefix("Content"))
+				},
 			}
 		}
 
-		if let Some(comment) = self.comment {
+		if let Some(comment) = value.comment {
 			children.push(Node {
 				prefixes: vec!["Comment".to_string()],
 				repr:     format!("{:?}", comment),
@@ -125,17 +127,17 @@ impl<'s> ToNode for Line<'s> {
 	}
 }
 
-impl<'s> ToNode for LabelId<'s> {
-	fn to_node(&self) -> Node {
-		match self {
-			Self::LabelDefine(id) => {
+impl<'s> From<&LabelId<'s>> for Node {
+	fn from(value: &LabelId) -> Self {
+		match value {
+			LabelId::LabelDefine(id) => {
 				Node {
 					prefixes: vec!["Label".to_string()],
 					repr:     format!("{:?}", id),
 					children: vec![],
 				}
 			},
-			Self::LocalLabelDefine(id) => {
+			LabelId::LocalLabelDefine(id) => {
 				Node {
 					prefixes: vec!["LocalLabel".to_string()],
 					repr:     format!("{:?}", id),
@@ -146,77 +148,77 @@ impl<'s> ToNode for LabelId<'s> {
 	}
 }
 
-impl<'s> ToNode for Statement<'s> {
-	fn to_node(&self) -> Node {
-		match self {
-			Self::Directive(dir) => dir.to_node().add_prefix("Statement"),
-			Self::Instruction(inst) => inst.to_node().add_prefix("Statement"),
+impl<'s> From<&Statement<'s>> for Node {
+	fn from(value: &Statement) -> Self {
+		match value {
+			Statement::Directive(dir) => Node::from(dir).add_prefix("Statement"),
+			Statement::Instruction(inst) => Node::from(inst).add_prefix("Statement"),
 		}
 	}
 }
 
-impl<'s> ToNode for Identifier<'s> {
-	fn to_node(&self) -> Node {
+impl<'s> From<&Identifier<'s>> for Node {
+	fn from(value: &Identifier) -> Self {
 		Node {
 			prefixes: vec!["Identifier".to_string()],
-			repr:     self.0.to_string(),
+			repr:     value.0.to_string(),
 			children: vec![],
 		}
 	}
 }
 
-impl<'s> ToNode for Directive<'s> {
-	fn to_node(&self) -> Node {
-		match self {
-			Self::Bytes { data } => {
+impl<'s> From<&Directive<'s>> for Node {
+	fn from(value: &Directive) -> Self {
+		match value {
+			Directive::Bytes { data } => {
 				Node {
 					prefixes: vec!["Directive".to_string()],
 					repr:     "Bytes".to_string(),
-					children: data.iter().map(|d| d.to_node()).collect(),
+					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			Self::Halves { data } => {
+			Directive::Halves { data } => {
 				Node {
 					prefixes: vec!["Directive".to_string()],
 					repr:     "Halves".to_string(),
-					children: data.iter().map(|d| d.to_node()).collect(),
+					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			Self::Words { data } => {
+			Directive::Words { data } => {
 				Node {
 					prefixes: vec!["Directive".to_string()],
 					repr:     "Words".to_string(),
-					children: data.iter().map(|d| d.to_node()).collect(),
+					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			Self::ResBytes { data } => {
+			Directive::ResBytes { data } => {
 				Node {
 					prefixes: vec!["Directive".to_string()],
 					repr:     "ResBytes".to_string(),
-					children: data.iter().map(|d| d.to_node()).collect(),
+					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			Self::ResHalves { data } => {
+			Directive::ResHalves { data } => {
 				Node {
 					prefixes: vec!["Directive".to_string()],
 					repr:     "ResHalves".to_string(),
-					children: data.iter().map(|d| d.to_node()).collect(),
+					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			Self::ResWords { data } => {
+			Directive::ResWords { data } => {
 				Node {
 					prefixes: vec!["Directive".to_string()],
 					repr:     "ResWords".to_string(),
-					children: data.iter().map(|d| d.to_node()).collect(),
+					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			Self::Repeat { amount, argument } => {
+			Directive::Repeat { amount, argument } => {
 				Node {
 					prefixes: vec!["Directive".to_string()],
 					repr:     "Repeat".to_string(),
 					children: vec![
-						amount.to_node().add_prefix("Amount"),
-						argument.to_node().add_prefix("Argument"),
+						Node::from(amount).add_prefix("Amount"),
+						Node::from(argument.as_ref()).add_prefix("Argument"),
 					],
 				}
 			},
@@ -224,630 +226,630 @@ impl<'s> ToNode for Directive<'s> {
 	}
 }
 
-impl<'s> ToNode for Literal<'s> {
-	fn to_node(&self) -> Node {
-		match self {
-			Self::String(s) => {
+impl<'s> From<&Literal<'s>> for Node {
+	fn from(value: &Literal) -> Self {
+		match value {
+			Literal::String(s) => {
 				Node {
 					prefixes: vec!["Literal".to_string(), "String".to_string()],
 					repr:     format!("{:?}", s),
 					children: vec![],
 				}
 			},
-			Self::Char(c) => {
+			Literal::Char(c) => {
 				Node {
 					prefixes: vec!["Literal".to_string(), "Char".to_string()],
 					repr:     format!("{:?}", c),
 					children: vec![],
 				}
 			},
-			Self::Immediate(imm) => imm.to_node(),
+			Literal::Immediate(imm) => imm.into(),
 		}
 	}
 }
 
 /// The big fella
-impl<'s> ToNode for Instruction<'s> {
-	fn to_node(&self) -> Node {
-		match self {
-			Self::Addi { dest, src, imm } => {
+impl<'s> From<&Instruction<'s>> for Node {
+	fn from(value: &Instruction) -> Self {
+		match value {
+			Instruction::Addi { dest, src, imm } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Addi".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						imm.to_node().add_prefix("Imm"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(imm).add_prefix("Imm"),
 					],
 				}
 			},
-			Self::Slti { dest, src, imm } => {
+			Instruction::Slti { dest, src, imm } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Slti".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						imm.to_node().add_prefix("Imm"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(imm).add_prefix("Imm"),
 					],
 				}
 			},
-			Self::Sltiu { dest, src, imm } => {
+			Instruction::Sltiu { dest, src, imm } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Sltiu".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						imm.to_node().add_prefix("Imm"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(imm).add_prefix("Imm"),
 					],
 				}
 			},
-			Self::Andi { dest, src, imm } => {
+			Instruction::Andi { dest, src, imm } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Andi".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						imm.to_node().add_prefix("Imm"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(imm).add_prefix("Imm"),
 					],
 				}
 			},
-			Self::Ori { dest, src, imm } => {
+			Instruction::Ori { dest, src, imm } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Ori".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						imm.to_node().add_prefix("Imm"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(imm).add_prefix("Imm"),
 					],
 				}
 			},
-			Self::Xori { dest, src, imm } => {
+			Instruction::Xori { dest, src, imm } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Xori".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						imm.to_node().add_prefix("Imm"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(imm).add_prefix("Imm"),
 					],
 				}
 			},
-			Self::Lsli { dest, src, imm } => {
+			Instruction::Lsli { dest, src, imm } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Lsli".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						imm.to_node().add_prefix("Imm"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(imm).add_prefix("Imm"),
 					],
 				}
 			},
-			Self::Lsri { dest, src, imm } => {
+			Instruction::Lsri { dest, src, imm } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Lsri".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						imm.to_node().add_prefix("Imm"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(imm).add_prefix("Imm"),
 					],
 				}
 			},
-			Self::Asri { dest, src, imm } => {
+			Instruction::Asri { dest, src, imm } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Asri".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						imm.to_node().add_prefix("Imm"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(imm).add_prefix("Imm"),
 					],
 				}
 			},
-			Self::Add { dest, src1, src2 } => {
+			Instruction::Add { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Add".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::Slt { dest, src1, src2 } => {
+			Instruction::Slt { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Slt".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::Sltu { dest, src1, src2 } => {
+			Instruction::Sltu { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Sltu".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::And { dest, src1, src2 } => {
+			Instruction::And { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "And".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::Or { dest, src1, src2 } => {
+			Instruction::Or { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Or".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::Xor { dest, src1, src2 } => {
+			Instruction::Xor { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Xor".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::Lsl { dest, src1, src2 } => {
+			Instruction::Lsl { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Lsl".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::Lsr { dest, src1, src2 } => {
+			Instruction::Lsr { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Lsr".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::Asr { dest, src1, src2 } => {
+			Instruction::Asr { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Asr".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::Sub { dest, src1, src2 } => {
+			Instruction::Sub { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Sub".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::Lui { dest, imm } => {
+			Instruction::Lui { dest, imm } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Lui".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						imm.to_node().add_prefix("Imm"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(imm).add_prefix("Imm"),
 					],
 				}
 			},
-			Self::Auipc { dest, imm } => {
+			Instruction::Auipc { dest, imm } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Auipc".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						imm.to_node().add_prefix("Imm"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(imm).add_prefix("Imm"),
 					],
 				}
 			},
-			Self::Jal { dest, offset } => {
+			Instruction::Jal { dest, offset } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Jal".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("dest"),
-						offset.to_node().add_prefix("offset"),
+						Node::from(dest).add_prefix("dest"),
+						Node::from(offset).add_prefix("offset"),
 					],
 				}
 			},
-			Self::Jalr { dest, base, offset } => {
+			Instruction::Jalr { dest, base, offset } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Jalr".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("dest"),
-						base.to_node().add_prefix("base"),
-						offset.to_node().add_prefix("offset"),
+						Node::from(dest).add_prefix("dest"),
+						Node::from(base).add_prefix("base"),
+						Node::from(offset).add_prefix("offset"),
 					],
 				}
 			},
-			Self::Beq { src1, src2, offset } => {
+			Instruction::Beq { src1, src2, offset } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Beq".to_string(),
 					children: vec![
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
-						offset.to_node().add_prefix("Offset"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
+						Node::from(offset).add_prefix("Offset"),
 					],
 				}
 			},
-			Self::Bne { src1, src2, offset } => {
+			Instruction::Bne { src1, src2, offset } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Bne".to_string(),
 					children: vec![
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
-						offset.to_node().add_prefix("Offset"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
+						Node::from(offset).add_prefix("Offset"),
 					],
 				}
 			},
-			Self::Blt { src1, src2, offset } => {
+			Instruction::Blt { src1, src2, offset } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Blt".to_string(),
 					children: vec![
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
-						offset.to_node().add_prefix("Offset"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
+						Node::from(offset).add_prefix("Offset"),
 					],
 				}
 			},
-			Self::Bltu { src1, src2, offset } => {
+			Instruction::Bltu { src1, src2, offset } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Bltu".to_string(),
 					children: vec![
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
-						offset.to_node().add_prefix("Offset"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
+						Node::from(offset).add_prefix("Offset"),
 					],
 				}
 			},
-			Self::Bge { src1, src2, offset } => {
+			Instruction::Bge { src1, src2, offset } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Bge".to_string(),
 					children: vec![
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
-						offset.to_node().add_prefix("Offset"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
+						Node::from(offset).add_prefix("Offset"),
 					],
 				}
 			},
-			Self::Bgeu { src1, src2, offset } => {
+			Instruction::Bgeu { src1, src2, offset } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Bgeu".to_string(),
 					children: vec![
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
-						offset.to_node().add_prefix("Offset"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
+						Node::from(offset).add_prefix("Offset"),
 					],
 				}
 			},
-			Self::Lb { dest, addr } => {
+			Instruction::Lb { dest, addr } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Lb".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						addr.to_node().add_prefix("Addr"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(addr).add_prefix("Addr"),
 					],
 				}
 			},
-			Self::Lbu { dest, addr } => {
+			Instruction::Lbu { dest, addr } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Lbu".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						addr.to_node().add_prefix("Addr"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(addr).add_prefix("Addr"),
 					],
 				}
 			},
-			Self::Lh { dest, addr } => {
+			Instruction::Lh { dest, addr } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Lh".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						addr.to_node().add_prefix("Addr"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(addr).add_prefix("Addr"),
 					],
 				}
 			},
-			Self::Lhu { dest, addr } => {
+			Instruction::Lhu { dest, addr } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Lhu".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						addr.to_node().add_prefix("Addr"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(addr).add_prefix("Addr"),
 					],
 				}
 			},
-			Self::Lw { dest, addr } => {
+			Instruction::Lw { dest, addr } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Lw".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						addr.to_node().add_prefix("Addr"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(addr).add_prefix("Addr"),
 					],
 				}
 			},
-			Self::Lwu { dest, addr } => {
+			Instruction::Lwu { dest, addr } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Lwu".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						addr.to_node().add_prefix("Addr"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(addr).add_prefix("Addr"),
 					],
 				}
 			},
-			Self::Sb { dest, addr } => {
+			Instruction::Sb { dest, addr } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Sb".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						addr.to_node().add_prefix("Addr"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(addr).add_prefix("Addr"),
 					],
 				}
 			},
-			Self::Sh { dest, addr } => {
+			Instruction::Sh { dest, addr } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Sh".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						addr.to_node().add_prefix("Addr"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(addr).add_prefix("Addr"),
 					],
 				}
 			},
-			Self::Sw { dest, addr } => {
+			Instruction::Sw { dest, addr } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Sw".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						addr.to_node().add_prefix("Addr"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(addr).add_prefix("Addr"),
 					],
 				}
 			},
-			Self::Fence { pred, succ } => {
+			Instruction::Fence { pred, succ } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Fence".to_string(),
 					children: vec![
-						pred.to_node().add_prefix("Pred"),
-						succ.to_node().add_prefix("Succ"),
+						Node::from(pred).add_prefix("Pred"),
+						Node::from(succ).add_prefix("Succ"),
 					],
 				}
 			},
-			Self::FenceTso { pred, succ } => {
+			Instruction::FenceTso { pred, succ } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "FenceTso".to_string(),
 					children: vec![
-						pred.to_node().add_prefix("Pred"),
-						succ.to_node().add_prefix("Succ"),
+						Node::from(pred).add_prefix("Pred"),
+						Node::from(succ).add_prefix("Succ"),
 					],
 				}
 			},
-			Self::ECall => {
+			Instruction::ECall => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "ECall".to_string(),
 					children: vec![],
 				}
 			},
-			Self::EBreak => {
+			Instruction::EBreak => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "EBreak".to_string(),
 					children: vec![],
 				}
 			},
-			Self::FenceI => {
+			Instruction::FenceI => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "FenceI".to_string(),
 					children: vec![],
 				}
 			},
-			Self::CsrRw { dest, src, target } => {
+			Instruction::CsrRw { dest, src, target } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "CsrRw".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						target.to_node().add_prefix("Target"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(target).add_prefix("Target"),
 					],
 				}
 			},
-			Self::CsrRs { dest, src, target } => {
+			Instruction::CsrRs { dest, src, target } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "CsrRs".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						target.to_node().add_prefix("Target"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(target).add_prefix("Target"),
 					],
 				}
 			},
-			Self::CsrRc { dest, src, target } => {
+			Instruction::CsrRc { dest, src, target } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "CsrRc".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						target.to_node().add_prefix("Target"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(target).add_prefix("Target"),
 					],
 				}
 			},
-			Self::CsrRwi { dest, src, target } => {
+			Instruction::CsrRwi { dest, src, target } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "CsrRwi".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						target.to_node().add_prefix("Target"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(target).add_prefix("Target"),
 					],
 				}
 			},
-			Self::CsrRsi { dest, src, target } => {
+			Instruction::CsrRsi { dest, src, target } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "CsrRsi".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						target.to_node().add_prefix("Target"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(target).add_prefix("Target"),
 					],
 				}
 			},
-			Self::CsrRci { dest, src, target } => {
+			Instruction::CsrRci { dest, src, target } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "CsrRci".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src.to_node().add_prefix("Src"),
-						target.to_node().add_prefix("Target"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src).add_prefix("Src"),
+						Node::from(target).add_prefix("Target"),
 					],
 				}
 			},
-			Self::Mul { dest, src1, src2 } => {
+			Instruction::Mul { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Mul".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::MulH { dest, src1, src2 } => {
+			Instruction::MulH { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "MulH".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::MulHU { dest, src1, src2 } => {
+			Instruction::MulHU { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "MulHU".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::MulHSU { dest, src1, src2 } => {
+			Instruction::MulHSU { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "MulHSU".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::Div { dest, src1, src2 } => {
+			Instruction::Div { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Div".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::DivU { dest, src1, src2 } => {
+			Instruction::DivU { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "DivU".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::Rem { dest, src1, src2 } => {
+			Instruction::Rem { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Rem".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
-			Self::RemU { dest, src1, src2 } => {
+			Instruction::RemU { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "RemU".to_string(),
 					children: vec![
-						dest.to_node().add_prefix("Dest"),
-						src1.to_node().add_prefix("Src1"),
-						src2.to_node().add_prefix("Src2"),
+						Node::from(dest).add_prefix("Dest"),
+						Node::from(src1).add_prefix("Src1"),
+						Node::from(src2).add_prefix("Src2"),
 					],
 				}
 			},
@@ -855,63 +857,63 @@ impl<'s> ToNode for Instruction<'s> {
 	}
 }
 
-impl ToNode for RegToken {
-	fn to_node(&self) -> Node {
+impl From<&RegToken> for Node {
+	fn from(value: &RegToken) -> Self {
 		Node {
 			prefixes: vec!["Register".to_string()],
-			repr:     self.to_string(),
+			repr:     value.to_string(),
 			children: vec![],
 		}
 	}
 }
 
-impl<'s> ToNode for Immediate<'s> {
-	fn to_node(&self) -> Node {
-		Node { prefixes: vec![], repr: self.to_string(), children: vec![] }
+impl<'s> From<&Immediate<'s>> for Node {
+	fn from(value: &Immediate) -> Self {
+		Node { prefixes: vec![], repr: value.to_string(), children: vec![] }
 	}
 }
 
-impl<'s> ToNode for Address<'s> {
-	fn to_node(&self) -> Node {
-		let children = if let Some(offset) = &self.offset {
+impl<'s> From<&Address<'s>> for Node {
+	fn from(value: &Address) -> Self {
+		let children = if let Some(offset) = &value.offset {
 			vec![
-				self.base.to_node().add_prefix("Base"),
-				offset.op.to_node().add_prefix("Op"),
-				offset.imm.to_node().add_prefix("Imm"),
+				Node::from(&value.base).add_prefix("Base"),
+				Node::from(&offset.op).add_prefix("Op"),
+				Node::from(&offset.imm).add_prefix("Imm"),
 			]
 		} else {
-			vec![self.base.to_node().add_prefix("Base")]
+			vec![Node::from(&value.base).add_prefix("Base")]
 		};
 
 		Node { prefixes: vec![], repr: "Address".to_string(), children }
 	}
 }
 
-impl ToNode for OffsetOperator {
-	fn to_node(&self) -> Node {
-		let repr = match self {
-			Self::Plus => "+",
-			Self::Minus => "-",
+impl From<&OffsetOperator> for Node {
+	fn from(value: &OffsetOperator) -> Self {
+		let repr = match value {
+			OffsetOperator::Plus => "+",
+			OffsetOperator::Minus => "-",
 		};
 
 		Node { prefixes: vec![], repr: repr.to_string(), children: vec![] }
 	}
 }
 
-impl ToNode for OrderingTarget {
-	fn to_node(&self) -> Node {
+impl From<&OrderingTarget> for Node {
+	fn from(value: &OrderingTarget) -> Self {
 		let mut repr = String::new();
 
-		if self.contains(Self::I) {
+		if value.contains(OrderingTarget::I) {
 			repr.push('I');
 		}
-		if self.contains(Self::O) {
+		if value.contains(OrderingTarget::O) {
 			repr.push('O');
 		}
-		if self.contains(Self::R) {
+		if value.contains(OrderingTarget::R) {
 			repr.push('R');
 		}
-		if self.contains(Self::W) {
+		if value.contains(OrderingTarget::W) {
 			repr.push('W');
 		}
 
