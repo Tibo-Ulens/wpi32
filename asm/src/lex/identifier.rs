@@ -138,17 +138,17 @@ impl<'s> Lexer<'s> {
 			"t5" => Ok(self.make_token(TokenType::Reg(RegToken::R30))),
 			"t6" => Ok(self.make_token(TokenType::Reg(RegToken::R31))),
 
-			d if d.starts_with('$') => {
+			d if d.starts_with('#') => {
 				match d {
-					"$SECTION" => Ok(self.make_token(TokenType::Dir(DirToken::Section))),
-					"$BYTES" => Ok(self.make_token(TokenType::Dir(DirToken::Bytes))),
-					"$HALVES" => Ok(self.make_token(TokenType::Dir(DirToken::Halves))),
-					"$WORDS" => Ok(self.make_token(TokenType::Dir(DirToken::Words))),
-					"$RES_BYTES" => Ok(self.make_token(TokenType::Dir(DirToken::ResBytes))),
-					"$RES_HALVES" => Ok(self.make_token(TokenType::Dir(DirToken::ResHalves))),
-					"$RES_WORDS" => Ok(self.make_token(TokenType::Dir(DirToken::ResWords))),
-					"$REPEAT" => Ok(self.make_token(TokenType::Dir(DirToken::Repeat))),
-					"$DEFINE" => Ok(self.make_token(TokenType::Dir(DirToken::Define))),
+					"#SECTION" => Ok(self.make_token(TokenType::Dir(DirToken::Section))),
+					"#BYTES" => Ok(self.make_token(TokenType::Dir(DirToken::Bytes))),
+					"#HALVES" => Ok(self.make_token(TokenType::Dir(DirToken::Halves))),
+					"#WORDS" => Ok(self.make_token(TokenType::Dir(DirToken::Words))),
+					"#RES_BYTES" => Ok(self.make_token(TokenType::Dir(DirToken::ResBytes))),
+					"#RES_HALVES" => Ok(self.make_token(TokenType::Dir(DirToken::ResHalves))),
+					"#RES_WORDS" => Ok(self.make_token(TokenType::Dir(DirToken::ResWords))),
+					"#REPEAT" => Ok(self.make_token(TokenType::Dir(DirToken::Repeat))),
+					"#CONST" => Ok(self.make_token(TokenType::Dir(DirToken::Const))),
 					_ => {
 						Err(LexError::InvalidDirective {
 							src_file: self.source_file.clone(),
@@ -161,6 +161,10 @@ impl<'s> Lexer<'s> {
 					},
 				}
 			},
+
+			".TEXT" => Ok(self.make_token(TokenType::Section(id))),
+			".DATA" => Ok(self.make_token(TokenType::Section(id))),
+			".BSS" => Ok(self.make_token(TokenType::Section(id))),
 
 			_ => {
 				if id.starts_with('.') {

@@ -21,6 +21,9 @@ pub(crate) enum TokenType<'s> {
 	LitChar(char),
 	LitNum(isize),
 
+	// Sections
+	Section(&'s str),
+
 	// Labels
 	Label(&'s str),
 	LabelDefine(&'s str),
@@ -168,7 +171,9 @@ impl<'s> Debug for TokenType<'s> {
 			Self::Dir(DirToken::Repeat) => {
 				write!(f, "{:<20} | {:<16}", "DIRECTIVE", "$repeat")
 			},
-			Self::Dir(DirToken::Define) => write!(f, "{:<20} | {:<16}", "DIRECTIVE", "$DEFINE"),
+			Self::Dir(DirToken::Const) => write!(f, "{:<20} | {:<16}", "DIRECTIVE", "$CONST"),
+
+			Self::Section(s) => write!(f, "{:<20} | {:<16}", "SECTION", s),
 
 			Self::LitStr(s) => write!(f, "{:<20} | {:<16}", "STRING", format!("{:?}", s)),
 			Self::LitChar(c) => write!(f, "{:<20} | {:<16}", "CHAR", format!("{:?}", c)),
@@ -228,6 +233,8 @@ impl<'s> Display for TokenType<'s> {
 			Self::LitStr(s) => write!(f, "{:?}", s),
 			Self::LitChar(c) => write!(f, "{:?}", c),
 			Self::LitNum(n) => write!(f, "{}", n),
+
+			Self::Section(s) => write!(f, "{}", s),
 
 			Self::Label(l) => write!(f, "{:?}", l),
 			Self::LabelDefine(l) => write!(f, "{:?}", l),

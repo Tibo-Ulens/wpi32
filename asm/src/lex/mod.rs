@@ -7,7 +7,7 @@ mod token;
 mod util;
 
 use common::{Error, LexError};
-pub(crate) use token::{OpToken, RegToken, Token, TokenType};
+pub(crate) use token::*;
 
 pub(crate) struct Lexer<'s> {
 	pub(crate) source_file: String,

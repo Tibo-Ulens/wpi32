@@ -1,26 +1,91 @@
 use super::{Node, ToNode};
 use crate::lex::RegToken;
-use crate::parse::{
+use crate::parse::ast::{
 	Address,
+	ConstDirective,
 	Directive,
 	Identifier,
 	Immediate,
 	Instruction,
 	LabelId,
 	Line,
+	LineContent,
 	Literal,
 	OffsetOperator,
 	OrderingTarget,
+	PreambleLine,
 	Root,
+	Section,
 	Statement,
 };
 
 impl<'s> ToNode for Root<'s> {
 	fn to_node(&self) -> Node {
+		let preamble_lines = Node {
+			prefixes: vec![],
+			repr:     "Preamble".to_string(),
+			children: self.preamble.iter().map(|l| l.to_node()).collect(),
+		};
+		let sections = Node {
+			prefixes: vec![],
+			repr:     "Sections".to_string(),
+			children: self.sections.iter().map(|s| s.to_node()).collect(),
+		};
+
 		Node {
 			prefixes: vec![],
 			repr:     "Root".to_string(),
+			children: vec![preamble_lines, sections],
+		}
+	}
+}
+
+impl<'s> ToNode for PreambleLine<'s> {
+	fn to_node(&self) -> Node {
+		let mut children = vec![];
+
+		if let Some(constdir) = &self.constdir {
+			children.push(constdir.to_node());
+		}
+
+		if let Some(comment) = self.comment {
+			children.push(Node {
+				prefixes: vec!["Comment".to_string()],
+				repr:     format!("{:?}", comment),
+				children: vec![],
+			});
+		}
+
+		if children.is_empty() {
+			Node { prefixes: vec![], repr: "Empty".to_string(), children }
+		} else {
+			Node { prefixes: vec![], repr: "PreambleLine".to_string(), children }
+		}
+	}
+}
+
+impl<'s> ToNode for ConstDirective<'s> {
+	fn to_node(&self) -> Node {
+		Node {
+			prefixes: vec!["Directive".to_string()],
+			repr:     "Const".to_string(),
+			children: vec![self.value.to_node().add_prefix("Value")],
+		}
+	}
+}
+
+impl<'s> ToNode for Section<'s> {
+	fn to_node(&self) -> Node {
+		let lines = Node {
+			prefixes: vec![],
+			repr:     "Lines".to_string(),
 			children: self.lines.iter().map(|l| l.to_node()).collect(),
+		};
+
+		Node {
+			prefixes: vec![],
+			repr:     "Section".to_string(),
+			children: vec![self.name.to_node().add_prefix("Name"), lines],
 		}
 	}
 }
@@ -29,18 +94,29 @@ impl<'s> ToNode for Line<'s> {
 	fn to_node(&self) -> Node {
 		let mut children = vec![];
 
-		if let Some(labl) = &self.labl {
-			children.push(labl.to_node());
+		if let Some(content) = &self.content {
+			match content {
+				LineContent::LabeledStatement { label, stmt } => {
+					let stmt_children = if let Some(stmt) = stmt {
+						vec![label.to_node(), stmt.to_node()]
+					} else {
+						vec![label.to_node()]
+					};
+
+					children.push(Node {
+						prefixes: vec!["Content".to_string()],
+						repr:     "LabeledStatement".to_string(),
+						children: stmt_children,
+					});
+				},
+				LineContent::Statement(stmt) => children.push(stmt.to_node().add_prefix("Content")),
+			}
 		}
 
-		if let Some(stmt) = &self.stmt {
-			children.push(stmt.to_node());
-		}
-
-		if let Some(cmnt) = self.cmnt {
+		if let Some(comment) = self.comment {
 			children.push(Node {
 				prefixes: vec!["Comment".to_string()],
-				repr:     format!("{:?}", cmnt),
+				repr:     format!("{:?}", comment),
 				children: vec![],
 			});
 		}
@@ -54,16 +130,16 @@ impl<'s> ToNode for LabelId<'s> {
 		match self {
 			Self::LabelDefine(id) => {
 				Node {
-					prefixes: vec![],
-					repr:     "Label".to_string(),
-					children: vec![id.to_node()],
+					prefixes: vec!["Label".to_string()],
+					repr:     format!("{:?}", id),
+					children: vec![],
 				}
 			},
 			Self::LocalLabelDefine(id) => {
 				Node {
-					prefixes: vec![],
-					repr:     "LocalLabel".to_string(),
-					children: vec![id.to_node()],
+					prefixes: vec!["LocalLabel".to_string()],
+					repr:     format!("{:?}", id),
+					children: vec![],
 				}
 			},
 		}
@@ -92,24 +168,45 @@ impl<'s> ToNode for Identifier<'s> {
 impl<'s> ToNode for Directive<'s> {
 	fn to_node(&self) -> Node {
 		match self {
-			Self::Byte { data } => {
+			Self::Bytes { data } => {
 				Node {
 					prefixes: vec!["Directive".to_string()],
-					repr:     "Byte".to_string(),
+					repr:     "Bytes".to_string(),
 					children: data.iter().map(|d| d.to_node()).collect(),
 				}
 			},
-			Self::Half { data } => {
+			Self::Halves { data } => {
 				Node {
 					prefixes: vec!["Directive".to_string()],
-					repr:     "Half".to_string(),
+					repr:     "Halves".to_string(),
 					children: data.iter().map(|d| d.to_node()).collect(),
 				}
 			},
-			Self::Word { data } => {
+			Self::Words { data } => {
 				Node {
 					prefixes: vec!["Directive".to_string()],
-					repr:     "Word".to_string(),
+					repr:     "Words".to_string(),
+					children: data.iter().map(|d| d.to_node()).collect(),
+				}
+			},
+			Self::ResBytes { data } => {
+				Node {
+					prefixes: vec!["Directive".to_string()],
+					repr:     "ResBytes".to_string(),
+					children: data.iter().map(|d| d.to_node()).collect(),
+				}
+			},
+			Self::ResHalves { data } => {
+				Node {
+					prefixes: vec!["Directive".to_string()],
+					repr:     "ResHalves".to_string(),
+					children: data.iter().map(|d| d.to_node()).collect(),
+				}
+			},
+			Self::ResWords { data } => {
+				Node {
+					prefixes: vec!["Directive".to_string()],
+					repr:     "ResWords".to_string(),
 					children: data.iter().map(|d| d.to_node()).collect(),
 				}
 			},
@@ -120,16 +217,6 @@ impl<'s> ToNode for Directive<'s> {
 					children: vec![
 						amount.to_node().add_prefix("Amount"),
 						argument.to_node().add_prefix("Argument"),
-					],
-				}
-			},
-			Self::Equ { id, value } => {
-				Node {
-					prefixes: vec!["Directive".to_string()],
-					repr:     "Equ".to_string(),
-					children: vec![
-						id.to_node().add_prefix("Id"),
-						value.to_node().add_prefix("Value"),
 					],
 				}
 			},
@@ -151,13 +238,6 @@ impl<'s> ToNode for Literal<'s> {
 				Node {
 					prefixes: vec!["Literal".to_string(), "Char".to_string()],
 					repr:     format!("{:?}", c),
-					children: vec![],
-				}
-			},
-			Self::Number(n) => {
-				Node {
-					prefixes: vec!["Literal".to_string(), "Number".to_string()],
-					repr:     n.to_string(),
 					children: vec![],
 				}
 			},

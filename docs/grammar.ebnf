@@ -36,76 +36,46 @@ local_label_define = local_label, ":";
 
 (* Syntactical grammar *)
 
-root = { section };
-section = text_section | data_section | bss_section;
+root = [ preamble ], { section };
+preamble = { preamble_line };
+section = section_header, { line };
 
-text_section = text_header, { text_line };
-text_header = "$SECTION", "TEXT", newline;
-
-data_section = data_header, { data_line };
-data_header = "$SECTION", "DATA", newline;
-
-bss_section = bss_header, { bss_line };
-bss_header = "$SECTION", "BSS", newline;
-
-label_id = label_define | local_label_define;
-
-(* text section *)
-
-text_line = { whitespace },
-	[ label_id ],
-	[ text_statement ],
+preamble_line = { whitespace },
+	[ const_directive ],
 	[ comment ],
 	newline;
 
-text_statement = [ text_directive | instruction ];
+section_header = "#SECTION", section_name, newline;
+section_name = ".TEXT" | ".DATA" | ".BSS";
 
-text_directive = text_repeat_directive | define_directive;
-text_repeat_directive = "$REPEAT", immediate, instruction;
-
-(* /text section *)
-(* data section *)
-
-data_line = { whitespace },
-	[ label_id ],
-	[ data_directive ],
-	[ comment ]
+line = { whitespace },
+	[ labeled_statement | statement ],
+	[ comment ],
 	newline;
 
-data_directive = bytes_directive
-	| halves_directive
-	| words_directive
-	| data_repeat_directive
-	| define_directive;
+label_id = label_define | local_label_define;
+labeled_statement = label_id, [ const_directive | statement ];
+statement = directive | instruction;
 
-bytes_directive = "$BYTES", literal, { comma, literal };
-halves_directive = "$HALVES", literal, { comma, literal };
-words_directive = "$WORDS", literal, { comma, literal };
-data_repeat_directive = "$REPEAT", immediate, data_directive;
+directive =
+	bytes_directive,
+	halves_directive
+	words_directive,
+	res_bytes_directive,
+	res_halves_directive,
+	res_words_directive,
+	repeat_directive;
 
-(* /data section *)
-(* bss section *)
+bytes_directive = "#BYTES", literal, { comma, literal };
+halves_directive = "#HALVES", literal, { comma, literal };
+words_directive = "#WORDS", literal, { comma, literal };
 
-bss_line = { whitespace },
-	[ label_id ],
-	[ bss_directive ],
-	[ comment ]
-	newline;
+res_bytes_directive = "#RES_BYTES", number, { comma, number };
+res_halves_directive = "#RES_HALVES", number, { comma, number };
+res_words_directive = "#RES_WORDS", number, { comma, number };
 
-bss_directive = res_bytes_directive
-	| res_halves_directive
-	| res_words_directive
-	| bss_repeat_directive
-	| define_directive;
-
-res_bytes_directive = "$RES_BYTES", number, { comma, number };
-res_halves_directive = "$RES_HALVES", number, { comma, number };
-res_words_directive = "$RES_WORDS", number, { comma, number };
-bss_repeat_directive = "$REPEAT", immediate, bss_directive;
-
-(* /bss section *)
-
-define_directive = "$DEFINE", ( label | local_label ), literal;
+repeat_directive = "#REPEAT", immediate, [ directive | instruction ];
+const_directive = "#CONST", literal;
 
 literal = string | char | immediate;
 
@@ -132,11 +102,13 @@ addsub_imm = muldivrem_imm, {
 	( "+", muldivrem_imm )
 	| ( "-", muldivrem_imm )
 };
-muldivrem_imm = operand, {
-	( "*", operand )
-	| ( "/", operand )
-	| ( "%", operand )
+muldivrem_imm = unary_imm, {
+	( "*", unary_imm )
+	| ( "/", unary_imm )
+	| ( "%", unary_imm )
 };
+unary_imm = [ "+" | "-" | "!" | "~" ], operand;
+
 operand = label | local_label | number | ( "(", immediate, ")" );
 
 address_calculation = "[", register, "+" | "-", immediate, "]";
