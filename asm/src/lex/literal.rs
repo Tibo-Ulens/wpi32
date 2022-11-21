@@ -30,32 +30,6 @@ impl<'s> Lexer<'s> {
 		}
 	}
 
-	/// Replace the escape codes in a string of arbitrary length by their
-	/// corresponding character
-	fn unescape_string(&self, string: &'s str) -> Result<String, LexError> {
-		let mut buf = String::with_capacity(string.len());
-		let mut chunk = String::with_capacity(2);
-
-		let mut iter = string.chars();
-		while let Some(chr) = iter.next() {
-			if chr == '\\' {
-				chunk.push(chr);
-
-				// Unwrap is safe as the implementation of try_take_string
-				// assures a string cannot end with a \
-				chunk.push(iter.next().unwrap());
-
-				buf.push(self.unescape_string_to_char(&chunk)?);
-
-				chunk.clear()
-			} else {
-				buf.push(chr);
-			}
-		}
-
-		Ok(buf)
-	}
-
 	/// Try to read a single character while handling escape sequences
 	///
 	/// Supported escape sequences:
@@ -157,7 +131,7 @@ impl<'s> Lexer<'s> {
 	///  - `\\` - backslash
 	///  - `\0` - null
 	///  - `\'` - single quote
-	pub(super) fn try_take_string(&mut self) -> Result<String, LexError> {
+	pub(super) fn try_take_string(&mut self) -> Result<&'s str, LexError> {
 		// Return early if the immediately following character is None
 		let mut peek = match self.peek() {
 			Some(c) => *c,
@@ -203,7 +177,7 @@ impl<'s> Lexer<'s> {
 		// + and - 1 to ignore the quotes
 		let string_literal = &self.source[self.start + 1..self.idx - 1];
 
-		self.unescape_string(string_literal)
+		Ok(string_literal)
 	}
 
 	/// Attempt to make a number starting from the lexers current position

@@ -32,7 +32,9 @@ pub enum TokenType<'s> {
 	/// A directive (see also [`DirToken`])
 	Dir(DirToken),
 
-	LitStr(String),
+	/// **UNESCAPED** string literal, basckslash escaping should be performed
+	/// when splitting into bytes
+	LitStr(&'s str),
 	LitChar(char),
 	LitNum(isize),
 
