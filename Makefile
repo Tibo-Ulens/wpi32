@@ -1,11 +1,5 @@
 .PHONY: r rr b br fmt lint
 
-r: b
-	cargo +nightly run --package wpi32
-
-rr: br
-	cargo +nightly run --release --package wpi32
-
 b: fmt
 	cargo +nightly build
 
@@ -17,3 +11,9 @@ fmt:
 
 lint:
 	cargo +nightly clippy
+
+doc:
+	cargo +nightly doc --no-deps --document-private-items --workspace --all-features
+
+docopen:
+	cargo +nightly doc --no-deps --document-private-items --workspace --all-features --open
