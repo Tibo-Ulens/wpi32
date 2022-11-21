@@ -22,7 +22,7 @@ pub use register::RegToken;
 /// ### Lifetimes
 ///  - `'s`: The lifetime of the reference to the source code string, needed to store any potential
 ///    string references in identifiers
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 #[allow(missing_docs)]
 pub enum TokenType<'s> {
 	/// An instruction (see also [`InstToken`])
@@ -282,7 +282,7 @@ impl<'s> Display for TokenType<'s> {
 /// ### Lifetimes
 ///  - `'s`: The lifetime of the reference to the source code string, needed to keep a reference to
 ///    the source line for this token and to store any potential references in its [`TokenType`]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Token<'s> {
 	/// The type of this token
 	pub t:           TokenType<'s>,
