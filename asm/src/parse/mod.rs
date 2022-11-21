@@ -29,6 +29,8 @@ pub(crate) mod ast;
 mod display;
 mod immediate;
 
+pub(crate) use display::Node;
+
 use self::ast::{
 	ConstDirective,
 	DataDirective,
@@ -89,7 +91,7 @@ impl<'s> Parser<'s> {
 	///
 	/// Returns [`ParseError::UnexpectedEof`] if the next token is [`None`]
 	fn peek(&self) -> Result<&'s Token<'s>, ParseError> {
-		if self.idx < self.len - 1 {
+		if self.idx < self.len {
 			Ok(&self.stream[self.idx])
 		} else {
 			let srcf = self.source_file.to_string();
@@ -139,13 +141,12 @@ impl<'s> Parser<'s> {
 		let mut sections = vec![];
 
 		// As long as there is no section header we're in the preamble
-		while self.peek()?.t != TokenType::Dir(DirToken::Section) {
+		while let Ok(peek) = self.peek() && peek.t != TokenType::Dir(DirToken::Section) {
 			let preambleline = self.parse_preambleline()?;
 			preamble.push(preambleline);
 		}
 
-		// Unwrap is safe as && short circuits
-		while self.peek().is_ok() && self.peek().unwrap().t == TokenType::Dir(DirToken::Section) {
+		while let Ok(peek) = self.peek() && peek.t == TokenType::Dir(DirToken::Section) {
 			let section = self.parse_section()?;
 
 			sections.push(section);
@@ -161,10 +162,11 @@ impl<'s> Parser<'s> {
 	///
 	/// Consumes the trailing newline
 	fn parse_preambleline<'r>(&'r mut self) -> Result<PreambleLine<'s>, ParseError> {
-		let constdir = if let TokenType::Dir(DirToken::Const) = self.peek()?.t {
-			Some(self.parse_constdir()?)
-		} else {
-			None
+		let peek = self.peek()?;
+		let constdir = match &peek.t {
+			TokenType::LabelDefine(_) => Some(self.parse_constdir()?),
+			TokenType::LocalLabelDefine(_) => Some(self.parse_constdir()?),
+			_ => None,
 		};
 
 		let comment = if let TokenType::Comment(c) = self.peek()?.t {
@@ -181,20 +183,49 @@ impl<'s> Parser<'s> {
 	}
 
 	/// Parse a `#CONST` directive consisting of:
+	///  - A [`LabelId`] name
 	///  - The [`#CONST`](DirToken::Const) keyword
 	///  - A [`Literal`] value
 	///
 	/// Assumes the current [`Token`] has [`TokenType`]
-	/// [`TokenType::Dir(DirToken::Const)`]
+	/// [`TokenType::LabelDefine`] or [`TokenType::LocalLabelDefine`]
 	fn parse_constdir<'r>(&'r mut self) -> Result<ConstDirective<'s>, ParseError> {
-		// Consume the `#CONST` directive token
+		// Consume the label definition
 		// Unwrap is safe as [`self.peek()`] is [`Some`]
-		assert_eq!(self.peek().unwrap().t, TokenType::Dir(DirToken::Const));
-		self.next().unwrap();
+		assert_matches!(
+			self.peek().unwrap().t,
+			TokenType::LabelDefine(_) | TokenType::LocalLabelDefine(_)
+		);
+		let label_token = self.next().unwrap();
+
+		let id = match &label_token.t {
+			TokenType::LabelDefine(ld) => LabelId::LabelDefine(ld),
+			TokenType::LocalLabelDefine(ld) => LabelId::LocalLabelDefine(ld),
+			_ => unreachable!(),
+		};
+
+		let peek = self.peek()?;
+		match &peek.t {
+			TokenType::Dir(DirToken::Const) => {
+				// Unwrap is safe as [`self.peek()`] is [`Some`]
+				self.next().unwrap();
+			},
+			_ => {
+				return Err(ParseError::UnexpectedToken {
+					src_file: self.source_file.to_string(),
+					line:     peek.line,
+					col:      peek.col,
+					span:     peek.span,
+					src_line: peek.source_line.to_string(),
+					fnd:      peek.t.to_string(),
+					ex:       "#CONST".to_string(),
+				});
+			},
+		}
 
 		let value = self.parse_literal()?;
 
-		Ok(ConstDirective { value })
+		Ok(ConstDirective { id, value })
 	}
 
 	/// Parse a [`Literal`] consisting of either:
@@ -214,9 +245,11 @@ impl<'s> Parser<'s> {
 				self.next().unwrap();
 				Literal::Char(*c)
 			},
-			TokenType::Op(OpToken::Plus | OpToken::Minus | OpToken::BitNot | OpToken::LogicNot) => {
-				Literal::Immediate(self.parse_immediate()?)
-			},
+			TokenType::Op(OpToken::Plus | OpToken::Minus | OpToken::BitNot | OpToken::LogicNot)
+			| TokenType::SymLeftParen
+			| TokenType::LitNum(_)
+			| TokenType::Label(_)
+			| TokenType::LocalLabel(_) => Literal::Immediate(self.parse_immediate()?),
 			_ => {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
@@ -247,7 +280,11 @@ impl<'s> Parser<'s> {
 
 		let peek = self.peek()?;
 		let name = match peek.t {
-			TokenType::Section(s) => s,
+			TokenType::Section(s) => {
+				// Unwrap is safe as [`self.peek()`] is [`Some`]
+				self.next().unwrap();
+				s
+			},
 			_ => {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),

@@ -15,6 +15,9 @@ mod parse;
 use common::Error;
 use lex::{Lexer, Token};
 use parse::Parser;
+use ptree::print_tree;
+
+use crate::parse::Node;
 
 pub fn assemble(input_path: &Path, _output_path: &Path) -> Result<(), Error> {
 	let src_file = input_path.to_string_lossy().to_string();
@@ -32,7 +35,7 @@ pub fn assemble(input_path: &Path, _output_path: &Path) -> Result<(), Error> {
 	let mut parser = Parser::new(&src_file, &tokens);
 	let ast_root = parser.parse()?;
 
-	debug!("{:?}", ast_root);
+	let _ = print_tree(&Node::from(&ast_root));
 
 	Ok(())
 }

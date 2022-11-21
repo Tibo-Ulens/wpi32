@@ -19,6 +19,17 @@ pub enum ParseError {
 		fnd:      String,
 		ex:       String,
 	},
+	UnclosedParenthesis {
+		src_file:      String,
+		line:          usize,
+		col:           usize,
+		span:          usize,
+		src_line:      String,
+		open_line:     usize,
+		open_col:      usize,
+		open_span:     usize,
+		open_src_line: String,
+	},
 }
 
 impl Display for ParseError {
@@ -36,6 +47,36 @@ impl Display for ParseError {
 					*span,
 					src_line,
 				)
+			},
+			Self::UnclosedParenthesis {
+				src_file,
+				line,
+				col,
+				span,
+				src_line,
+				open_line,
+				open_col,
+				open_span,
+				open_src_line,
+			} => {
+				let err = make_info_block(
+					"expected closing parenthesis",
+					src_file,
+					*line,
+					*col,
+					*span,
+					src_line,
+				);
+				let origin = make_info_block(
+					"unclosed parenthesis",
+					src_file,
+					*open_line,
+					*open_col,
+					*open_span,
+					open_src_line,
+				);
+
+				format!("{}\n{}", err, origin)
 			},
 		};
 

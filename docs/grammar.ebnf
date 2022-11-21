@@ -42,7 +42,7 @@ section = section_header, { line };
 
 preamble_line =
 	{ whitespace },
-	[ const_directive ],
+	[ label_id, const_directive ],
 	[ comment ],
 	newline;
 

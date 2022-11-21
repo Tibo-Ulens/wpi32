@@ -33,10 +33,10 @@ pub(crate) struct Root<'s> {
 ///
 /// ```ebnf
 /// preamble_line =
-/// 	{ whitespace },
-/// 	[ const_directive ],
-/// 	[ comment ],
-/// 	newline;
+///     { whitespace },
+///     [ const_directive ],
+///     [ comment ],
+///     newline;
 /// ```
 #[derive(Clone, Debug)]
 pub(crate) struct PreambleLine<'s> {
@@ -72,10 +72,10 @@ pub(crate) struct Section<'s> {
 ///
 /// ```ebnf
 /// line =
-/// 	{ whitespace },
-/// 	[ line_content ],
-/// 	[ comment ],
-/// 	newline;
+///     { whitespace },
+///     [ line_content ],
+///     [ comment ],
+///     newline;
 /// ```
 #[derive(Clone, Debug)]
 pub(crate) struct Line<'s> {
@@ -138,6 +138,7 @@ pub(crate) enum LabelId<'l> {
 /// ```
 #[derive(Clone, Debug)]
 pub(crate) struct ConstDirective<'d> {
+	pub(crate) id:    LabelId<'d>,
 	pub(crate) value: Literal<'d>,
 }
 
@@ -150,13 +151,13 @@ pub(crate) struct ConstDirective<'d> {
 ///
 /// ```ebnf
 /// data_directive =
-/// 	bytes_directive,
-/// 	halves_directive
-/// 	words_directive,
-/// 	res_bytes_directive,
-/// 	res_halves_directive,
-/// 	res_words_directive,
-/// 	repeat_directive;
+///     bytes_directive,
+///     halves_directive
+///     words_directive,
+///     res_bytes_directive,
+///     res_halves_directive,
+///     res_words_directive,
+///     repeat_directive;
 /// ```
 
 #[derive(Clone, Debug)]

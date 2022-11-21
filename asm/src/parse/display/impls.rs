@@ -70,7 +70,10 @@ impl<'s> From<&ConstDirective<'s>> for Node {
 		Node {
 			prefixes: vec!["Directive".to_string()],
 			repr:     "Const".to_string(),
-			children: vec![Node::from(&value.value).add_prefix("Value")],
+			children: vec![
+				Node::from(&value.id).add_prefix("Id"),
+				Node::from(&value.value).add_prefix("Value"),
+			],
 		}
 	}
 }
@@ -83,8 +86,11 @@ impl<'s> From<&Section<'s>> for Node {
 			children: value.lines.iter().map(|l| l.into()).collect(),
 		};
 
-		let mut children = vec![];
-		children.push(Node { prefixes: vec![], repr: "Name".to_string(), children: vec![] });
+		let mut children = vec![Node {
+			prefixes: vec!["Name".to_string()],
+			repr:     value.name.to_string(),
+			children: vec![],
+		}];
 		children.push(lines);
 
 		Node { prefixes: vec![], repr: "Section".to_string(), children }

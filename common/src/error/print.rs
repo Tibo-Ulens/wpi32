@@ -30,7 +30,7 @@ pub(crate) fn make_info_block(
 		"{} {} {}\n",
 		Blue.bold().paint(format!("{}", line)),
 		Blue.bold().paint("|"),
-		src
+		src.trim_end(),
 	));
 	repr.push_str(&format!("{}{} ", " ".repeat(line_len + 1), Blue.bold().paint("|")));
 
