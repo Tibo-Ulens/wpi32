@@ -1,16 +1,18 @@
 //! # AST types
 //!
 //! The AST (Abstract Syntax Tree) is a datastructure that represents all the
-//! information known about a given piece of source code. </br>
+//! information known about a given piece of source code. <br>
 //! It provides an easier way of interacting with, modifying, and reasoning
 //! about source code as compared to a stream of [`Token`](crate::lex::Token)s
 //! or a raw string
 
+#![allow(missing_docs)]
+
 mod immediate;
 mod instruction;
 
-pub(crate) use immediate::*;
-pub(crate) use instruction::*;
+pub use immediate::*;
+pub use instruction::*;
 
 /// The root of the AST
 ///
@@ -20,9 +22,9 @@ pub(crate) use instruction::*;
 /// root = [ preamble ], { section };
 /// ```
 #[derive(Clone, Debug)]
-pub(crate) struct Root<'s> {
-	pub(crate) preamble: Vec<PreambleLine<'s>>,
-	pub(crate) sections: Vec<Section<'s>>,
+pub struct Root<'s> {
+	pub preamble: Vec<PreambleLine<'s>>,
+	pub sections: Vec<Section<'s>>,
 }
 
 /// A single line in the preamble of some source code
@@ -39,14 +41,14 @@ pub(crate) struct Root<'s> {
 ///     newline;
 /// ```
 #[derive(Clone, Debug)]
-pub(crate) struct PreambleLine<'s> {
-	pub(crate) constdir: Option<ConstDirective<'s>>,
-	pub(crate) comment:  Option<&'s str>,
+pub struct PreambleLine<'s> {
+	pub constdir: Option<ConstDirective<'s>>,
+	pub comment:  Option<&'s str>,
 }
 
 /// A single assembler
 ///
-/// Sections are used to indicate the function of a certain piece of code </br>
+/// Sections are used to indicate the function of a certain piece of code <br>
 /// The assembler currently recognizes three section types:
 ///  - `.TEXT` sections: executable instructions
 ///  - `.DATA` sections: initialized read/write data
@@ -60,9 +62,9 @@ pub(crate) struct PreambleLine<'s> {
 /// section_name = ".TEXT" | ".DATA" | ".BSS";
 /// ```
 #[derive(Clone, Debug)]
-pub(crate) struct Section<'s> {
-	pub(crate) name:  &'s str,
-	pub(crate) lines: Vec<Line<'s>>,
+pub struct Section<'s> {
+	pub name:  &'s str,
+	pub lines: Vec<Line<'s>>,
 }
 
 /// A single line of code in a [`Section`]
@@ -78,9 +80,9 @@ pub(crate) struct Section<'s> {
 ///     newline;
 /// ```
 #[derive(Clone, Debug)]
-pub(crate) struct Line<'s> {
-	pub(crate) content: Option<LineContent<'s>>,
-	pub(crate) comment: Option<&'s str>,
+pub struct Line<'s> {
+	pub content: Option<LineContent<'s>>,
+	pub comment: Option<&'s str>,
 }
 
 /// The potential content of a [`Line`]
@@ -94,7 +96,7 @@ pub(crate) struct Line<'s> {
 /// label_id = label_define | local_label_define;
 /// ```
 #[derive(Clone, Debug)]
-pub(crate) enum LineContent<'s> {
+pub enum LineContent<'s> {
 	LabeledStatement { label: LabelId<'s>, stmt: Option<Statement<'s>> },
 	Statement(Statement<'s>),
 }
@@ -107,7 +109,7 @@ pub(crate) enum LineContent<'s> {
 /// statement = data_directive | instruction;
 /// ```
 #[derive(Clone, Debug)]
-pub(crate) enum Statement<'s> {
+pub enum Statement<'s> {
 	DataDirective(DataDirective<'s>),
 	Instruction(Instruction<'s>),
 }
@@ -124,7 +126,7 @@ pub(crate) enum Statement<'s> {
 /// label = identifier_initial, { identifier_subsequent };
 /// ```
 #[derive(Clone, Debug)]
-pub(crate) enum LabelId<'l> {
+pub enum LabelId<'l> {
 	LabelDefine(&'l str),
 	LocalLabelDefine(&'l str),
 }
@@ -137,9 +139,9 @@ pub(crate) enum LabelId<'l> {
 /// const_directive = "#CONST", literal;
 /// ```
 #[derive(Clone, Debug)]
-pub(crate) struct ConstDirective<'d> {
-	pub(crate) id:    LabelId<'d>,
-	pub(crate) value: Literal<'d>,
+pub struct ConstDirective<'d> {
+	pub id:    LabelId<'d>,
+	pub value: Literal<'d>,
 }
 
 /// A directive that creates or otherwise manipulates data
@@ -161,7 +163,7 @@ pub(crate) struct ConstDirective<'d> {
 /// ```
 
 #[derive(Clone, Debug)]
-pub(crate) enum DataDirective<'d> {
+pub enum DataDirective<'d> {
 	Bytes { data: Vec<Literal<'d>> },
 	Halves { data: Vec<Literal<'d>> },
 	Words { data: Vec<Literal<'d>> },
@@ -174,7 +176,7 @@ pub(crate) enum DataDirective<'d> {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) enum RepeatedData<'r> {
+pub enum RepeatedData<'r> {
 	Directive(DataDirective<'r>),
 	Instruction(Instruction<'r>),
 }
@@ -187,7 +189,7 @@ pub(crate) enum RepeatedData<'r> {
 /// literal = string | char | immediate;
 /// ```
 #[derive(Clone, Debug)]
-pub(crate) enum Literal<'t> {
+pub enum Literal<'t> {
 	String(&'t str),
 	Char(char),
 	Immediate(Immediate<'t>),

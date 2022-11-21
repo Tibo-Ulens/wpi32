@@ -4,7 +4,8 @@ use std::fmt::{Display, Formatter, Result};
 
 /// A tokentype to identify instructions
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum InstToken {
+#[allow(missing_docs)]
+pub enum InstToken {
 	Add,
 	Addi,
 	Sub,

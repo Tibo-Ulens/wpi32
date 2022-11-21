@@ -4,7 +4,8 @@ use std::fmt::{Display, Formatter, Result};
 
 /// A tokentype to identify operators
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum OpToken {
+#[allow(missing_docs)]
+pub enum OpToken {
 	TernStart,
 	TernAlt,
 	LogicOr,

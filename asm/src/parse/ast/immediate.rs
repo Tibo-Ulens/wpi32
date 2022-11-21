@@ -1,5 +1,7 @@
 //! AST immediate type definitions
 
+#![allow(missing_docs)]
+
 use std::fmt::{Display, Formatter, Result};
 use std::ops::Deref;
 
@@ -12,90 +14,90 @@ use crate::lex::{OpToken, TokenType};
 ///
 /// *EBNF not given as it is too chonky, look at the docs folder for grammar*
 #[derive(Clone, Debug)]
-pub(crate) struct Immediate<'s> {
-	pub(crate) lhs: LogicOrImmediate<'s>,
-	pub(crate) rhs: Option<(LogicOrImmediate<'s>, LogicOrImmediate<'s>)>,
+pub struct Immediate<'s> {
+	pub lhs: LogicOrImmediate<'s>,
+	pub rhs: Option<(LogicOrImmediate<'s>, LogicOrImmediate<'s>)>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct LogicOrImmediate<'s> {
-	pub(crate) lhs: LogicXorImmediate<'s>,
-	pub(crate) rhs: Option<LogicXorImmediate<'s>>,
+pub struct LogicOrImmediate<'s> {
+	pub lhs: LogicXorImmediate<'s>,
+	pub rhs: Option<LogicXorImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct LogicXorImmediate<'s> {
-	pub(crate) lhs: LogicAndImmediate<'s>,
-	pub(crate) rhs: Option<LogicAndImmediate<'s>>,
+pub struct LogicXorImmediate<'s> {
+	pub lhs: LogicAndImmediate<'s>,
+	pub rhs: Option<LogicAndImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct LogicAndImmediate<'s> {
-	pub(crate) lhs: OrImmediate<'s>,
-	pub(crate) rhs: Option<OrImmediate<'s>>,
+pub struct LogicAndImmediate<'s> {
+	pub lhs: OrImmediate<'s>,
+	pub rhs: Option<OrImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct OrImmediate<'s> {
-	pub(crate) lhs: XorImmediate<'s>,
-	pub(crate) rhs: Option<XorImmediate<'s>>,
+pub struct OrImmediate<'s> {
+	pub lhs: XorImmediate<'s>,
+	pub rhs: Option<XorImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct XorImmediate<'s> {
-	pub(crate) lhs: AndImmediate<'s>,
-	pub(crate) rhs: Option<AndImmediate<'s>>,
+pub struct XorImmediate<'s> {
+	pub lhs: AndImmediate<'s>,
+	pub rhs: Option<AndImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct AndImmediate<'s> {
-	pub(crate) lhs: EqImmediate<'s>,
-	pub(crate) rhs: Option<EqImmediate<'s>>,
+pub struct AndImmediate<'s> {
+	pub lhs: EqImmediate<'s>,
+	pub rhs: Option<EqImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct EqImmediate<'s> {
-	pub(crate) lhs: OrdImmediate<'s>,
-	pub(crate) op:  Option<EqOp>,
-	pub(crate) rhs: Option<OrdImmediate<'s>>,
+pub struct EqImmediate<'s> {
+	pub lhs: OrdImmediate<'s>,
+	pub op:  Option<EqOp>,
+	pub rhs: Option<OrdImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct OrdImmediate<'s> {
-	pub(crate) lhs: ShiftImmediate<'s>,
-	pub(crate) op:  Option<OrdOp>,
-	pub(crate) rhs: Option<ShiftImmediate<'s>>,
+pub struct OrdImmediate<'s> {
+	pub lhs: ShiftImmediate<'s>,
+	pub op:  Option<OrdOp>,
+	pub rhs: Option<ShiftImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct ShiftImmediate<'s> {
-	pub(crate) lhs: AddSubImmediate<'s>,
-	pub(crate) op:  Option<ShiftOp>,
-	pub(crate) rhs: Option<AddSubImmediate<'s>>,
+pub struct ShiftImmediate<'s> {
+	pub lhs: AddSubImmediate<'s>,
+	pub op:  Option<ShiftOp>,
+	pub rhs: Option<AddSubImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct AddSubImmediate<'s> {
-	pub(crate) lhs: MulDivRemImmediate<'s>,
-	pub(crate) op:  Option<AddSubOp>,
-	pub(crate) rhs: Option<MulDivRemImmediate<'s>>,
+pub struct AddSubImmediate<'s> {
+	pub lhs: MulDivRemImmediate<'s>,
+	pub op:  Option<AddSubOp>,
+	pub rhs: Option<MulDivRemImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct MulDivRemImmediate<'s> {
-	pub(crate) lhs: UnaryImmediate<'s>,
-	pub(crate) op:  Option<MulDivRemOp>,
-	pub(crate) rhs: Option<UnaryImmediate<'s>>,
+pub struct MulDivRemImmediate<'s> {
+	pub lhs: UnaryImmediate<'s>,
+	pub op:  Option<MulDivRemOp>,
+	pub rhs: Option<UnaryImmediate<'s>>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct UnaryImmediate<'s> {
-	pub(crate) op:  Option<UnaryOp>,
-	pub(crate) rhs: Operand<'s>,
+pub struct UnaryImmediate<'s> {
+	pub op:  Option<UnaryOp>,
+	pub rhs: Operand<'s>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) enum Operand<'s> {
+pub enum Operand<'s> {
 	Label(&'s str),
 	LocalLabel(&'s str),
 	Number(isize),
@@ -103,17 +105,17 @@ pub(crate) enum Operand<'s> {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct EqOp(OpToken);
+pub struct EqOp(OpToken);
 #[derive(Clone, Debug)]
-pub(crate) struct OrdOp(OpToken);
+pub struct OrdOp(OpToken);
 #[derive(Clone, Debug)]
-pub(crate) struct ShiftOp(OpToken);
+pub struct ShiftOp(OpToken);
 #[derive(Clone, Debug)]
-pub(crate) struct AddSubOp(OpToken);
+pub struct AddSubOp(OpToken);
 #[derive(Clone, Debug)]
-pub(crate) struct MulDivRemOp(OpToken);
+pub struct MulDivRemOp(OpToken);
 #[derive(Clone, Debug)]
-pub(crate) struct UnaryOp(OpToken);
+pub struct UnaryOp(OpToken);
 
 impl<'s> From<&TokenType<'s>> for EqOp {
 	fn from(value: &TokenType<'s>) -> Self {

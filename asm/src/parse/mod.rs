@@ -23,9 +23,9 @@
 
 use std::assert_matches::assert_matches;
 
-use common::{Error, LocationInfo, ParseError};
+use crate::error::{Error, LocationInfo, ParseError};
 
-pub(crate) mod ast;
+pub mod ast;
 mod directive;
 mod display;
 mod immediate;
@@ -54,7 +54,7 @@ use crate::lex::{DirToken, OpToken, Token, TokenType};
 /// ### Lifetimes
 ///  - `'s`: The lifetime of the reference to the source code string, needed as (most) tokens
 ///    containing string literals will contain references instead of owned data
-pub(crate) struct Parser<'s> {
+pub struct Parser<'s> {
 	stream: &'s [Token<'s>],
 
 	source_file: String,
@@ -63,7 +63,8 @@ pub(crate) struct Parser<'s> {
 }
 
 impl<'s> Parser<'s> {
-	pub(crate) fn new(src_file: &str, stream: &'s [Token<'s>]) -> Self {
+	/// Create a new parser given a source file name and a stream of [`Token`]s
+	pub fn new(src_file: &str, stream: &'s [Token<'s>]) -> Self {
 		Self { stream, source_file: src_file.to_string(), len: stream.len(), idx: 0 }
 	}
 
@@ -129,7 +130,7 @@ impl<'s> Parser<'s> {
 	/// Parse the token stream into an AST [`Root`]
 	///
 	/// Assumes the token stream ends on a newline
-	pub(crate) fn parse(&'s mut self) -> Result<Root<'s>, Error> {
+	pub fn parse(&'s mut self) -> Result<Root<'s>, Error> {
 		let mut preamble = vec![];
 		let mut sections = vec![];
 

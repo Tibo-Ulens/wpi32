@@ -12,10 +12,10 @@ mod instruction;
 mod operator;
 mod register;
 
-pub(crate) use directive::DirToken;
-pub(crate) use instruction::InstToken;
-pub(crate) use operator::OpToken;
-pub(crate) use register::RegToken;
+pub use directive::DirToken;
+pub use instruction::InstToken;
+pub use operator::OpToken;
+pub use register::RegToken;
 
 /// All possible types of token
 ///
@@ -23,7 +23,8 @@ pub(crate) use register::RegToken;
 ///  - `'s`: The lifetime of the reference to the source code string, needed to store any potential
 ///    string references in identifiers
 #[derive(Clone, PartialEq, Eq)]
-pub(crate) enum TokenType<'s> {
+#[allow(missing_docs)]
+pub enum TokenType<'s> {
 	/// An instruction (see also [`InstToken`])
 	Inst(InstToken),
 	/// A Register (see also [`RegToken`])
@@ -280,17 +281,17 @@ impl<'s> Display for TokenType<'s> {
 ///  - `'s`: The lifetime of the reference to the source code string, needed to keep a reference to
 ///    the source line for this token and to store any potential references in its [`TokenType`]
 #[derive(Clone, Debug)]
-pub(crate) struct Token<'s> {
+pub struct Token<'s> {
 	/// The type of this token
-	pub(crate) t:           TokenType<'s>,
+	pub t:           TokenType<'s>,
 	/// The line number of this token
-	pub(crate) line:        usize,
+	pub line:        usize,
 	/// The column number of this token
-	pub(crate) col:         usize,
+	pub col:         usize,
 	/// The length (in characters) of this token
-	pub(crate) span:        usize,
+	pub span:        usize,
 	/// The line of source code containing this token
-	pub(crate) source_line: &'s str,
+	pub source_line: &'s str,
 }
 
 impl<'s> Display for Token<'s> {

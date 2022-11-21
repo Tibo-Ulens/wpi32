@@ -1,7 +1,7 @@
 //! # Assembler
 //!
 //! The assembler is responsible for converting a text file into a binary that
-//! can be executed by the simulator </br>
+//! can be executed by the simulator <br>
 //! This is achieved using the following steps:
 //!  - Lexing: The [`Lexer`] converts the raw text of the input file into a series of abstracted
 //!    [`Token`]s that more conveniently represent their underlying data
@@ -12,11 +12,14 @@
 //!  - TODO: Fold constants: Calculate immediates at runtime
 //!  - TODO: Code generation: Output binary data
 //!
+//! TODO: don't parse immediates recursively but determine order using
+//!       something like the shunting-yard algorithm
 //! TODO: consider nesting instruction (and maybe directive) token types
 //!       an extra level to shorten parser functions
 //! TODO: more detailed parser errors (maybe see if lexer errors can be
 //!       improved as well but i can't rlly think of anything)
 
+#![warn(missing_docs)]
 #![feature(is_ascii_octdigit)]
 #![feature(let_chains)]
 #![feature(assert_matches)]
@@ -28,27 +31,21 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
-mod lex;
-mod parse;
+pub mod error;
+pub mod lex;
+pub mod parse;
 
-use common::{Error, LocationInfo};
+use error::Error;
 use lex::{Lexer, Token};
 use parse::Parser;
 use ptree::print_tree;
 
 use crate::parse::Node;
 
-impl<'s> From<&Token<'s>> for LocationInfo {
-	fn from(value: &Token<'s>) -> Self {
-		Self {
-			line:     value.line,
-			col:      value.col,
-			span:     value.span,
-			src_line: value.source_line.to_string(),
-		}
-	}
-}
-
+/// Assemble a file at the given input path into a binary, and write it to the
+/// file given by the output path
+///
+/// See the [module level documentation](self) for more info
 pub fn assemble(input_path: &Path, _output_path: &Path) -> Result<(), Error> {
 	let src_file = input_path.to_string_lossy().to_string();
 	let mut file = File::open(input_path)?;

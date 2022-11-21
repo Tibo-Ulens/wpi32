@@ -5,9 +5,8 @@
 //!  - string (for [`LitStr`](crate::lex::TokenType::LitStr))
 //!  - numbers (for [`LitNum`](crate::lex::TokenType::LitNum))
 
-use common::LexError;
-
 use super::Lexer;
+use crate::error::LexError;
 
 impl<'s> Lexer<'s> {
 	/// Convert a string with a 2 character escape code into its corresponding character

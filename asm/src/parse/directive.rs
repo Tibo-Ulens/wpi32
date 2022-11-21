@@ -1,13 +1,12 @@
 //! [`Parser`] functions to parse [`DataDirective`] expressions
 
-use common::{LocationInfo, ParseError};
-
 use super::ast::{DataDirective, Literal, RepeatedData};
 use super::Parser;
+use crate::error::{LocationInfo, ParseError};
 use crate::lex::{DirToken, TokenType};
 
 impl<'s> Parser<'s> {
-	/// Parse any of the following [`Directive`]s:
+	/// Parse any of the following [`DataDirective`]s:
 	///  - [`#BYTES`](DirToken::Bytes)
 	///  - [`#HALVES`](DirToken::Halves)
 	///  - [`#WORDS`](DirToken::Words)
@@ -16,7 +15,8 @@ impl<'s> Parser<'s> {
 	///  - [`#RES_WORDS`](DirToken::ResWords)
 	///  - [`#REPEAT`](DirToken::Repeat)
 	///
-	/// Assumes the current [`Token`] has [`TokenType`] [`TokenType::Dir`]
+	/// Assumes the current [`Token`](crate::lex::Token) has [`TokenType`]
+	/// [`TokenType::Dir`]
 	pub(super) fn parse_datadirective<'r>(&'r mut self) -> Result<DataDirective<'s>, ParseError> {
 		// Unwrap is assumed to be safe
 		let directive_token = self.next().unwrap();
@@ -51,13 +51,13 @@ impl<'s> Parser<'s> {
 		}
 	}
 
-	/// Parse a value list for any of the following [`Directive`]s:
+	/// Parse a value list for any of the following [`DataDirective`]s:
 	///  - [`#BYTES`](DirToken::Bytes)
 	///  - [`#HALVES`](DirToken::Halves)
 	///  - [`#WORDS`](DirToken::Words)
-	///  - [`#RES_BYTES`](DirToken:Res:Bytes)
+	///  - [`#RES_BYTES`](DirToken::ResBytes)
 	///  - [`#RES_HALVES`](DirToken::ResHalves)
-	///  - [`#RES_WORDS`](DirToken:Res:Words)
+	///  - [`#RES_WORDS`](DirToken::ResWords)
 	fn parse_literal_list<'r>(&'r mut self) -> Result<Vec<Literal<'s>>, ParseError> {
 		let mut data = vec![];
 
@@ -76,7 +76,7 @@ impl<'s> Parser<'s> {
 		Ok(data)
 	}
 
-	/// Parse [`#REPEAT`](DirToken::Repeat) [`Directive`]s
+	/// Parse [`#REPEAT`](DirToken::Repeat) [`DataDirective`]s
 	fn parse_repeat_directive<'r>(&'r mut self) -> Result<DataDirective<'s>, ParseError> {
 		let amount = self.parse_literal()?;
 

@@ -8,10 +8,9 @@
 //!  - Labels and LabelDefines ([`TokenType::Label`], [`TokenType::LocalLabel`],
 //!    [`TokenType::LabelDefine`], [`TokenType::LocalLabelDefine`])
 
-use common::LexError;
-
 use super::token::{DirToken, InstToken, RegToken};
 use super::{Lexer, Token, TokenType};
+use crate::error::LexError;
 
 impl<'s> Lexer<'s> {
 	/// Attempt to match an identifier to an instruction, register, section

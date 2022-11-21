@@ -1,7 +1,28 @@
+//! ```text
+//!  _    _ ______  _____          _____  _____
+//! | |  | || ___ \|_   _|        |____ |/ __  \
+//! | |  | || |_/ /  | |   ______     / /`' / /'
+//! | |/\| ||  __/   | |  |______|    \ \  / /
+//! \  /\  /| |     _| |_         .___/ /./ /___
+//!  \/  \/ \_|     \___/         \____/ \_____/
+//! ```
+//!
+//! # WPI-32
+//!
+//! Custom assembler and emulator for the
+//! [RISC-V](https://en.wikipedia.org/wiki/RISC-V) CPU architecture
+
+#![warn(missing_docs)]
+
 use std::path::PathBuf;
 
+use asm::error::Error as AssemblerError;
 use clap::{Arg, ArgAction, Command};
-use common::Error;
+use sim::error::Error as SimulatorError;
+
+mod error;
+
+use error::Error;
 
 fn run() -> Result<(), Error> {
 	let matches = Command::new(env!("CARGO_PKG_NAME"))

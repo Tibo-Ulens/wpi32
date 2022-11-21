@@ -8,13 +8,14 @@ use crate::lex::{OpToken, RegToken};
 /// An assembly instruction
 ///
 /// Most instructions contain some form of [register](RegToken) specifier
-/// and/or an [`Immediate`] </br>
-/// The load and store instructions contain [`Address`] calculations </br>
+/// and/or an [`Immediate`] <br>
+/// The load and store instructions contain [`Address`] calculations <br>
 /// Fence instructions use [`OrderingTarget`]s
 ///
 /// *EBNF not given as it is too chonky, look at the docs folder for grammar*
 #[derive(Clone, Debug)]
-pub(crate) enum Instruction<'s> {
+#[allow(missing_docs)]
+pub enum Instruction<'s> {
 	// Integer Register Immediate
 	Addi { dest: RegToken, src: RegToken, imm: Immediate<'s> },
 	Slti { dest: RegToken, src: RegToken, imm: Immediate<'s> },
@@ -109,9 +110,9 @@ pub(crate) enum Instruction<'s> {
 /// address_calculation = "[", register, [ address_offset ] "]";
 /// ```
 #[derive(Clone, Debug)]
-pub(crate) struct Address<'s> {
-	pub(crate) base:   RegToken,
-	pub(crate) offset: Option<AddrOffset<'s>>,
+pub struct Address<'s> {
+	pub base:   RegToken,
+	pub offset: Option<AddrOffset<'s>>,
 }
 
 /// An offset for a specific [`Address`]
@@ -122,9 +123,9 @@ pub(crate) struct Address<'s> {
 /// address_offset = "+" | "-", immediate;
 /// ```
 #[derive(Clone, Debug)]
-pub(crate) struct AddrOffset<'s> {
-	pub(crate) op:     OffsetOperator,
-	pub(crate) offset: Immediate<'s>,
+pub struct AddrOffset<'s> {
+	pub op:     OffsetOperator,
+	pub offset: Immediate<'s>,
 }
 
 /// The operator used in [`Address`]es with an offset
@@ -133,7 +134,7 @@ pub(crate) struct AddrOffset<'s> {
 ///
 /// See [`AddrOffset`] for grammar
 #[derive(Clone, Debug)]
-pub(crate) enum OffsetOperator {
+pub enum OffsetOperator {
 	Plus,
 	Minus,
 }
@@ -163,7 +164,7 @@ bitflags! {
 	/// ```ebnf
 	/// ordering_operation = [ "i" ], [ "o" ], [ "r" ], [ "w" ];
 	/// ```
-	pub(crate) struct OrderingTarget: u8 {
+	pub struct OrderingTarget: u8 {
 		const I = 0b0000_0001;
 		const O = 0b0000_0010;
 		const R = 0b0000_0100;

@@ -1,10 +1,10 @@
 //! Directive Tokens
-
 use std::fmt::{Display, Formatter, Result};
 
 /// A tokentype to identify directives
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum DirToken {
+#[allow(missing_docs)]
+pub enum DirToken {
 	Section,
 	Bytes,
 	Halves,

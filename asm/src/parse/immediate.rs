@@ -1,7 +1,5 @@
 //! [`Parser`] functions to parse [`Immediate`] expressions
 
-use common::{LocationInfo, ParseError};
-
 use super::ast::{
 	AddSubImmediate,
 	AddSubOp,
@@ -25,6 +23,7 @@ use super::ast::{
 	XorImmediate,
 };
 use super::Parser;
+use crate::error::{LocationInfo, ParseError};
 use crate::lex::{OpToken, TokenType};
 
 // !!!
@@ -52,7 +51,7 @@ impl<'s> Parser<'s> {
 
 	/// Parse the consequent and alternate in a ternary expression
 	///
-	/// Assumes the current [`Token`] has [`TokenType`]
+	/// Assumes the current [`Token`](crate::lex::Token) has [`TokenType`]
 	/// [`TokenType::Op(OpToken::TernStart)`]
 	fn parse_ternary<'r>(
 		&'r mut self,

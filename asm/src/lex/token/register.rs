@@ -4,7 +4,8 @@ use std::fmt::{Display, Formatter, Result};
 
 /// A tokentype to identify registers
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum RegToken {
+#[allow(missing_docs)]
+pub enum RegToken {
 	R0,
 	R1,
 	R2,

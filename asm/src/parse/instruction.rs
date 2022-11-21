@@ -1,15 +1,15 @@
 //! [`Parser`] functions to parse [`Instruction`]s
 
-use common::{LocationInfo, ParseError};
-
 use super::ast::{AddrOffset, Address, Immediate, Instruction, OffsetOperator, OrderingTarget};
 use super::Parser;
+use crate::error::{LocationInfo, ParseError};
 use crate::lex::{InstToken, OpToken, RegToken, TokenType};
 
 impl<'s> Parser<'s> {
 	/// Parse any valid [`Instruction`]
 	///
-	/// Assumes the current [`Token`] has [`TokenType`] [`TokenType::Inst`]
+	/// Assumes the current [`Token`](crate::lex::Token) has [`TokenType`]
+	/// [`TokenType::Inst`]
 	pub(super) fn parse_instruction<'r>(&'r mut self) -> Result<Instruction<'s>, ParseError> {
 		// Unwrap is assumed to be safe
 		let instruction_token = self.next().unwrap();

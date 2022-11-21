@@ -1,7 +1,10 @@
+#![allow(missing_docs)]
+
 use std::fmt::{Display, Formatter};
 
 use super::make_info_block;
 
+/// An error produced by the [`Lexer`](crate::lex::Lexer)
 #[derive(Debug)]
 pub enum LexError {
 	UnexpectedEof {

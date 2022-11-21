@@ -26,8 +26,9 @@ mod literal;
 mod token;
 mod util;
 
-use common::{Error, LexError};
-pub(crate) use token::*;
+pub use token::*;
+
+use crate::error::{Error, LexError};
 
 /// Main Lexer type
 ///
@@ -37,7 +38,7 @@ pub(crate) use token::*;
 /// ### Lifetimes
 ///  - `'s`: The lifetime of the reference to the source code string, needed as (most) tokens
 ///    containing string literals will contain references instead of owned data
-pub(crate) struct Lexer<'s> {
+pub struct Lexer<'s> {
 	pub(crate) source_file: String,
 	source:                 &'s str,
 	source_iter:            Peekable<Chars<'s>>,
@@ -59,7 +60,8 @@ impl<'s> Iterator for Lexer<'s> {
 }
 
 impl<'s> Lexer<'s> {
-	pub(crate) fn new(src_file: &str, source: &'s str) -> Self {
+	/// Create a new lexer given a source file name and a string of source code
+	pub fn new(src_file: &str, source: &'s str) -> Self {
 		Self {
 			source_file: src_file.to_string(),
 			source,
@@ -171,7 +173,7 @@ impl<'s> Lexer<'s> {
 
 	/// Lex a single [`Token`]
 	///
-	/// Returns [`None`] if the iterator has ended </br>
+	/// Returns [`None`] if the iterator has ended <br>
 	/// Returns [`Error`] if a lexical error was found
 	fn lex_token(&mut self) -> Option<Result<Token<'s>, Error>> {
 		// Consume any leading whitespace

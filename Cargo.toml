@@ -1,12 +1,10 @@
 [workspace]
 members = [
 	"asm",
-	"common",
 	"sim",
 ]
 default-members = [
 	"asm",
-	"common",
 	"sim",
 ]
 
@@ -31,7 +29,6 @@ codegen-units = 1
 
 [dependencies]
 asm = { path="./asm" }
-common = { path="./common" }
 sim = { path="./sim" }
 
 clap = "4.0.18"
