@@ -12,12 +12,23 @@ use std::path::Path;
 mod lex;
 mod parse;
 
-use common::Error;
+use common::{Error, LocationInfo};
 use lex::{Lexer, Token};
 use parse::Parser;
 use ptree::print_tree;
 
 use crate::parse::Node;
+
+impl<'s> From<&Token<'s>> for LocationInfo {
+	fn from(value: &Token<'s>) -> Self {
+		Self {
+			line:     value.line,
+			col:      value.col,
+			span:     value.span,
+			src_line: value.source_line.to_string(),
+		}
+	}
+}
 
 pub fn assemble(input_path: &Path, _output_path: &Path) -> Result<(), Error> {
 	let src_file = input_path.to_string_lossy().to_string();

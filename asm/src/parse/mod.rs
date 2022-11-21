@@ -23,7 +23,7 @@
 
 use std::assert_matches::assert_matches;
 
-use common::{Error, ParseError};
+use common::{Error, LocationInfo, ParseError};
 
 pub(crate) mod ast;
 mod display;
@@ -80,9 +80,7 @@ impl<'s> Parser<'s> {
 
 			Err(ParseError::UnexpectedEof {
 				src_file: srcf,
-				line:     prev.line,
-				col:      prev.col,
-				src_line: prev.source_line.to_string(),
+				location: Box::new(LocationInfo::from(prev)),
 			})
 		}
 	}
@@ -99,9 +97,7 @@ impl<'s> Parser<'s> {
 
 			Err(ParseError::UnexpectedEof {
 				src_file: srcf,
-				line:     prev.line,
-				col:      prev.col,
-				src_line: prev.source_line.to_string(),
+				location: Box::new(LocationInfo::from(prev)),
 			})
 		}
 	}
@@ -123,10 +119,7 @@ impl<'s> Parser<'s> {
 
 			Err(ParseError::UnexpectedToken {
 				src_file: srcf,
-				line:     prev.line,
-				col:      prev.col,
-				span:     prev.span,
-				src_line: prev.source_line.to_string(),
+				location: Box::new(LocationInfo::from(prev)),
 				fnd:      repr,
 				ex:       t.to_string(),
 			})
@@ -213,10 +206,7 @@ impl<'s> Parser<'s> {
 			_ => {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
-					line:     peek.line,
-					col:      peek.col,
-					span:     peek.span,
-					src_line: peek.source_line.to_string(),
+					location: Box::new(LocationInfo::from(peek)),
 					fnd:      peek.t.to_string(),
 					ex:       "#CONST".to_string(),
 				});
@@ -253,10 +243,7 @@ impl<'s> Parser<'s> {
 			_ => {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
-					line:     peek.line,
-					col:      peek.col,
-					span:     peek.span,
-					src_line: peek.source_line.to_string(),
+					location: Box::new(LocationInfo::from(peek)),
 					fnd:      peek.t.to_string(),
 					ex:       "STRING or CHAR or IMMEDIATE".to_string(),
 				});
@@ -288,10 +275,7 @@ impl<'s> Parser<'s> {
 			_ => {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
-					line:     peek.line,
-					col:      peek.col,
-					span:     peek.span,
-					src_line: peek.source_line.to_string(),
+					location: Box::new(LocationInfo::from(peek)),
 					fnd:      peek.t.to_string(),
 					ex:       ".TEXT or .DATA or .BSS".to_string(),
 				});
@@ -379,10 +363,7 @@ impl<'s> Parser<'s> {
 			_ => {
 				Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
-					line:     peek.line,
-					col:      peek.col,
-					span:     peek.span,
-					src_line: peek.source_line.to_string(),
+					location: Box::new(LocationInfo::from(peek)),
 					fnd:      peek.t.to_string(),
 					ex:       "DIRECTIVE or INSTRUCTION or COMMENT or NEWLINE".to_string(),
 				})

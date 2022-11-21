@@ -1,6 +1,6 @@
 //! [`Parser`] functions to parse [`Immediate`] expressions
 
-use common::ParseError;
+use common::{LocationInfo, ParseError};
 
 use super::ast::{
 	AddSubImmediate,
@@ -68,10 +68,7 @@ impl<'s> Parser<'s> {
 		if peek.t != TokenType::Op(OpToken::TernAlt) {
 			return Err(ParseError::UnexpectedToken {
 				src_file: self.source_file.to_string(),
-				line:     peek.line,
-				col:      peek.col,
-				span:     peek.span,
-				src_line: peek.source_line.to_string(),
+				location: Box::new(LocationInfo::from(peek)),
 				fnd:      peek.t.to_string(),
 				ex:       OpToken::TernAlt.to_string(),
 			});
@@ -343,15 +340,9 @@ impl<'s> Parser<'s> {
 				let close_peek = self.peek()?;
 				if close_peek.t != TokenType::SymRightParen {
 					return Err(ParseError::UnclosedParenthesis {
-						src_file:      self.source_file.to_string(),
-						line:          close_peek.line,
-						col:           close_peek.col,
-						span:          close_peek.span,
-						src_line:      close_peek.source_line.to_string(),
-						open_line:     peek.line,
-						open_col:      peek.col,
-						open_span:     peek.span,
-						open_src_line: peek.source_line.to_string(),
+						src_file:       self.source_file.to_string(),
+						close_location: Box::new(LocationInfo::from(close_peek)),
+						open_location:  Box::new(LocationInfo::from(peek)),
 					});
 				}
 
@@ -364,10 +355,7 @@ impl<'s> Parser<'s> {
 			_ => {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
-					line:     peek.line,
-					col:      peek.col,
-					span:     peek.span,
-					src_line: peek.source_line.to_string(),
+					location: Box::new(LocationInfo::from(peek)),
 					fnd:      peek.t.to_string(),
 					ex:       "LABEL or LOCAL_LABEL or NUMBER or IMMEDIATE".to_string(),
 				});
