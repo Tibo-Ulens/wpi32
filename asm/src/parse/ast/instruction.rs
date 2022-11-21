@@ -3,7 +3,7 @@
 use bitflags::bitflags;
 
 use super::Immediate;
-use crate::lex::RegToken;
+use crate::lex::{OpToken, RegToken};
 
 /// An assembly instruction
 ///
@@ -61,45 +61,44 @@ pub(crate) enum Instruction<'s> {
 	Lh { dest: RegToken, addr: Address<'s> },
 	Lhu { dest: RegToken, addr: Address<'s> },
 	Lw { dest: RegToken, addr: Address<'s> },
-	Lwu { dest: RegToken, addr: Address<'s> },
 	// Store
-	Sb { dest: RegToken, addr: Address<'s> },
-	Sh { dest: RegToken, addr: Address<'s> },
-	Sw { dest: RegToken, addr: Address<'s> },
+	Sb { dest: Address<'s>, src: RegToken },
+	Sh { dest: Address<'s>, src: RegToken },
+	Sw { dest: Address<'s>, src: RegToken },
 
 	// Memory Ordering
 	Fence { pred: OrderingTarget, succ: OrderingTarget },
 	FenceTso { pred: OrderingTarget, succ: OrderingTarget },
 
 	// System Interaction
-	ECall,
-	EBreak,
+	Ecall,
+	Ebreak,
 
 	// Instruction Fetch Fencing
-	FenceI,
+	Fencei,
 
 	// CSR RegisterToken
-	CsrRw { dest: RegToken, src: RegToken, target: Immediate<'s> },
-	CsrRs { dest: RegToken, src: RegToken, target: Immediate<'s> },
-	CsrRc { dest: RegToken, src: RegToken, target: Immediate<'s> },
+	Csrrw { dest: RegToken, src: RegToken, target: Immediate<'s> },
+	Csrrs { dest: RegToken, src: RegToken, target: Immediate<'s> },
+	Csrrc { dest: RegToken, src: RegToken, target: Immediate<'s> },
 	// CSR Immediate
-	CsrRwi { dest: RegToken, src: Immediate<'s>, target: Immediate<'s> },
-	CsrRsi { dest: RegToken, src: Immediate<'s>, target: Immediate<'s> },
-	CsrRci { dest: RegToken, src: Immediate<'s>, target: Immediate<'s> },
+	Csrrwi { dest: RegToken, src: Immediate<'s>, target: Immediate<'s> },
+	Csrrsi { dest: RegToken, src: Immediate<'s>, target: Immediate<'s> },
+	Csrrci { dest: RegToken, src: Immediate<'s>, target: Immediate<'s> },
 
 	// Multiply
 	Mul { dest: RegToken, src1: RegToken, src2: RegToken },
-	MulH { dest: RegToken, src1: RegToken, src2: RegToken },
-	MulHU { dest: RegToken, src1: RegToken, src2: RegToken },
-	MulHSU { dest: RegToken, src1: RegToken, src2: RegToken },
+	Mulh { dest: RegToken, src1: RegToken, src2: RegToken },
+	Mulhu { dest: RegToken, src1: RegToken, src2: RegToken },
+	Mulhsu { dest: RegToken, src1: RegToken, src2: RegToken },
 
 	// Divide
 	Div { dest: RegToken, src1: RegToken, src2: RegToken },
-	DivU { dest: RegToken, src1: RegToken, src2: RegToken },
+	Divu { dest: RegToken, src1: RegToken, src2: RegToken },
 
 	// Remainder
 	Rem { dest: RegToken, src1: RegToken, src2: RegToken },
-	RemU { dest: RegToken, src1: RegToken, src2: RegToken },
+	Remu { dest: RegToken, src1: RegToken, src2: RegToken },
 }
 
 /// An address calculation for use in load/store instructions
@@ -139,6 +138,16 @@ pub(crate) enum OffsetOperator {
 	Minus,
 }
 
+impl From<&OpToken> for OffsetOperator {
+	fn from(value: &OpToken) -> Self {
+		match value {
+			OpToken::Plus => Self::Plus,
+			OpToken::Minus => Self::Minus,
+			_ => unimplemented!(),
+		}
+	}
+}
+
 bitflags! {
 	/// A target operation for a fence-type instruction
 	///
@@ -159,5 +168,26 @@ bitflags! {
 		const O = 0b0000_0010;
 		const R = 0b0000_0100;
 		const W = 0b0000_1000;
+	}
+}
+
+impl From<&str> for OrderingTarget {
+	fn from(value: &str) -> Self {
+		let mut flags = Self::empty();
+
+		if value.contains('I') {
+			flags.set(Self::I, true);
+		}
+		if value.contains('O') {
+			flags.set(Self::O, true);
+		}
+		if value.contains('R') {
+			flags.set(Self::R, true);
+		}
+		if value.contains('W') {
+			flags.set(Self::W, true);
+		}
+
+		flags
 	}
 }

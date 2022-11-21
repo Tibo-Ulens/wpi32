@@ -12,7 +12,8 @@
 //!  - TODO: Fold constants: Calculate immediates at runtime
 //!  - TODO: Code generation: Output binary data
 //!
-//! TODO: remove repeated next() lookups in parser
+//! TODO: consider nesting instruction (and maybe directive) token types
+//!       an extra level to shorten parser functions
 //! TODO: more detailed parser errors (maybe see if lexer errors can be
 //!       improved as well but i can't rlly think of anything)
 

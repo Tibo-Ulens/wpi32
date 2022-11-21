@@ -629,43 +629,33 @@ impl<'s> From<&Instruction<'s>> for Node {
 					],
 				}
 			},
-			Instruction::Lwu { dest, addr } => {
-				Node {
-					prefixes: vec!["Instruction".to_string()],
-					repr:     "Lwu".to_string(),
-					children: vec![
-						Node::from(dest).add_prefix("Dest"),
-						Node::from(addr).add_prefix("Addr"),
-					],
-				}
-			},
-			Instruction::Sb { dest, addr } => {
+			Instruction::Sb { dest, src } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Sb".to_string(),
 					children: vec![
 						Node::from(dest).add_prefix("Dest"),
-						Node::from(addr).add_prefix("Addr"),
+						Node::from(src).add_prefix("Src"),
 					],
 				}
 			},
-			Instruction::Sh { dest, addr } => {
+			Instruction::Sh { dest, src } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Sh".to_string(),
 					children: vec![
 						Node::from(dest).add_prefix("Dest"),
-						Node::from(addr).add_prefix("Addr"),
+						Node::from(src).add_prefix("Src"),
 					],
 				}
 			},
-			Instruction::Sw { dest, addr } => {
+			Instruction::Sw { dest, src } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "Sw".to_string(),
 					children: vec![
 						Node::from(dest).add_prefix("Dest"),
-						Node::from(addr).add_prefix("Addr"),
+						Node::from(src).add_prefix("Src"),
 					],
 				}
 			},
@@ -689,28 +679,28 @@ impl<'s> From<&Instruction<'s>> for Node {
 					],
 				}
 			},
-			Instruction::ECall => {
+			Instruction::Ecall => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "ECall".to_string(),
 					children: vec![],
 				}
 			},
-			Instruction::EBreak => {
+			Instruction::Ebreak => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "EBreak".to_string(),
 					children: vec![],
 				}
 			},
-			Instruction::FenceI => {
+			Instruction::Fencei => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "FenceI".to_string(),
 					children: vec![],
 				}
 			},
-			Instruction::CsrRw { dest, src, target } => {
+			Instruction::Csrrw { dest, src, target } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "CsrRw".to_string(),
@@ -721,7 +711,7 @@ impl<'s> From<&Instruction<'s>> for Node {
 					],
 				}
 			},
-			Instruction::CsrRs { dest, src, target } => {
+			Instruction::Csrrs { dest, src, target } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "CsrRs".to_string(),
@@ -732,7 +722,7 @@ impl<'s> From<&Instruction<'s>> for Node {
 					],
 				}
 			},
-			Instruction::CsrRc { dest, src, target } => {
+			Instruction::Csrrc { dest, src, target } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "CsrRc".to_string(),
@@ -743,7 +733,7 @@ impl<'s> From<&Instruction<'s>> for Node {
 					],
 				}
 			},
-			Instruction::CsrRwi { dest, src, target } => {
+			Instruction::Csrrwi { dest, src, target } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "CsrRwi".to_string(),
@@ -754,7 +744,7 @@ impl<'s> From<&Instruction<'s>> for Node {
 					],
 				}
 			},
-			Instruction::CsrRsi { dest, src, target } => {
+			Instruction::Csrrsi { dest, src, target } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "CsrRsi".to_string(),
@@ -765,7 +755,7 @@ impl<'s> From<&Instruction<'s>> for Node {
 					],
 				}
 			},
-			Instruction::CsrRci { dest, src, target } => {
+			Instruction::Csrrci { dest, src, target } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "CsrRci".to_string(),
@@ -787,7 +777,7 @@ impl<'s> From<&Instruction<'s>> for Node {
 					],
 				}
 			},
-			Instruction::MulH { dest, src1, src2 } => {
+			Instruction::Mulh { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "MulH".to_string(),
@@ -798,7 +788,7 @@ impl<'s> From<&Instruction<'s>> for Node {
 					],
 				}
 			},
-			Instruction::MulHU { dest, src1, src2 } => {
+			Instruction::Mulhu { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "MulHU".to_string(),
@@ -809,7 +799,7 @@ impl<'s> From<&Instruction<'s>> for Node {
 					],
 				}
 			},
-			Instruction::MulHSU { dest, src1, src2 } => {
+			Instruction::Mulhsu { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "MulHSU".to_string(),
@@ -831,7 +821,7 @@ impl<'s> From<&Instruction<'s>> for Node {
 					],
 				}
 			},
-			Instruction::DivU { dest, src1, src2 } => {
+			Instruction::Divu { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "DivU".to_string(),
@@ -853,7 +843,7 @@ impl<'s> From<&Instruction<'s>> for Node {
 					],
 				}
 			},
-			Instruction::RemU { dest, src1, src2 } => {
+			Instruction::Remu { dest, src1, src2 } => {
 				Node {
 					prefixes: vec!["Instruction".to_string()],
 					repr:     "RemU".to_string(),
