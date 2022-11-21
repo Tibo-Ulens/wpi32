@@ -1,0 +1,370 @@
+//! AST immediate type definitions
+
+use std::fmt::{Display, Formatter, Result};
+use std::ops::Deref;
+
+use crate::lex::{OpToken, TokenType};
+
+/// An immediate value
+///
+/// This can range from a single number to a complex expression referencing
+/// labels and constants
+///
+/// *EBNF not given as it is too chonky, look at the docs folder for grammar*
+#[derive(Clone, Debug)]
+pub(crate) struct Immediate<'s> {
+	pub(crate) lhs: LogicOrImmediate<'s>,
+	pub(crate) rhs: Option<(LogicOrImmediate<'s>, LogicOrImmediate<'s>)>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct LogicOrImmediate<'s> {
+	pub(crate) lhs: LogicXorImmediate<'s>,
+	pub(crate) rhs: Option<LogicXorImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct LogicXorImmediate<'s> {
+	pub(crate) lhs: LogicAndImmediate<'s>,
+	pub(crate) rhs: Option<LogicAndImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct LogicAndImmediate<'s> {
+	pub(crate) lhs: OrImmediate<'s>,
+	pub(crate) rhs: Option<OrImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct OrImmediate<'s> {
+	pub(crate) lhs: XorImmediate<'s>,
+	pub(crate) rhs: Option<XorImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct XorImmediate<'s> {
+	pub(crate) lhs: AndImmediate<'s>,
+	pub(crate) rhs: Option<AndImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct AndImmediate<'s> {
+	pub(crate) lhs: EqImmediate<'s>,
+	pub(crate) rhs: Option<EqImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct EqImmediate<'s> {
+	pub(crate) lhs: OrdImmediate<'s>,
+	pub(crate) op:  Option<EqOp>,
+	pub(crate) rhs: Option<OrdImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct OrdImmediate<'s> {
+	pub(crate) lhs: ShiftImmediate<'s>,
+	pub(crate) op:  Option<OrdOp>,
+	pub(crate) rhs: Option<ShiftImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct ShiftImmediate<'s> {
+	pub(crate) lhs: AddSubImmediate<'s>,
+	pub(crate) op:  Option<ShiftOp>,
+	pub(crate) rhs: Option<AddSubImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct AddSubImmediate<'s> {
+	pub(crate) lhs: MulDivRemImmediate<'s>,
+	pub(crate) op:  Option<AddSubOp>,
+	pub(crate) rhs: Option<MulDivRemImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct MulDivRemImmediate<'s> {
+	pub(crate) lhs: UnaryImmediate<'s>,
+	pub(crate) op:  Option<MulDivRemOp>,
+	pub(crate) rhs: Option<UnaryImmediate<'s>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct UnaryImmediate<'s> {
+	pub(crate) op:  Option<UnaryOp>,
+	pub(crate) rhs: Operand<'s>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum Operand<'s> {
+	Label(&'s str),
+	LocalLabel(&'s str),
+	Number(isize),
+	Immediate(Box<Immediate<'s>>),
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct EqOp(OpToken);
+#[derive(Clone, Debug)]
+pub(crate) struct OrdOp(OpToken);
+#[derive(Clone, Debug)]
+pub(crate) struct ShiftOp(OpToken);
+#[derive(Clone, Debug)]
+pub(crate) struct AddSubOp(OpToken);
+#[derive(Clone, Debug)]
+pub(crate) struct MulDivRemOp(OpToken);
+#[derive(Clone, Debug)]
+pub(crate) struct UnaryOp(OpToken);
+
+impl<'s> From<&TokenType<'s>> for EqOp {
+	fn from(value: &TokenType<'s>) -> Self {
+		match value {
+			TokenType::Op(o @ OpToken::Eq) | TokenType::Op(o @ OpToken::Neq) => Self(*o),
+			_ => unimplemented!(),
+		}
+	}
+}
+
+impl Deref for EqOp {
+	type Target = OpToken;
+
+	fn deref(&self) -> &Self::Target { &self.0 }
+}
+
+impl<'s> From<&TokenType<'s>> for OrdOp {
+	fn from(value: &TokenType<'s>) -> Self {
+		match value {
+			TokenType::Op(o @ OpToken::Gt)
+			| TokenType::Op(o @ OpToken::Gte)
+			| TokenType::Op(o @ OpToken::Lt)
+			| TokenType::Op(o @ OpToken::Lte) => Self(*o),
+			_ => unimplemented!(),
+		}
+	}
+}
+
+impl Deref for OrdOp {
+	type Target = OpToken;
+
+	fn deref(&self) -> &Self::Target { &self.0 }
+}
+
+impl<'s> From<&TokenType<'s>> for ShiftOp {
+	fn from(value: &TokenType<'s>) -> Self {
+		match value {
+			TokenType::Op(o @ OpToken::Lsl)
+			| TokenType::Op(o @ OpToken::Lsr)
+			| TokenType::Op(o @ OpToken::Asr) => Self(*o),
+			_ => unimplemented!(),
+		}
+	}
+}
+
+impl Deref for ShiftOp {
+	type Target = OpToken;
+
+	fn deref(&self) -> &Self::Target { &self.0 }
+}
+
+impl<'s> From<&TokenType<'s>> for AddSubOp {
+	fn from(value: &TokenType<'s>) -> Self {
+		match value {
+			TokenType::Op(o @ OpToken::Plus) | TokenType::Op(o @ OpToken::Minus) => Self(*o),
+			_ => unimplemented!(),
+		}
+	}
+}
+
+impl Deref for AddSubOp {
+	type Target = OpToken;
+
+	fn deref(&self) -> &Self::Target { &self.0 }
+}
+
+impl<'s> From<&TokenType<'s>> for MulDivRemOp {
+	fn from(value: &TokenType<'s>) -> Self {
+		match value {
+			TokenType::Op(o @ OpToken::Mul)
+			| TokenType::Op(o @ OpToken::Div)
+			| TokenType::Op(o @ OpToken::Rem) => Self(*o),
+			_ => unimplemented!(),
+		}
+	}
+}
+
+impl Deref for MulDivRemOp {
+	type Target = OpToken;
+
+	fn deref(&self) -> &Self::Target { &self.0 }
+}
+
+impl<'s> From<&TokenType<'s>> for UnaryOp {
+	fn from(value: &TokenType<'s>) -> Self {
+		match value {
+			TokenType::Op(o @ OpToken::Plus)
+			| TokenType::Op(o @ OpToken::Minus)
+			| TokenType::Op(o @ OpToken::LogicNot)
+			| TokenType::Op(o @ OpToken::BitNot) => Self(*o),
+			_ => unimplemented!(),
+		}
+	}
+}
+
+impl Deref for UnaryOp {
+	type Target = OpToken;
+
+	fn deref(&self) -> &Self::Target { &self.0 }
+}
+
+// Display impls that flatten the deeply nested structur of [`Immediate`]s into
+// a (hopefully) easy to read string
+
+impl<'s> Display for Immediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(rhs) = &self.rhs {
+			write!(f, "({}) ? ({}) : ({})", self.lhs, rhs.0, rhs.1)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for LogicOrImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(rhs) = &self.rhs {
+			write!(f, "({} || {})", self.lhs, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for LogicXorImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(rhs) = &self.rhs {
+			write!(f, "({} ^^ {})", self.lhs, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for LogicAndImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(rhs) = &self.rhs {
+			write!(f, "({} && {})", self.lhs, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for OrImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(rhs) = &self.rhs {
+			write!(f, "({} | {})", self.lhs, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for XorImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(rhs) = &self.rhs {
+			write!(f, "({} ^ {})", self.lhs, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for AndImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(rhs) = &self.rhs {
+			write!(f, "({} & {})", self.lhs, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for EqImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(op) = &self.op
+			&& let Some (rhs) = &self.rhs
+		{
+			write!(f, "({} {} {})", self.lhs, op.0, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for OrdImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(op) = &self.op
+			&& let Some(rhs) = &self.rhs
+		{
+			write!(f, "({} {} {})", self.lhs, op.0, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for ShiftImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(op) = &self.op
+			&& let Some(rhs) = &self.rhs
+		{
+			write!(f, "({} {} {})", self.lhs, op.0, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for AddSubImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(op) = &self.op
+			&& let Some(rhs) = &self.rhs
+		{
+			write!(f, "({} {} {})", self.lhs, op.0, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for MulDivRemImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(op) = &self.op
+			&& let Some(rhs) = &self.rhs
+		{
+			write!(f, "({} {} {})", self.lhs, op.0, rhs)
+		} else {
+			write!(f, "{}", self.lhs)
+		}
+	}
+}
+
+impl<'s> Display for UnaryImmediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		if let Some(op) = &self.op {
+			write!(f, "{} ({})", op.deref(), self.rhs)
+		} else {
+			write!(f, "{}", self.rhs)
+		}
+	}
+}
+
+impl<'s> Display for Operand<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		match self {
+			Self::Label(l) => write!(f, "{}", l),
+			Self::LocalLabel(ll) => write!(f, "{}", ll),
+			Self::Number(n) => write!(f, "{}", n),
+			Self::Immediate(imm) => write!(f, "({})", imm),
+		}
+	}
+}

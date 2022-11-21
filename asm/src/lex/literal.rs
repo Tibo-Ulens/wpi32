@@ -1,4 +1,6 @@
-//! Lexer functions handling the recognition of:
+//! [`Lexer`] functions to process literals
+//!
+//! handles the recognition of:
 //!  - characters (for [`LitChar`](crate::lex::TokenType::LitChar))
 //!  - string (for [`LitStr`](crate::lex::TokenType::LitStr))
 //!  - numbers (for [`LitNum`](crate::lex::TokenType::LitNum))
@@ -19,7 +21,7 @@ impl<'s> Lexer<'s> {
 			"\\'" => Ok('\''),
 			_ => {
 				Err(LexError::InvalidEscape {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + 1,
 					span:     2,
@@ -70,7 +72,7 @@ impl<'s> Lexer<'s> {
 			Some(c) => c,
 			None => {
 				return Err(LexError::UnexpectedEof {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + 1,
 					src_line: self.get_curr_line().to_string(),
@@ -83,7 +85,7 @@ impl<'s> Lexer<'s> {
 				Some(c) => c,
 				None => {
 					return Err(LexError::UnexpectedEof {
-						src_file: self.source_file.to_owned(),
+						src_file: self.source_file.to_string(),
 						line:     self.line,
 						col:      self.col + 2,
 						src_line: self.get_curr_line().to_string(),
@@ -95,7 +97,7 @@ impl<'s> Lexer<'s> {
 				Some(c) => c,
 				None => {
 					return Err(LexError::UnexpectedEof {
-						src_file: self.source_file.to_owned(),
+						src_file: self.source_file.to_string(),
 						line:     self.line,
 						col:      self.col + 3,
 						src_line: self.get_curr_line().to_string(),
@@ -105,7 +107,7 @@ impl<'s> Lexer<'s> {
 
 			if close != '\'' {
 				return Err(LexError::UnexpectedSymbol {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + 3,
 					src_line: self.get_curr_line().to_string(),
@@ -124,7 +126,7 @@ impl<'s> Lexer<'s> {
 			Some(c) => c,
 			None => {
 				return Err(LexError::UnexpectedEof {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + 2,
 					src_line: self.get_curr_line().to_string(),
@@ -134,7 +136,7 @@ impl<'s> Lexer<'s> {
 
 		if close != '\'' {
 			return Err(LexError::UnexpectedSymbol {
-				src_file: self.source_file.to_owned(),
+				src_file: self.source_file.to_string(),
 				line:     self.line,
 				col:      self.col + 2,
 				src_line: self.get_curr_line().to_string(),
@@ -162,7 +164,7 @@ impl<'s> Lexer<'s> {
 			Some(c) => *c,
 			None => {
 				return Err(LexError::UnexpectedEof {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + 1,
 					src_line: self.get_curr_line().to_string(),
@@ -180,7 +182,7 @@ impl<'s> Lexer<'s> {
 
 			if self.idx >= self.len {
 				return Err(LexError::UnexpectedEof {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + i + 2,
 					src_line: self.get_curr_line().to_string(),
@@ -210,7 +212,7 @@ impl<'s> Lexer<'s> {
 	///
 	/// Can make decimal, hex, octal, or binary numbers depending on the
 	/// supplied predicate function
-	pub(super) fn try_take_number<F>(&mut self, pred: F) -> Result<u32, LexError>
+	pub(super) fn try_take_number<F>(&mut self, pred: F) -> Result<isize, LexError>
 	where
 		F: for<'a> Fn(&'a char) -> bool,
 	{
@@ -220,9 +222,9 @@ impl<'s> Lexer<'s> {
 		};
 
 		let num = if raw.starts_with("0x") {
-			u32::from_str_radix(raw.trim_start_matches("0x"), 16).map_err(|_| {
+			isize::from_str_radix(raw.trim_start_matches("0x"), 16).map_err(|_| {
 				LexError::InvalidNumber {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col,
 					span:     raw.len(),
@@ -230,9 +232,9 @@ impl<'s> Lexer<'s> {
 				}
 			})
 		} else if raw.starts_with("0o") {
-			u32::from_str_radix(raw.trim_start_matches("0o"), 8).map_err(|_| {
+			isize::from_str_radix(raw.trim_start_matches("0o"), 8).map_err(|_| {
 				LexError::InvalidNumber {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col,
 					span:     raw.len(),
@@ -240,9 +242,9 @@ impl<'s> Lexer<'s> {
 				}
 			})
 		} else if raw.starts_with("0b") {
-			u32::from_str_radix(raw.trim_start_matches("0b"), 2).map_err(|_| {
+			isize::from_str_radix(raw.trim_start_matches("0b"), 2).map_err(|_| {
 				LexError::InvalidNumber {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col,
 					span:     raw.len(),
@@ -250,9 +252,9 @@ impl<'s> Lexer<'s> {
 				}
 			})
 		} else {
-			raw.parse::<u32>().map_err(|_| {
+			raw.parse::<isize>().map_err(|_| {
 				LexError::InvalidNumber {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col,
 					span:     raw.len(),

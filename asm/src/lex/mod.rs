@@ -1,3 +1,23 @@
+//! # Lexer
+//!
+//! The lexer is responsible for converting the input text file from a raw
+//! string of characters into a stream of [`Token`]s that are easier to work
+//! with, as well as handling any possible escape sequences, whitespace, and
+//! (some) bracket matching, and recognizing lexicographical errors
+//!
+//! ### Usage
+//! ```rust
+//! let src_file_name = "/foo/bar/baz.asm";
+//! let src_file_path = PathBuf::from(&src_file_name);
+//!
+//! let mut file = File::open(src_file_path)?;
+//! let mut contents = String::new();
+//! file.read_to_string(&mut contents)?;
+//!
+//! let lexer = Lexer::new(&src_file_path_name, &contents);
+//! let tokens: Vec<Token> = lexer.into_iter().collect::<Result<Vec<Token>, Error>>()?;
+//! ```
+
 use std::iter::Peekable;
 use std::str::Chars;
 
@@ -7,13 +27,21 @@ mod token;
 mod util;
 
 use common::{Error, LexError};
-pub(crate) use token::{Token, TokenType};
+pub(crate) use token::*;
 
+/// Main Lexer type
+///
+/// Wraps all internal state during lexing and provides a namespace for all
+/// lexer-related functions
+///
+/// ### Lifetimes
+///  - `'s`: The lifetime of the reference to the source code string, needed as (most) tokens
+///    containing string literals will contain references instead of owned data
 pub(crate) struct Lexer<'s> {
-	source_file: String,
-	source:      &'s str,
-	source_iter: Peekable<Chars<'s>>,
-	len:         usize,
+	pub(crate) source_file: String,
+	source:                 &'s str,
+	source_iter:            Peekable<Chars<'s>>,
+	len:                    usize,
 
 	start: usize,
 	idx:   usize,
@@ -31,9 +59,9 @@ impl<'s> Iterator for Lexer<'s> {
 }
 
 impl<'s> Lexer<'s> {
-	pub(crate) fn new(source_file: String, source: &'s str) -> Self {
+	pub(crate) fn new(src_file: &str, source: &'s str) -> Self {
 		Self {
-			source_file,
+			source_file: src_file.to_string(),
 			source,
 			source_iter: source.chars().peekable(),
 			len: source.chars().count(),
@@ -45,16 +73,20 @@ impl<'s> Lexer<'s> {
 		}
 	}
 
-	/// Peek at the next character
+	/// Peek at the next [`char`]
+	///
+	/// Returns [`None`] if no characters are left
 	fn peek(&mut self) -> Option<&char> { self.source_iter.peek() }
 
-	/// Consume and return the next character
+	/// Consume and return the next [`char`]
+	///
+	/// Returns [`None`] if no characters are left
 	fn next(&mut self) -> Option<char> {
 		self.idx += 1;
 		self.source_iter.next()
 	}
 
-	/// Get the current working line of source code
+	/// Get a reference to the current working line of source code
 	fn get_curr_line(&self) -> &'s str {
 		let next_nl =
 			self.source[self.prev_nl..].find('\n').unwrap_or(self.source.len()) + self.prev_nl;
@@ -62,7 +94,7 @@ impl<'s> Lexer<'s> {
 		&self.source[self.prev_nl..=next_nl]
 	}
 
-	/// Make a token given the lexers current state
+	/// Make a [`Token`] given the [`Lexer`]s current state and a [`TokenType`]
 	fn make_token(&self, t: TokenType<'s>) -> Token<'s> {
 		Token {
 			t,
@@ -76,8 +108,8 @@ impl<'s> Lexer<'s> {
 	/// Keep taking characters while a predicate holds true
 	///
 	/// Returns the slice of characters that satisfied the predicate, from the
-	/// start of the current token up to the last character that satisfied the
-	/// predicate
+	/// start of the current token up to, and including, the last character
+	/// that satisfied the predicate
 	fn take_while<F>(&mut self, pred: F) -> Result<&'s str, LexError>
 	where
 		F: for<'a> Fn(&'a char) -> bool,
@@ -87,7 +119,7 @@ impl<'s> Lexer<'s> {
 			Some(p) => *p,
 			None => {
 				return Err(LexError::UnexpectedEof {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col,
 					src_line: self.get_curr_line().to_string(),
@@ -104,7 +136,7 @@ impl<'s> Lexer<'s> {
 
 			if self.idx >= self.len {
 				return Err(LexError::UnexpectedEof {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col + i,
 					src_line: self.get_curr_line().to_string(),
@@ -119,15 +151,16 @@ impl<'s> Lexer<'s> {
 		Ok(&self.source[self.start..self.idx])
 	}
 
-	/// Consume any available whitespace characters, updating the lexers state
-	/// as it goes along
+	/// Consume any available whitespace characters, updating the [`Lexer`]s
+	/// state as it goes along
 	///
-	/// Returns [`None`] if no characters are left in the source iterator
+	/// Returns [`None`] if no characters are left
 	fn take_whitespace(&mut self) -> Option<()> {
 		match self.peek()? {
 			' ' | '\t' => {
 				self.col += 1;
 
+				// Unwrap is safe as peek is some
 				self.next().unwrap();
 
 				self.take_whitespace()
@@ -136,9 +169,10 @@ impl<'s> Lexer<'s> {
 		}
 	}
 
-	/// Lex a single token
+	/// Lex a single [`Token`]
 	///
-	/// Returns [`None`] if the iterator has ended, else returns a [`Token`] or an [`Error`]
+	/// Returns [`None`] if the iterator has ended </br>
+	/// Returns [`Error`] if a lexical error was found
 	fn lex_token(&mut self) -> Option<Result<Token<'s>, Error>> {
 		// Consume any leading whitespace
 		self.take_whitespace()?;
@@ -174,20 +208,46 @@ impl<'s> Lexer<'s> {
 			')' => Ok(self.make_token(TokenType::SymRightParen)),
 			'[' => Ok(self.make_token(TokenType::SymLeftBracket)),
 			']' => Ok(self.make_token(TokenType::SymRightBracket)),
-			'|' => Ok(self.make_token(TokenType::OperatorOr)),
-			'^' => Ok(self.make_token(TokenType::OperatorXor)),
-			'&' => Ok(self.make_token(TokenType::OperatorAnd)),
-			'+' => Ok(self.make_token(TokenType::OperatorPlus)),
-			'-' => Ok(self.make_token(TokenType::OperatorMinus)),
-			'*' => Ok(self.make_token(TokenType::OperatorMul)),
-			'/' => Ok(self.make_token(TokenType::OperatorDiv)),
-			'%' => Ok(self.make_token(TokenType::OperatorRem)),
+			'?' => Ok(self.make_token(TokenType::Op(OpToken::TernStart))),
+			':' => Ok(self.make_token(TokenType::Op(OpToken::TernAlt))),
+			'|' => {
+				match self.peek()? {
+					'|' => {
+						self.next().unwrap(); // Unwrap is safe as peek is some
+						Ok(self.make_token(TokenType::Op(OpToken::LogicOr)))
+					},
+					_ => Ok(self.make_token(TokenType::Op(OpToken::BitOr))),
+				}
+			},
+			'^' => {
+				match self.peek()? {
+					'^' => {
+						self.next().unwrap(); // Unwrap is safe as peek is some
+						Ok(self.make_token(TokenType::Op(OpToken::LogicXor)))
+					},
+					_ => Ok(self.make_token(TokenType::Op(OpToken::BitXor))),
+				}
+			},
+			'&' => {
+				match self.peek()? {
+					'&' => {
+						self.next().unwrap(); // Unwrap is safe as peek is some
+						Ok(self.make_token(TokenType::Op(OpToken::LogicAnd)))
+					},
+					_ => Ok(self.make_token(TokenType::Op(OpToken::BitAnd))),
+				}
+			},
+			'+' => Ok(self.make_token(TokenType::Op(OpToken::Plus))),
+			'-' => Ok(self.make_token(TokenType::Op(OpToken::Minus))),
+			'*' => Ok(self.make_token(TokenType::Op(OpToken::Mul))),
+			'/' => Ok(self.make_token(TokenType::Op(OpToken::Div))),
+			'%' => Ok(self.make_token(TokenType::Op(OpToken::Rem))),
 			'=' => {
 				match self.next()? {
-					'=' => Ok(self.make_token(TokenType::OperatorEq)),
+					'=' => Ok(self.make_token(TokenType::Op(OpToken::Eq))),
 					c => {
 						Err(LexError::UnexpectedSymbol {
-							src_file: self.source_file.to_owned(),
+							src_file: self.source_file.to_string(),
 							line:     self.line,
 							col:      self.col,
 							src_line: self.get_curr_line().to_string(),
@@ -198,38 +258,33 @@ impl<'s> Lexer<'s> {
 				}
 			},
 			'!' => {
-				match self.next()? {
-					'=' => Ok(self.make_token(TokenType::OperatorNeq)),
-					c => {
-						Err(LexError::UnexpectedSymbol {
-							src_file: self.source_file.to_owned(),
-							line:     self.line,
-							col:      self.col,
-							src_line: self.get_curr_line().to_string(),
-							fnd:      c,
-							ex:       '=',
-						})
+				match self.peek()? {
+					'=' => {
+						self.next().unwrap(); // Unwrap is safe as peek is some
+						Ok(self.make_token(TokenType::Op(OpToken::Neq)))
 					},
+					_ => Ok(self.make_token(TokenType::Op(OpToken::LogicNot))),
 				}
 			},
+			'~' => Ok(self.make_token(TokenType::Op(OpToken::BitNot))),
 			'<' => {
 				match self.peek()? {
 					'=' => {
 						self.next()?;
-						Ok(self.make_token(TokenType::OperatorLte))
+						Ok(self.make_token(TokenType::Op(OpToken::Lte)))
 					},
 					'<' => {
 						self.next()?;
-						Ok(self.make_token(TokenType::OperatorLsl))
+						Ok(self.make_token(TokenType::Op(OpToken::Lsl)))
 					},
-					_ => Ok(self.make_token(TokenType::OperatorLt)),
+					_ => Ok(self.make_token(TokenType::Op(OpToken::Lt))),
 				}
 			},
 			'>' => {
 				match self.peek()? {
 					'=' => {
 						self.next()?;
-						Ok(self.make_token(TokenType::OperatorGte))
+						Ok(self.make_token(TokenType::Op(OpToken::Gte)))
 					},
 					'>' => {
 						self.next()?;
@@ -237,12 +292,12 @@ impl<'s> Lexer<'s> {
 						match self.peek()? {
 							'>' => {
 								self.next()?;
-								Ok(self.make_token(TokenType::OperatorAsr))
+								Ok(self.make_token(TokenType::Op(OpToken::Asr)))
 							},
-							_ => Ok(self.make_token(TokenType::OperatorLsr)),
+							_ => Ok(self.make_token(TokenType::Op(OpToken::Lsr))),
 						}
 					},
-					_ => Ok(self.make_token(TokenType::OperatorGt)),
+					_ => Ok(self.make_token(TokenType::Op(OpToken::Gt))),
 				}
 			},
 			'\'' => {
@@ -275,11 +330,11 @@ impl<'s> Lexer<'s> {
 					Err(e) => return Some(Err(e.into())),
 				};
 
-				Ok(self.match_identifier(raw))
+				self.match_identifier(raw)
 			},
 			c => {
 				Err(LexError::RawUnexpectedSymbol {
-					src_file: self.source_file.to_owned(),
+					src_file: self.source_file.to_string(),
 					line:     self.line,
 					col:      self.col,
 					src_line: self.get_curr_line().to_string(),

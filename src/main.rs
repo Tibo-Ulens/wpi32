@@ -48,8 +48,8 @@ fn run() -> Result<(), Error> {
 		let ext = input_path.extension().map_or("", |ext| ext.to_str().unwrap());
 		if ext != "wpibin" {
 			return Err(Error::WrongFileType {
-				found:    ext.to_owned(),
-				expected: "wpibin".to_owned(),
+				found:    ext.to_string(),
+				expected: "wpibin".to_string(),
 			});
 		}
 

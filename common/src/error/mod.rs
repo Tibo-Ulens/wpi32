@@ -1,9 +1,11 @@
 use std::fmt::{Display, Formatter};
 
 mod lex_error;
+mod parse_error;
 mod print;
 
 pub use lex_error::LexError;
+pub use parse_error::ParseError;
 pub(crate) use print::make_info_block;
 
 #[derive(Debug)]
@@ -11,6 +13,15 @@ pub enum Error {
 	WrongFileType { found: String, expected: String },
 	Io(std::io::Error),
 	Lex(LexError),
+	Parse(ParseError),
+}
+
+#[derive(Debug)]
+pub struct LocationInfo {
+	pub line:     usize,
+	pub col:      usize,
+	pub span:     usize,
+	pub src_line: String,
 }
 
 impl Display for Error {
@@ -25,6 +36,7 @@ impl Display for Error {
 			},
 			Self::Io(err) => write!(f, "{}", err),
 			Self::Lex(err) => write!(f, "{}", err),
+			Self::Parse(err) => write!(f, "{}", err),
 		}
 	}
 }
@@ -35,4 +47,8 @@ impl From<std::io::Error> for Error {
 
 impl From<LexError> for Error {
 	fn from(value: LexError) -> Self { Self::Lex(value) }
+}
+
+impl From<ParseError> for Error {
+	fn from(value: ParseError) -> Self { Self::Parse(value) }
 }
