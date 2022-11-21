@@ -406,11 +406,11 @@ impl<'s> Parser<'s> {
 			_ => None,
 		};
 
-		let close_peek = self.peek()?;
-		if close_peek.t != TokenType::SymRightBracket {
+		let close_token = self.next()?;
+		if close_token.t != TokenType::SymRightBracket {
 			return Err(ParseError::UnclosedParenthesis {
 				src_file:       self.source_file.to_string(),
-				close_location: Box::new(LocationInfo::from(close_peek)),
+				close_location: Box::new(LocationInfo::from(close_token)),
 				open_location:  Box::new(LocationInfo::from(open_peek)),
 			});
 		}
