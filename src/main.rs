@@ -11,6 +11,14 @@
 //!
 //! Custom assembler and emulator for the
 //! [RISC-V](https://en.wikipedia.org/wiki/RISC-V) CPU architecture
+//!
+//! TODO: Move file opening/reading logic into main function
+//! TODO: don't parse immediates recursively but determine order using
+//!       something like the shunting-yard algorithm
+//! TODO: consider nesting instruction (and maybe directive) token types
+//!       an extra level to shorten parser functions
+//! TODO: more detailed parser errors (maybe see if lexer errors can be
+//!       improved as well but i can't rlly think of anything)
 
 #![warn(missing_docs)]
 

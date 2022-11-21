@@ -11,13 +11,6 @@
 //!  - TODO: Label resolution: Resolve labels to their final value
 //!  - TODO: Fold constants: Calculate immediates at runtime
 //!  - TODO: Code generation: Output binary data
-//!
-//! TODO: don't parse immediates recursively but determine order using
-//!       something like the shunting-yard algorithm
-//! TODO: consider nesting instruction (and maybe directive) token types
-//!       an extra level to shorten parser functions
-//! TODO: more detailed parser errors (maybe see if lexer errors can be
-//!       improved as well but i can't rlly think of anything)
 
 #![warn(missing_docs)]
 #![feature(is_ascii_octdigit)]
