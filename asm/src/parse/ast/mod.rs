@@ -147,7 +147,7 @@ pub(crate) struct ConstDirective<'d> {
 /// Data directives can:
 ///  - define initialised data as bytes, halves, or words
 ///  - reserve a given number bytes, halves, or words
-///  - repeat any other [`DataDirective`] a given number of times
+///  - repeat any other [`DataDirective`] or [`Instruction`] a given number of times
 ///
 /// ```ebnf
 /// data_directive =
@@ -170,7 +170,13 @@ pub(crate) enum DataDirective<'d> {
 	ResHalves { data: Vec<Literal<'d>> },
 	ResWords { data: Vec<Literal<'d>> },
 
-	Repeat { amount: Literal<'d>, argument: Box<DataDirective<'d>> },
+	Repeat { amount: Literal<'d>, argument: Box<RepeatedData<'d>> },
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum RepeatedData<'r> {
+	Directive(DataDirective<'r>),
+	Instruction(Instruction<'r>),
 }
 
 /// A literal value

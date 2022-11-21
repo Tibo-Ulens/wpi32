@@ -26,15 +26,15 @@ use std::assert_matches::assert_matches;
 use common::{Error, LocationInfo, ParseError};
 
 pub(crate) mod ast;
+mod directive;
 mod display;
 mod immediate;
+mod instruction;
 
 pub(crate) use display::Node;
 
 use self::ast::{
 	ConstDirective,
-	DataDirective,
-	Instruction,
 	LabelId,
 	Line,
 	LineContent,
@@ -370,21 +370,4 @@ impl<'s> Parser<'s> {
 			},
 		}
 	}
-
-	/// Parse any of the following [`Directive`]s:
-	///  - [`#BYTES`](DirToken::Bytes)
-	///  - [`#HALVES`](DirToken::Halves)
-	///  - [`#WORDS`](DirToken::Words)
-	///  - [`#RES_BYTES`](DirToken::ResBytes)
-	///  - [`#RES_HALVES`](DirToken::ResHalves)
-	///  - [`#RES_WORDS`](DirToken::ResWords)
-	///  - [`#REPEAT`](DirToken::Repeat)
-	///
-	/// Assumes the current [`Token`] has [`TokenType`] [`TokenType::Dir`]
-	fn parse_datadirective<'r>(&'r mut self) -> Result<DataDirective<'s>, ParseError> { todo!() }
-
-	/// Parse any valid [`Instruction`]
-	///
-	/// Assumes the current [`Token`] has [`TokenType`] [`TokenType::Inst`]
-	fn parse_instruction<'r>(&'r mut self) -> Result<Instruction<'s>, ParseError> { todo!() }
 }

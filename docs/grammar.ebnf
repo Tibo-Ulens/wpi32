@@ -77,7 +77,7 @@ res_bytes_directive = "#RES_BYTES", number, { comma, number };
 res_halves_directive = "#RES_HALVES", number, { comma, number };
 res_words_directive = "#RES_WORDS", number, { comma, number };
 
-repeat_directive = "#REPEAT", immediate, [ data_directive | instruction ];
+repeat_directive = "#REPEAT", immediate, ( data_directive | instruction );
 const_directive = "#CONST", literal;
 
 literal = string | char | immediate;

@@ -15,6 +15,7 @@ use crate::parse::ast::{
 	OffsetOperator,
 	OrderingTarget,
 	PreambleLine,
+	RepeatedData,
 	Root,
 	Section,
 	Statement,
@@ -130,7 +131,11 @@ impl<'s> From<&Line<'s>> for Node {
 			});
 		}
 
-		Node { prefixes: vec![], repr: "Line".to_string(), children }
+		if children.is_empty() {
+			Node { prefixes: vec![], repr: "Empty".to_string(), children }
+		} else {
+			Node { prefixes: vec![], repr: "Line".to_string(), children }
+		}
 	}
 }
 
@@ -219,6 +224,15 @@ impl<'s> From<&DataDirective<'s>> for Node {
 					],
 				}
 			},
+		}
+	}
+}
+
+impl<'s> From<&RepeatedData<'s>> for Node {
+	fn from(value: &RepeatedData<'s>) -> Self {
+		match value {
+			RepeatedData::Directive(dir) => dir.into(),
+			RepeatedData::Instruction(inst) => inst.into(),
 		}
 	}
 }
