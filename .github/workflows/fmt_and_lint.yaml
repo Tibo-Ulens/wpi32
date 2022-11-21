@@ -1,8 +1,13 @@
 name: fmt-and-lint
+
 on:
     push:
         paths:
           - "**/*.rs"
+
+env:
+    CARGO_TERM_COLOR: always
+
 jobs:
     fmt-and-lint:
         runs-on: ubuntu-latest
