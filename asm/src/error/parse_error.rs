@@ -21,6 +21,10 @@ pub enum ParseError {
 		close_location: Box<LocationInfo>,
 		open_location:  Box<LocationInfo>,
 	},
+	UnmatchedCloseParenthesis {
+		src_file: String,
+		location: Box<LocationInfo>,
+	},
 	UnclosedBracket {
 		src_file:       String,
 		close_location: Box<LocationInfo>,
@@ -75,6 +79,16 @@ impl Display for ParseError {
 				);
 
 				format!("{}\n{}", err, origin)
+			},
+			Self::UnmatchedCloseParenthesis { src_file, location } => {
+				make_info_block(
+					"unmatched closing parenthesis",
+					src_file,
+					location.line,
+					location.col,
+					location.span,
+					&location.src_line,
+				)
 			},
 			Self::UnclosedBracket { src_file, close_location, open_location } => {
 				let err = make_info_block(

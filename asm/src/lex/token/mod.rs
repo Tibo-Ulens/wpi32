@@ -234,6 +234,8 @@ impl<'s> Debug for TokenType<'s> {
 			Self::Op(OpToken::Rem) => write!(f, "{:<20} | {:<16}", "OPERATOR", "%"),
 			Self::Op(OpToken::LogicNot) => write!(f, "{:<20} | {:<16}", "OPERATOR", "!"),
 			Self::Op(OpToken::BitNot) => write!(f, "{:<20} | {:<16}", "OPERATOR", "~"),
+			Self::Op(OpToken::UnaryMinus) => write!(f, "{:<20} | {:<16}", "OPERATOR", "-"),
+			Self::Op(OpToken::LeftParen) => write!(f, "{:<20} | {:<16}", "OPERATOR", "("),
 
 			Self::Comment(cmt) => write!(f, "{:<20} | {:<16}", "COMMENT", format!("{:?}", cmt)),
 		}
