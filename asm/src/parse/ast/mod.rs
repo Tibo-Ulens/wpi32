@@ -6,7 +6,7 @@
 //! about source code as compared to a stream of [`Token`](crate::lex::Token)s
 //! or a raw string
 
-#![allow(missing_docs)]
+// #![allow(missing_docs)]
 
 mod immediate;
 mod instruction;
@@ -23,7 +23,9 @@ pub use instruction::*;
 /// ```
 #[derive(Clone, Debug)]
 pub struct Root<'s> {
+	/// The preamble of the file (see [`PreambleLine`] for more info)
 	pub preamble: Vec<PreambleLine<'s>>,
+	/// All the sections of the file (see [`Section`] for more info)
 	pub sections: Vec<Section<'s>>,
 }
 
@@ -42,7 +44,9 @@ pub struct Root<'s> {
 /// ```
 #[derive(Clone, Debug)]
 pub struct PreambleLine<'s> {
+	/// The optional [`ConstDirective`] in this line
 	pub constdir: Option<ConstDirective<'s>>,
+	/// The optional comment in this line
 	pub comment:  Option<&'s str>,
 }
 
@@ -63,7 +67,9 @@ pub struct PreambleLine<'s> {
 /// ```
 #[derive(Clone, Debug)]
 pub struct Section<'s> {
+	/// The name of the section
 	pub name:  &'s str,
+	/// All the line of code within this section (see [`Line`] for more info)
 	pub lines: Vec<Line<'s>>,
 }
 
@@ -81,7 +87,9 @@ pub struct Section<'s> {
 /// ```
 #[derive(Clone, Debug)]
 pub struct Line<'s> {
+	/// The optional content in this line
 	pub content: Option<LineContent<'s>>,
+	/// The optional comment in this line
 	pub comment: Option<&'s str>,
 }
 
@@ -97,7 +105,14 @@ pub struct Line<'s> {
 /// ```
 #[derive(Clone, Debug)]
 pub enum LineContent<'s> {
-	LabeledStatement { label: LabelId<'s>, stmt: Option<Statement<'s>> },
+	/// An optional [`Statement`] prefixed with a [`Label`](LabelId)
+	LabeledStatement {
+		/// The [`Label`](LabelId) in this line
+		label: LabelId<'s>,
+		/// The optional [`Statement`] in this line
+		stmt:  Option<Statement<'s>>,
+	},
+	/// A [`Statement`] without any [`Label`](LabelId)
 	Statement(Statement<'s>),
 }
 
@@ -110,7 +125,9 @@ pub enum LineContent<'s> {
 /// ```
 #[derive(Clone, Debug)]
 pub enum Statement<'s> {
+	/// A directive
 	DataDirective(DataDirective<'s>),
+	/// An instruction
 	Instruction(Instruction<'s>),
 }
 
@@ -127,7 +144,9 @@ pub enum Statement<'s> {
 /// ```
 #[derive(Clone, Debug)]
 pub enum LabelId<'l> {
+	/// A global label definition
 	LabelDefine(&'l str),
+	/// A local label definition
 	LocalLabelDefine(&'l str),
 }
 
@@ -140,7 +159,9 @@ pub enum LabelId<'l> {
 /// ```
 #[derive(Clone, Debug)]
 pub struct ConstDirective<'d> {
+	/// The [`Label`](LabelId) defining the name of this constant
 	pub id:    LabelId<'d>,
+	/// The value of this constant
 	pub value: Literal<'d>,
 }
 
@@ -164,20 +185,36 @@ pub struct ConstDirective<'d> {
 
 #[derive(Clone, Debug)]
 pub enum DataDirective<'d> {
-	Bytes { data: Vec<Literal<'d>> },
-	Halves { data: Vec<Literal<'d>> },
-	Words { data: Vec<Literal<'d>> },
+	/// Encodes data as bytes
+	Bytes(Vec<Literal<'d>>),
+	/// Encodes data as halves
+	Halves(Vec<Literal<'d>>),
+	/// Encodes data as words
+	Words(Vec<Literal<'d>>),
 
-	ResBytes { data: Vec<Literal<'d>> },
-	ResHalves { data: Vec<Literal<'d>> },
-	ResWords { data: Vec<Literal<'d>> },
+	/// Reserve a given amount of bytes
+	ResBytes(Vec<Literal<'d>>),
+	/// Reserve a given amount of halves
+	ResHalves(Vec<Literal<'d>>),
+	/// Reserve a given amount of words
+	ResWords(Vec<Literal<'d>>),
 
-	Repeat { amount: Literal<'d>, argument: Box<RepeatedData<'d>> },
+	/// Repeat a given argument any amount of times
+	Repeat {
+		/// The amount of times to repeat the argument
+		amount:   Literal<'d>,
+		/// The data to repeat
+		argument: Box<RepeatedData<'d>>,
+	},
 }
 
+/// The data that can be repeated using a [repeat](DataDirective::Repeat)
+/// directive
 #[derive(Clone, Debug)]
 pub enum RepeatedData<'r> {
+	/// A directive that gets repeated
 	Directive(DataDirective<'r>),
+	/// An instruction that gets repeated
 	Instruction(Instruction<'r>),
 }
 
@@ -190,7 +227,10 @@ pub enum RepeatedData<'r> {
 /// ```
 #[derive(Clone, Debug)]
 pub enum Literal<'t> {
+	/// A string literal
 	String(&'t str),
+	/// A character literal
 	Char(char),
+	/// An immediate (a number, label, or arithmetic expression)
 	Immediate(Immediate<'t>),
 }

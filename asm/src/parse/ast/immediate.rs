@@ -12,6 +12,8 @@ use crate::lex::Token;
 /// *EBNF not given as it is too chonky, look at the docs folder for grammar*
 #[derive(Clone, Debug)]
 pub struct Immediate<'s> {
+	/// The tokens making up this immediate, parsed into
+	/// [Reverse Polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation)
 	pub rpn_tokens: Vec<Token<'s>>,
 }
 

@@ -111,7 +111,9 @@ pub enum Instruction<'s> {
 /// ```
 #[derive(Clone, Debug)]
 pub struct Address<'s> {
+	/// The base register of the address
 	pub base:   RegToken,
+	/// The optional offset to add to the base register
 	pub offset: Option<AddrOffset<'s>>,
 }
 
@@ -124,7 +126,9 @@ pub struct Address<'s> {
 /// ```
 #[derive(Clone, Debug)]
 pub struct AddrOffset<'s> {
+	/// The operator of the offset (+ or -)
 	pub op:     OffsetOperator,
+	/// The actual value of the offset
 	pub offset: Immediate<'s>,
 }
 
@@ -134,6 +138,7 @@ pub struct AddrOffset<'s> {
 ///
 /// See [`AddrOffset`] for grammar
 #[derive(Clone, Debug)]
+#[allow(missing_docs)]
 pub enum OffsetOperator {
 	Plus,
 	Minus,
@@ -165,9 +170,13 @@ bitflags! {
 	/// ordering_operation = [ "i" ], [ "o" ], [ "r" ], [ "w" ];
 	/// ```
 	pub struct OrderingTarget: u8 {
+		/// An input instruction
 		const I = 0b0000_0001;
+		/// An output instruction
 		const O = 0b0000_0010;
+		/// A memory read instruction
 		const R = 0b0000_0100;
+		/// A memory write instruction
 		const W = 0b0000_1000;
 	}
 }

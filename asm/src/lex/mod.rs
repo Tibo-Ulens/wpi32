@@ -39,17 +39,26 @@ use crate::error::{Error, LexError};
 ///  - `'s`: The lifetime of the reference to the source code string, needed as (most) tokens
 ///    containing string literals will contain references instead of owned data
 pub struct Lexer<'s> {
-	pub(crate) source_file: String,
+	/// The name of the file being parsed (used for error messages)
+	pub(crate) source_file: &'s str,
+	/// The string of source code (used for error messages)
 	source:                 &'s str,
+	/// An iterator over the characters of the source code
 	source_iter:            Peekable<Chars<'s>>,
+	/// The length of the source code (in [`char`]s)
 	len:                    usize,
 
+	/// The start of the current token
 	start: usize,
+	/// The current index into the source file
 	idx:   usize,
 
-	line: usize,
-	col:  usize,
+	/// The current line position of the lexer
+	pub line: usize,
+	/// The current column position of the lexer
+	pub col:  usize,
 
+	/// The index of the previous newline character (used for errors)
 	prev_nl: usize,
 }
 
@@ -61,9 +70,9 @@ impl<'s> Iterator for Lexer<'s> {
 
 impl<'s> Lexer<'s> {
 	/// Create a new lexer given a source file name and a string of source code
-	pub fn new(src_file: &str, source: &'s str) -> Self {
+	pub fn new(source_file: &'s str, source: &'s str) -> Self {
 		Self {
-			source_file: src_file.to_string(),
+			source_file,
 			source,
 			source_iter: source.chars().peekable(),
 			len: source.chars().count(),

@@ -396,7 +396,7 @@ impl<'s> Parser<'s> {
 		let offset = match &op_peek.t {
 			TokenType::Op(o @ OpToken::Plus | o @ OpToken::Minus) => {
 				// Take operator token
-				// Unwrap is safe as [`self.peek()`] is [`Some`]
+				// Unwrap is safe as peek is Ok
 				self.next().unwrap();
 
 				let offset = self.parse_immediate()?;

@@ -5,16 +5,12 @@ use super::Parser;
 use crate::error::{LocationInfo, ParseError};
 use crate::lex::{OpToken, Token, TokenType};
 
-// !!!
-//
-// THIS IS ALMOST CERTAINLY ONE OF THE LEAST EFFICIENT WAYS TO DO THIS
-// I ONLY DID IT LIKE THIS TO SIMPLIFY TRANSLATING THE GRAMMAR INTO CODE
-// (and so i don't need to implement the shunting-yard algorithm)
-//
-// !!!
-
+/// Parser specifically to convert immediates into RPN
 struct ImmediateParser<'i, 's> {
+	/// Reference to the top level parser, used to get the source file name
+	/// for errors
 	parser:    &'i Parser<'s>,
+	/// The token slice containing the immediate
 	imm_slice: &'i [Token<'s>],
 }
 
@@ -79,6 +75,8 @@ impl<'i, 's> ImmediateParser<'i, 's> {
 	/// Parse the slice of tokens into an immediate in reverse polish notation
 	///
 	/// TODO: this is quite ugly and can probably be cleaned up a bit
+	///
+	/// Assumes the immediate slice contains balanced parentheses
 	fn parse(&mut self) -> Result<Vec<Token<'s>>, ParseError> {
 		self.check_parens_balanced()?;
 
@@ -165,7 +163,9 @@ impl<'i, 's> ImmediateParser<'i, 's> {
 }
 
 impl<'s> Parser<'s> {
-	/// Recursively parse an immediate expresion
+	/// Parse an immediate expression into a list of tokens encoding the same
+	/// immediate but in
+	/// [Reverse Polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation)
 	pub(super) fn parse_immediate<'r>(&'r mut self) -> Result<Immediate<'s>, ParseError> {
 		let start = self.idx;
 		while let Ok(peek) = self.peek() {

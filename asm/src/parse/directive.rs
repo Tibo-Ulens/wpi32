@@ -24,27 +24,27 @@ impl<'s> Parser<'s> {
 		match &directive_token.t {
 			TokenType::Dir(DirToken::Bytes) => {
 				let data = self.parse_literal_list()?;
-				Ok(DataDirective::Bytes { data })
+				Ok(DataDirective::Bytes(data))
 			},
 			TokenType::Dir(DirToken::Halves) => {
 				let data = self.parse_literal_list()?;
-				Ok(DataDirective::Halves { data })
+				Ok(DataDirective::Halves(data))
 			},
 			TokenType::Dir(DirToken::Words) => {
 				let data = self.parse_literal_list()?;
-				Ok(DataDirective::Words { data })
+				Ok(DataDirective::Words(data))
 			},
 			TokenType::Dir(DirToken::ResBytes) => {
 				let data = self.parse_literal_list()?;
-				Ok(DataDirective::ResBytes { data })
+				Ok(DataDirective::ResBytes(data))
 			},
 			TokenType::Dir(DirToken::ResHalves) => {
 				let data = self.parse_literal_list()?;
-				Ok(DataDirective::ResHalves { data })
+				Ok(DataDirective::ResHalves(data))
 			},
 			TokenType::Dir(DirToken::ResWords) => {
 				let data = self.parse_literal_list()?;
-				Ok(DataDirective::ResWords { data })
+				Ok(DataDirective::ResWords(data))
 			},
 			TokenType::Dir(DirToken::Repeat) => self.parse_repeat_directive(),
 			_ => unreachable!(),
@@ -66,7 +66,7 @@ impl<'s> Parser<'s> {
 
 		// Keep looking for literals as long as a comma is found
 		while let Ok(peek) = self.peek() && peek.t == TokenType::SymComma {
-			// Unwrap is safe as [`self.peek()`] is [`Some`]
+			// Unwrap is safe as peek is Ok
 			self.next().unwrap();
 
 			let value = self.parse_literal()?;

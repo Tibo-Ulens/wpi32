@@ -172,42 +172,42 @@ impl<'s> From<&Statement<'s>> for Node {
 impl<'s> From<&DataDirective<'s>> for Node {
 	fn from(value: &DataDirective) -> Self {
 		match value {
-			DataDirective::Bytes { data } => {
+			DataDirective::Bytes(data) => {
 				Node {
 					prefixes: vec!["DataDirective".to_string()],
 					repr:     "Bytes".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			DataDirective::Halves { data } => {
+			DataDirective::Halves(data) => {
 				Node {
 					prefixes: vec!["DataDirective".to_string()],
 					repr:     "Halves".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			DataDirective::Words { data } => {
+			DataDirective::Words(data) => {
 				Node {
 					prefixes: vec!["DataDirective".to_string()],
 					repr:     "Words".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			DataDirective::ResBytes { data } => {
+			DataDirective::ResBytes(data) => {
 				Node {
 					prefixes: vec!["DataDirective".to_string()],
 					repr:     "ResBytes".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			DataDirective::ResHalves { data } => {
+			DataDirective::ResHalves(data) => {
 				Node {
 					prefixes: vec!["DataDirective".to_string()],
 					repr:     "ResHalves".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			DataDirective::ResWords { data } => {
+			DataDirective::ResWords(data) => {
 				Node {
 					prefixes: vec!["DataDirective".to_string()],
 					repr:     "ResWords".to_string(),

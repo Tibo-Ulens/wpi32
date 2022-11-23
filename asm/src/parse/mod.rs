@@ -54,18 +54,23 @@ use crate::lex::{DirToken, OpToken, Token, TokenType};
 /// ### Lifetimes
 ///  - `'s`: The lifetime of the reference to the source code string, needed as (most) tokens
 ///    containing string literals will contain references instead of owned data
+#[derive(Clone, Copy, Debug)]
 pub struct Parser<'s> {
+	/// The stream of lexemes
 	stream: &'s [Token<'s>],
 
-	source_file: String,
+	/// The name of the file being parsed (used for error messages)
+	source_file: &'s str,
+	/// The length of the token stream
 	len:         usize,
+	/// The current index into the token stream
 	idx:         usize,
 }
 
 impl<'s> Parser<'s> {
 	/// Create a new parser given a source file name and a stream of [`Token`]s
-	pub fn new(src_file: &str, stream: &'s [Token<'s>]) -> Self {
-		Self { stream, source_file: src_file.to_string(), len: stream.len(), idx: 0 }
+	pub fn new(source_file: &'s str, stream: &'s [Token<'s>]) -> Self {
+		Self { stream, source_file, len: stream.len(), idx: 0 }
 	}
 
 	/// Return the next token in the stream
@@ -164,7 +169,7 @@ impl<'s> Parser<'s> {
 		};
 
 		let comment = if let TokenType::Comment(c) = self.peek()?.t {
-			// Unwrap is safe as [`self.peek()`] is [`Some`]
+			// Unwrap is safe as peek is Ok
 			self.next().unwrap();
 			Some(c)
 		} else {
@@ -185,7 +190,7 @@ impl<'s> Parser<'s> {
 	/// [`TokenType::LabelDefine`] or [`TokenType::LocalLabelDefine`]
 	fn parse_constdir<'r>(&'r mut self) -> Result<ConstDirective<'s>, ParseError> {
 		// Consume the label definition
-		// Unwrap is safe as [`self.peek()`] is [`Some`]
+		// Unwrap is safe as peek is Ok
 		assert_matches!(
 			self.peek().unwrap().t,
 			TokenType::LabelDefine(_) | TokenType::LocalLabelDefine(_)
@@ -201,7 +206,7 @@ impl<'s> Parser<'s> {
 		let peek = self.peek()?;
 		match &peek.t {
 			TokenType::Dir(DirToken::Const) => {
-				// Unwrap is safe as [`self.peek()`] is [`Some`]
+				// Unwrap is safe as peek is Ok
 				self.next().unwrap();
 			},
 			_ => {
@@ -226,7 +231,7 @@ impl<'s> Parser<'s> {
 	fn parse_literal<'r>(&'r mut self) -> Result<Literal<'s>, ParseError> {
 		let peek = self.peek()?;
 
-		// Unwraps are safe as [`self.peek()`] is [`Some`]
+		// Unwrap is safe as peek is Ok
 		let lit = match &peek.t {
 			TokenType::LitStr(s) => {
 				self.next().unwrap();
@@ -262,14 +267,14 @@ impl<'s> Parser<'s> {
 	/// [`TokenType::Dir(DirToken::Section)`]
 	fn parse_section<'r>(&'r mut self) -> Result<Section<'s>, ParseError> {
 		// Consume the `#SECTION` directive token
-		// Unwrap is safe as [`self.peek()`] is [`Some`]
+		// Unwrap is safe as peek is Ok
 		assert_eq!(self.peek().unwrap().t, TokenType::Dir(DirToken::Section));
 		self.next().unwrap();
 
 		let peek = self.peek()?;
 		let name = match peek.t {
 			TokenType::Section(s) => {
-				// Unwrap is safe as [`self.peek()`] is [`Some`]
+				// Unwrap is safe as peek is Ok
 				self.next().unwrap();
 				s
 			},
@@ -315,7 +320,7 @@ impl<'s> Parser<'s> {
 		};
 
 		let comment = if let TokenType::Comment(c) = self.peek()?.t {
-			// Unwrap is safe as [`self.peek()`] is [`Some`]
+			// Unwrap is safe as peek is Ok
 			self.next().unwrap();
 			Some(c)
 		} else {
@@ -336,7 +341,7 @@ impl<'s> Parser<'s> {
 	/// [`TokenType::LabelDefine`] or [`TokenType::LocalLabelDefine`]
 	fn parse_labeled_statement<'r>(&'r mut self) -> Result<LineContent<'s>, ParseError> {
 		// Consume the label definition
-		// Unwrap is safe as [`self.peek()`] is [`Some`]
+		// Unwrap is safe as peek is Ok
 		let label_token = self.next().unwrap();
 		assert_matches!(label_token.t, TokenType::LabelDefine(_) | TokenType::LocalLabelDefine(_));
 

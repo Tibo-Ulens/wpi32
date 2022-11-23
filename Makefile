@@ -1,10 +1,10 @@
 .PHONY: r rr b br fmt lint
 
 b: fmt
-	cargo +nightly build
+	cargo +nightly build --workspace
 
 br: fmt
-	cargo +nightly build --release --package wpi32
+	cargo +nightly build --release --workspace
 
 fmt:
 	cargo +nightly fmt

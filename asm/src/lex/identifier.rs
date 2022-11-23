@@ -154,7 +154,7 @@ impl<'s> Lexer<'s> {
 					"#CONST" => Ok(self.make_token(TokenType::Dir(DirToken::Const))),
 					_ => {
 						Err(LexError::InvalidDirective {
-							src_file: self.source_file.clone(),
+							src_file: self.source_file.to_string(),
 							line:     self.line,
 							col:      self.col,
 							span:     d.len(),

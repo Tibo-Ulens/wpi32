@@ -21,8 +21,10 @@
 
 use std::path::PathBuf;
 
+use ansi_term::Colour::{Blue, Red, Yellow};
 use asm::error::Error as AssemblerError;
 use clap::{Arg, ArgAction, Command};
+use log::Level;
 use sim::error::Error as SimulatorError;
 
 mod error;
@@ -87,7 +89,17 @@ fn run() -> Result<(), Error> {
 
 fn main() {
 	fern::Dispatch::new()
-		.format(|out, msg, record| out.finish(format_args!("[{}] {}", record.level(), msg)))
+		.format(|out, msg, record| {
+			let repr = format!("{}", msg);
+			let repr = match record.level() {
+				Level::Error => Red.bold().paint(repr).to_string(),
+				Level::Warn => Yellow.bold().paint(repr).to_string(),
+				Level::Info => Blue.bold().paint(repr).to_string(),
+				_ => repr,
+			};
+
+			out.finish(format_args!("{}", repr))
+		})
 		.chain(std::io::stderr())
 		.level(log::LevelFilter::Debug)
 		.apply()

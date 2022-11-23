@@ -31,7 +31,6 @@ pub mod parse;
 use error::Error;
 use lex::{Lexer, Token};
 use parse::Parser;
-use ptree::print_tree;
 
 use crate::parse::Node;
 
@@ -45,17 +44,18 @@ pub fn assemble(input_path: &Path, _output_path: &Path) -> Result<(), Error> {
 	let mut contents = String::new();
 	file.read_to_string(&mut contents)?;
 
+	info!("Lexing file {}", &src_file);
 	let lexer = Lexer::new(&src_file, &contents);
 	let tokens: Vec<Token> = lexer.into_iter().collect::<Result<Vec<Token>, Error>>()?;
 
-	for token in &tokens {
-		debug!("{:?}", token);
-	}
+	debug!("Lexemes for file {}:", &src_file);
+	debug!("{}", tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join("\n"));
 
+	info!("Parsing file {}", &src_file);
 	let mut parser = Parser::new(&src_file, &tokens);
 	let ast_root = parser.parse()?;
 
-	let _ = print_tree(&Node::from(&ast_root));
+	debug!("{}", Node::from(&ast_root));
 
 	Ok(())
 }
