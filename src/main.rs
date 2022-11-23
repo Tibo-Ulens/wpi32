@@ -21,7 +21,7 @@ use std::path::PathBuf;
 
 use ansi_term::Colour::{Blue, Red, Yellow};
 use asm::error::Error as AssemblerError;
-use clap::{Arg, ArgAction, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use log::Level;
 use sim::error::Error as SimulatorError;
 
@@ -29,33 +29,7 @@ mod error;
 
 use error::Error;
 
-fn run() -> Result<(), Error> {
-	let matches = Command::new(env!("CARGO_PKG_NAME"))
-		.version(env!("CARGO_PKG_VERSION"))
-		.author(env!("CARGO_PKG_AUTHORS"))
-		.about(env!("CARGO_PKG_DESCRIPTION"))
-		.subcommand_required(true)
-		.subcommand(
-			Command::new("asm")
-				.about("Assemble a file into a binary")
-				.arg_required_else_help(true)
-				.arg(
-					Arg::new("output_file")
-						.help("The file to write the binary to")
-						.short('o')
-						.long("output")
-						.action(ArgAction::Set),
-				)
-				.arg(Arg::new("file").help("The file to assemble").index(1).required(true)),
-		)
-		.subcommand(
-			Command::new("sim")
-				.about("Simulte the execution of a binary file")
-				.arg_required_else_help(true)
-				.arg(Arg::new("file").help("The binary to simulate").index(1).required(true)),
-		)
-		.get_matches();
-
+fn run(matches: &ArgMatches) -> Result<(), Error> {
 	if let Some(m) = matches.subcommand_matches("asm") {
 		let input_path = m.get_one::<String>("file").map(PathBuf::from).unwrap();
 		let output_path_raw = m.get_one::<String>("output_file").map(PathBuf::from);
@@ -86,6 +60,41 @@ fn run() -> Result<(), Error> {
 }
 
 fn main() {
+	let matches = Command::new(env!("CARGO_PKG_NAME"))
+		.version(env!("CARGO_PKG_VERSION"))
+		.author(env!("CARGO_PKG_AUTHORS"))
+		.about(env!("CARGO_PKG_DESCRIPTION"))
+		.subcommand_required(true)
+		.arg(
+			Arg::new("verbosity")
+				.help("How verbose the output should be")
+				.short('v')
+				.long("verbose")
+				.action(ArgAction::Count),
+		)
+		.subcommand(
+			Command::new("asm")
+				.about("Assemble a file into a binary")
+				.arg_required_else_help(true)
+				.arg(
+					Arg::new("output_file")
+						.help("The file to write the binary to")
+						.short('o')
+						.long("output")
+						.action(ArgAction::Set),
+				)
+				.arg(Arg::new("file").help("The file to assemble").index(1).required(true)),
+		)
+		.subcommand(
+			Command::new("sim")
+				.about("Simulte the execution of a binary file")
+				.arg_required_else_help(true)
+				.arg(Arg::new("file").help("The binary to simulate").index(1).required(true)),
+		)
+		.get_matches();
+
+	let verbosity = matches.get_count("verbosity");
+
 	fern::Dispatch::new()
 		.format(|out, msg, record| {
 			let repr = format!("{}", msg);
@@ -99,14 +108,18 @@ fn main() {
 			out.finish(format_args!("{}", repr))
 		})
 		.chain(std::io::stderr())
-		.level(log::LevelFilter::Debug)
+		.level(match verbosity {
+			0 => log::LevelFilter::Warn,
+			1 => log::LevelFilter::Info,
+			_ => log::LevelFilter::Debug,
+		})
 		.apply()
 		.unwrap_or_else(|err| {
 			eprintln!("logger initialisation failed\n{:?}", err);
 			std::process::exit(1)
 		});
 
-	match run() {
+	match run(&matches) {
 		Ok(_) => (),
 		Err(e) => {
 			eprintln!("{}", e);
