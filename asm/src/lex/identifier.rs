@@ -9,7 +9,20 @@
 //!    [`TokenType::LabelDefine`], [`TokenType::LocalLabelDefine`])
 
 use super::token::{DirToken, InstToken, RegToken};
-use super::{Lexer, Token, TokenType};
+use super::{
+	BranchInstruction,
+	CsrInstruction,
+	CsriInstruction,
+	Lexer,
+	LoadInstruction,
+	MdrInstruction,
+	RegularDirective,
+	RriInstruction,
+	RrrInstruction,
+	StoreInstruction,
+	Token,
+	TokenType,
+};
 use crate::error::LexError;
 
 impl<'s> Lexer<'s> {
@@ -17,41 +30,53 @@ impl<'s> Lexer<'s> {
 	/// name, or directive, or return a new label if a match is not found
 	pub(super) fn match_identifier(&mut self, id: &'s str) -> Result<Token<'s>, LexError> {
 		match id {
-			"add" => Ok(self.make_token(TokenType::Inst(InstToken::Add))),
-			"addi" => Ok(self.make_token(TokenType::Inst(InstToken::Addi))),
-			"sub" => Ok(self.make_token(TokenType::Inst(InstToken::Sub))),
-			"and" => Ok(self.make_token(TokenType::Inst(InstToken::And))),
-			"andi" => Ok(self.make_token(TokenType::Inst(InstToken::Andi))),
-			"or" => Ok(self.make_token(TokenType::Inst(InstToken::Or))),
-			"ori" => Ok(self.make_token(TokenType::Inst(InstToken::Ori))),
-			"xor" => Ok(self.make_token(TokenType::Inst(InstToken::Xor))),
-			"xori" => Ok(self.make_token(TokenType::Inst(InstToken::Xori))),
-			"lsl" => Ok(self.make_token(TokenType::Inst(InstToken::Lsl))),
-			"lsli" => Ok(self.make_token(TokenType::Inst(InstToken::Lsli))),
-			"lsr" => Ok(self.make_token(TokenType::Inst(InstToken::Lsr))),
-			"lsri" => Ok(self.make_token(TokenType::Inst(InstToken::Lsri))),
-			"asr" => Ok(self.make_token(TokenType::Inst(InstToken::Asr))),
-			"asri" => Ok(self.make_token(TokenType::Inst(InstToken::Asri))),
-			"slt" => Ok(self.make_token(TokenType::Inst(InstToken::Slt))),
-			"slti" => Ok(self.make_token(TokenType::Inst(InstToken::Slti))),
-			"sltu" => Ok(self.make_token(TokenType::Inst(InstToken::Sltu))),
-			"sltiu" => Ok(self.make_token(TokenType::Inst(InstToken::Sltiu))),
-			"lw" => Ok(self.make_token(TokenType::Inst(InstToken::Lw))),
-			"lh" => Ok(self.make_token(TokenType::Inst(InstToken::Lh))),
-			"lhu" => Ok(self.make_token(TokenType::Inst(InstToken::Lhu))),
-			"lb" => Ok(self.make_token(TokenType::Inst(InstToken::Lb))),
-			"lbu" => Ok(self.make_token(TokenType::Inst(InstToken::Lbu))),
-			"sw" => Ok(self.make_token(TokenType::Inst(InstToken::Sw))),
-			"sh" => Ok(self.make_token(TokenType::Inst(InstToken::Sh))),
-			"sb" => Ok(self.make_token(TokenType::Inst(InstToken::Sb))),
+			"addi" => Ok(self.make_token(TokenType::Inst(InstToken::Rri(RriInstruction::Addi)))),
+			"andi" => Ok(self.make_token(TokenType::Inst(InstToken::Rri(RriInstruction::Andi)))),
+			"ori" => Ok(self.make_token(TokenType::Inst(InstToken::Rri(RriInstruction::Ori)))),
+			"xori" => Ok(self.make_token(TokenType::Inst(InstToken::Rri(RriInstruction::Xori)))),
+			"lsli" => Ok(self.make_token(TokenType::Inst(InstToken::Rri(RriInstruction::Lsli)))),
+			"lsri" => Ok(self.make_token(TokenType::Inst(InstToken::Rri(RriInstruction::Lsri)))),
+			"asri" => Ok(self.make_token(TokenType::Inst(InstToken::Rri(RriInstruction::Asri)))),
+			"slti" => Ok(self.make_token(TokenType::Inst(InstToken::Rri(RriInstruction::Slti)))),
+			"sltiu" => Ok(self.make_token(TokenType::Inst(InstToken::Rri(RriInstruction::Sltiu)))),
+			"add" => Ok(self.make_token(TokenType::Inst(InstToken::Rrr(RrrInstruction::Add)))),
+			"sub" => Ok(self.make_token(TokenType::Inst(InstToken::Rrr(RrrInstruction::Sub)))),
+			"and" => Ok(self.make_token(TokenType::Inst(InstToken::Rrr(RrrInstruction::And)))),
+			"or" => Ok(self.make_token(TokenType::Inst(InstToken::Rrr(RrrInstruction::Or)))),
+			"xor" => Ok(self.make_token(TokenType::Inst(InstToken::Rrr(RrrInstruction::Xor)))),
+			"lsl" => Ok(self.make_token(TokenType::Inst(InstToken::Rrr(RrrInstruction::Lsl)))),
+			"lsr" => Ok(self.make_token(TokenType::Inst(InstToken::Rrr(RrrInstruction::Lsr)))),
+			"asr" => Ok(self.make_token(TokenType::Inst(InstToken::Rrr(RrrInstruction::Asr)))),
+			"slt" => Ok(self.make_token(TokenType::Inst(InstToken::Rrr(RrrInstruction::Slt)))),
+			"sltu" => Ok(self.make_token(TokenType::Inst(InstToken::Rrr(RrrInstruction::Sltu)))),
+			"lw" => Ok(self.make_token(TokenType::Inst(InstToken::Load(LoadInstruction::Lw)))),
+			"lh" => Ok(self.make_token(TokenType::Inst(InstToken::Load(LoadInstruction::Lh)))),
+			"lhu" => Ok(self.make_token(TokenType::Inst(InstToken::Load(LoadInstruction::Lhu)))),
+			"lb" => Ok(self.make_token(TokenType::Inst(InstToken::Load(LoadInstruction::Lb)))),
+			"lbu" => Ok(self.make_token(TokenType::Inst(InstToken::Load(LoadInstruction::Lbu)))),
+			"sw" => Ok(self.make_token(TokenType::Inst(InstToken::Store(StoreInstruction::Sw)))),
+			"sh" => Ok(self.make_token(TokenType::Inst(InstToken::Store(StoreInstruction::Sh)))),
+			"sb" => Ok(self.make_token(TokenType::Inst(InstToken::Store(StoreInstruction::Sb)))),
 			"lui" => Ok(self.make_token(TokenType::Inst(InstToken::Lui))),
 			"auipc" => Ok(self.make_token(TokenType::Inst(InstToken::Auipc))),
-			"beq" => Ok(self.make_token(TokenType::Inst(InstToken::Beq))),
-			"bne" => Ok(self.make_token(TokenType::Inst(InstToken::Bne))),
-			"blt" => Ok(self.make_token(TokenType::Inst(InstToken::Blt))),
-			"bltu" => Ok(self.make_token(TokenType::Inst(InstToken::Bltu))),
-			"bge" => Ok(self.make_token(TokenType::Inst(InstToken::Bge))),
-			"bgeu" => Ok(self.make_token(TokenType::Inst(InstToken::Bgeu))),
+			"beq" => {
+				Ok(self.make_token(TokenType::Inst(InstToken::Branch(BranchInstruction::Beq))))
+			},
+			"bne" => {
+				Ok(self.make_token(TokenType::Inst(InstToken::Branch(BranchInstruction::Bne))))
+			},
+			"blt" => {
+				Ok(self.make_token(TokenType::Inst(InstToken::Branch(BranchInstruction::Blt))))
+			},
+			"bltu" => {
+				Ok(self.make_token(TokenType::Inst(InstToken::Branch(BranchInstruction::Bltu))))
+			},
+			"bge" => {
+				Ok(self.make_token(TokenType::Inst(InstToken::Branch(BranchInstruction::Bge))))
+			},
+			"bgeu" => {
+				Ok(self.make_token(TokenType::Inst(InstToken::Branch(BranchInstruction::Bgeu))))
+			},
 			"jal" => Ok(self.make_token(TokenType::Inst(InstToken::Jal))),
 			"jalr" => Ok(self.make_token(TokenType::Inst(InstToken::Jalr))),
 			"ecall" => Ok(self.make_token(TokenType::Inst(InstToken::Ecall))),
@@ -59,20 +84,28 @@ impl<'s> Lexer<'s> {
 			"fence" => Ok(self.make_token(TokenType::Inst(InstToken::Fence))),
 			"fence.tso" => Ok(self.make_token(TokenType::Inst(InstToken::FenceTso))),
 			"fence.i" => Ok(self.make_token(TokenType::Inst(InstToken::Fencei))),
-			"csrrw" => Ok(self.make_token(TokenType::Inst(InstToken::Csrrw))),
-			"csrrwi" => Ok(self.make_token(TokenType::Inst(InstToken::Csrrwi))),
-			"csrrs" => Ok(self.make_token(TokenType::Inst(InstToken::Csrrs))),
-			"csrrsi" => Ok(self.make_token(TokenType::Inst(InstToken::Csrrsi))),
-			"csrrc" => Ok(self.make_token(TokenType::Inst(InstToken::Csrrc))),
-			"csrrci" => Ok(self.make_token(TokenType::Inst(InstToken::Csrrci))),
-			"mul" => Ok(self.make_token(TokenType::Inst(InstToken::Mul))),
-			"mulh" => Ok(self.make_token(TokenType::Inst(InstToken::Mulh))),
-			"mulhu" => Ok(self.make_token(TokenType::Inst(InstToken::Mulhu))),
-			"mulhsu" => Ok(self.make_token(TokenType::Inst(InstToken::Mulhsu))),
-			"div" => Ok(self.make_token(TokenType::Inst(InstToken::Div))),
-			"divu" => Ok(self.make_token(TokenType::Inst(InstToken::Divu))),
-			"rem" => Ok(self.make_token(TokenType::Inst(InstToken::Rem))),
-			"remu" => Ok(self.make_token(TokenType::Inst(InstToken::Remu))),
+			"csrrw" => Ok(self.make_token(TokenType::Inst(InstToken::Csr(CsrInstruction::Csrrw)))),
+			"csrrs" => Ok(self.make_token(TokenType::Inst(InstToken::Csr(CsrInstruction::Csrrs)))),
+			"csrrc" => Ok(self.make_token(TokenType::Inst(InstToken::Csr(CsrInstruction::Csrrc)))),
+			"csrrwi" => {
+				Ok(self.make_token(TokenType::Inst(InstToken::Csri(CsriInstruction::Csrrwi))))
+			},
+			"csrrsi" => {
+				Ok(self.make_token(TokenType::Inst(InstToken::Csri(CsriInstruction::Csrrsi))))
+			},
+			"csrrci" => {
+				Ok(self.make_token(TokenType::Inst(InstToken::Csri(CsriInstruction::Csrrci))))
+			},
+			"mul" => Ok(self.make_token(TokenType::Inst(InstToken::Mdr(MdrInstruction::Mul)))),
+			"mulh" => Ok(self.make_token(TokenType::Inst(InstToken::Mdr(MdrInstruction::Mulh)))),
+			"mulhu" => Ok(self.make_token(TokenType::Inst(InstToken::Mdr(MdrInstruction::Mulhu)))),
+			"mulhsu" => {
+				Ok(self.make_token(TokenType::Inst(InstToken::Mdr(MdrInstruction::Mulhsu))))
+			},
+			"div" => Ok(self.make_token(TokenType::Inst(InstToken::Mdr(MdrInstruction::Div)))),
+			"divu" => Ok(self.make_token(TokenType::Inst(InstToken::Mdr(MdrInstruction::Divu)))),
+			"rem" => Ok(self.make_token(TokenType::Inst(InstToken::Mdr(MdrInstruction::Rem)))),
+			"remu" => Ok(self.make_token(TokenType::Inst(InstToken::Mdr(MdrInstruction::Remu)))),
 
 			"r0" => Ok(self.make_token(TokenType::Reg(RegToken::R0))),
 			"r1" => Ok(self.make_token(TokenType::Reg(RegToken::R1))),
@@ -144,12 +177,34 @@ impl<'s> Lexer<'s> {
 			d if d.starts_with('#') => {
 				match d {
 					"#SECTION" => Ok(self.make_token(TokenType::Dir(DirToken::Section))),
-					"#BYTES" => Ok(self.make_token(TokenType::Dir(DirToken::Bytes))),
-					"#HALVES" => Ok(self.make_token(TokenType::Dir(DirToken::Halves))),
-					"#WORDS" => Ok(self.make_token(TokenType::Dir(DirToken::Words))),
-					"#RES_BYTES" => Ok(self.make_token(TokenType::Dir(DirToken::ResBytes))),
-					"#RES_HALVES" => Ok(self.make_token(TokenType::Dir(DirToken::ResHalves))),
-					"#RES_WORDS" => Ok(self.make_token(TokenType::Dir(DirToken::ResWords))),
+					"#BYTES" => {
+						Ok(self
+							.make_token(TokenType::Dir(DirToken::Regular(RegularDirective::Bytes))))
+					},
+					"#HALVES" => {
+						Ok(self.make_token(TokenType::Dir(DirToken::Regular(
+							RegularDirective::Halves,
+						))))
+					},
+					"#WORDS" => {
+						Ok(self
+							.make_token(TokenType::Dir(DirToken::Regular(RegularDirective::Words))))
+					},
+					"#RES_BYTES" => {
+						Ok(self.make_token(TokenType::Dir(DirToken::Regular(
+							RegularDirective::ResBytes,
+						))))
+					},
+					"#RES_HALVES" => {
+						Ok(self.make_token(TokenType::Dir(DirToken::Regular(
+							RegularDirective::ResHalves,
+						))))
+					},
+					"#RES_WORDS" => {
+						Ok(self.make_token(TokenType::Dir(DirToken::Regular(
+							RegularDirective::ResWords,
+						))))
+					},
 					"#REPEAT" => Ok(self.make_token(TokenType::Dir(DirToken::Repeat))),
 					"#CONST" => Ok(self.make_token(TokenType::Dir(DirToken::Const))),
 					_ => {

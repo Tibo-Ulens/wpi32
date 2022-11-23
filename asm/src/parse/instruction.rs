@@ -3,7 +3,20 @@
 use super::ast::{AddrOffset, Address, Immediate, Instruction, OffsetOperator, OrderingTarget};
 use super::Parser;
 use crate::error::{LocationInfo, ParseError};
-use crate::lex::{InstToken, OpToken, RegToken, TokenType};
+use crate::lex::{
+	BranchInstruction,
+	CsrInstruction,
+	CsriInstruction,
+	InstToken,
+	LoadInstruction,
+	MdrInstruction,
+	OpToken,
+	RegToken,
+	RriInstruction,
+	RrrInstruction,
+	StoreInstruction,
+	TokenType,
+};
 
 impl<'s> Parser<'s> {
 	/// Parse any valid [`Instruction`]
@@ -15,103 +28,37 @@ impl<'s> Parser<'s> {
 		let instruction_token = self.next().unwrap();
 
 		match &instruction_token.t {
-			TokenType::Inst(InstToken::Addi) => {
+			TokenType::Inst(InstToken::Rri(rri_inst)) => {
 				let (dest, src, imm) = self.parse_rri()?;
 
-				Ok(Instruction::Addi { dest, src, imm })
+				match rri_inst {
+					RriInstruction::Addi => Ok(Instruction::Addi { dest, src, imm }),
+					RriInstruction::Andi => Ok(Instruction::Andi { dest, src, imm }),
+					RriInstruction::Ori => Ok(Instruction::Ori { dest, src, imm }),
+					RriInstruction::Xori => Ok(Instruction::Xori { dest, src, imm }),
+					RriInstruction::Lsli => Ok(Instruction::Lsli { dest, src, imm }),
+					RriInstruction::Lsri => Ok(Instruction::Lsri { dest, src, imm }),
+					RriInstruction::Asri => Ok(Instruction::Asri { dest, src, imm }),
+					RriInstruction::Slti => Ok(Instruction::Slti { dest, src, imm }),
+					RriInstruction::Sltiu => Ok(Instruction::Sltiu { dest, src, imm }),
+				}
 			},
-			TokenType::Inst(InstToken::Andi) => {
-				let (dest, src, imm) = self.parse_rri()?;
-
-				Ok(Instruction::Andi { dest, src, imm })
-			},
-			TokenType::Inst(InstToken::Ori) => {
-				let (dest, src, imm) = self.parse_rri()?;
-
-				Ok(Instruction::Ori { dest, src, imm })
-			},
-			TokenType::Inst(InstToken::Xori) => {
-				let (dest, src, imm) = self.parse_rri()?;
-
-				Ok(Instruction::Xori { dest, src, imm })
-			},
-			TokenType::Inst(InstToken::Lsli) => {
-				let (dest, src, imm) = self.parse_rri()?;
-
-				Ok(Instruction::Lsli { dest, src, imm })
-			},
-			TokenType::Inst(InstToken::Lsri) => {
-				let (dest, src, imm) = self.parse_rri()?;
-
-				Ok(Instruction::Lsri { dest, src, imm })
-			},
-			TokenType::Inst(InstToken::Asri) => {
-				let (dest, src, imm) = self.parse_rri()?;
-
-				Ok(Instruction::Asri { dest, src, imm })
-			},
-			TokenType::Inst(InstToken::Slti) => {
-				let (dest, src, imm) = self.parse_rri()?;
-
-				Ok(Instruction::Slti { dest, src, imm })
-			},
-			TokenType::Inst(InstToken::Sltiu) => {
-				let (dest, src, imm) = self.parse_rri()?;
-
-				Ok(Instruction::Sltiu { dest, src, imm })
-			},
-
-			TokenType::Inst(InstToken::Add) => {
+			TokenType::Inst(InstToken::Rrr(rrr_inst)) => {
 				let (dest, src1, src2) = self.parse_rrr()?;
 
-				Ok(Instruction::Add { dest, src1, src2 })
+				match rrr_inst {
+					RrrInstruction::Add => Ok(Instruction::Add { dest, src1, src2 }),
+					RrrInstruction::Sub => Ok(Instruction::Sub { dest, src1, src2 }),
+					RrrInstruction::And => Ok(Instruction::And { dest, src1, src2 }),
+					RrrInstruction::Or => Ok(Instruction::Or { dest, src1, src2 }),
+					RrrInstruction::Xor => Ok(Instruction::Xor { dest, src1, src2 }),
+					RrrInstruction::Lsl => Ok(Instruction::Lsl { dest, src1, src2 }),
+					RrrInstruction::Lsr => Ok(Instruction::Lsr { dest, src1, src2 }),
+					RrrInstruction::Asr => Ok(Instruction::Asr { dest, src1, src2 }),
+					RrrInstruction::Slt => Ok(Instruction::Slt { dest, src1, src2 }),
+					RrrInstruction::Sltu => Ok(Instruction::Sltu { dest, src1, src2 }),
+				}
 			},
-			TokenType::Inst(InstToken::Sub) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Sub { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::And) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::And { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::Or) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Or { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::Xor) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Xor { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::Lsl) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Lsl { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::Lsr) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Lsr { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::Asr) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Asr { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::Slt) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Slt { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::Sltu) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Sltu { dest, src1, src2 })
-			},
-
 			TokenType::Inst(InstToken::Lui) => {
 				let (dest, imm) = self.parse_ri()?;
 
@@ -122,7 +69,6 @@ impl<'s> Parser<'s> {
 
 				Ok(Instruction::Auipc { dest, imm })
 			},
-
 			TokenType::Inst(InstToken::Jal) => {
 				let (dest, offset) = self.parse_ri()?;
 
@@ -133,80 +79,38 @@ impl<'s> Parser<'s> {
 
 				Ok(Instruction::Jalr { dest, base, offset })
 			},
-
-			TokenType::Inst(InstToken::Beq) => {
+			TokenType::Inst(InstToken::Branch(b_inst)) => {
 				let (src1, src2, offset) = self.parse_rri()?;
 
-				Ok(Instruction::Beq { src1, src2, offset })
+				match b_inst {
+					BranchInstruction::Beq => Ok(Instruction::Beq { src1, src2, offset }),
+					BranchInstruction::Bne => Ok(Instruction::Bne { src1, src2, offset }),
+					BranchInstruction::Blt => Ok(Instruction::Blt { src1, src2, offset }),
+					BranchInstruction::Bltu => Ok(Instruction::Bltu { src1, src2, offset }),
+					BranchInstruction::Bge => Ok(Instruction::Bge { src1, src2, offset }),
+					BranchInstruction::Bgeu => Ok(Instruction::Bgeu { src1, src2, offset }),
+				}
 			},
-			TokenType::Inst(InstToken::Bne) => {
-				let (src1, src2, offset) = self.parse_rri()?;
-
-				Ok(Instruction::Bne { src1, src2, offset })
-			},
-			TokenType::Inst(InstToken::Blt) => {
-				let (src1, src2, offset) = self.parse_rri()?;
-
-				Ok(Instruction::Blt { src1, src2, offset })
-			},
-			TokenType::Inst(InstToken::Bltu) => {
-				let (src1, src2, offset) = self.parse_rri()?;
-
-				Ok(Instruction::Bltu { src1, src2, offset })
-			},
-			TokenType::Inst(InstToken::Bge) => {
-				let (src1, src2, offset) = self.parse_rri()?;
-
-				Ok(Instruction::Bge { src1, src2, offset })
-			},
-			TokenType::Inst(InstToken::Bgeu) => {
-				let (src1, src2, offset) = self.parse_rri()?;
-
-				Ok(Instruction::Bgeu { src1, src2, offset })
-			},
-
-			TokenType::Inst(InstToken::Lw) => {
+			TokenType::Inst(InstToken::Load(l_inst)) => {
 				let (dest, addr) = self.parse_ra()?;
 
-				Ok(Instruction::Lw { dest, addr })
+				match l_inst {
+					LoadInstruction::Lw => Ok(Instruction::Lw { dest, addr }),
+					LoadInstruction::Lh => Ok(Instruction::Lh { dest, addr }),
+					LoadInstruction::Lhu => Ok(Instruction::Lhu { dest, addr }),
+					LoadInstruction::Lb => Ok(Instruction::Lb { dest, addr }),
+					LoadInstruction::Lbu => Ok(Instruction::Lbu { dest, addr }),
+				}
 			},
-			TokenType::Inst(InstToken::Lh) => {
-				let (dest, addr) = self.parse_ra()?;
-
-				Ok(Instruction::Lh { dest, addr })
-			},
-			TokenType::Inst(InstToken::Lhu) => {
-				let (dest, addr) = self.parse_ra()?;
-
-				Ok(Instruction::Lhu { dest, addr })
-			},
-			TokenType::Inst(InstToken::Lb) => {
-				let (dest, addr) = self.parse_ra()?;
-
-				Ok(Instruction::Lb { dest, addr })
-			},
-			TokenType::Inst(InstToken::Lbu) => {
-				let (dest, addr) = self.parse_ra()?;
-
-				Ok(Instruction::Lbu { dest, addr })
-			},
-
-			TokenType::Inst(InstToken::Sw) => {
+			TokenType::Inst(InstToken::Store(s_inst)) => {
 				let (dest, src) = self.parse_ar()?;
 
-				Ok(Instruction::Sw { dest, src })
+				match s_inst {
+					StoreInstruction::Sw => Ok(Instruction::Sw { dest, src }),
+					StoreInstruction::Sh => Ok(Instruction::Sh { dest, src }),
+					StoreInstruction::Sb => Ok(Instruction::Sb { dest, src }),
+				}
 			},
-			TokenType::Inst(InstToken::Sh) => {
-				let (dest, src) = self.parse_ar()?;
-
-				Ok(Instruction::Sh { dest, src })
-			},
-			TokenType::Inst(InstToken::Sb) => {
-				let (dest, src) = self.parse_ar()?;
-
-				Ok(Instruction::Sb { dest, src })
-			},
-
 			TokenType::Inst(InstToken::Fence) => {
 				let (pred, succ) = self.parse_oo()?;
 
@@ -217,85 +121,40 @@ impl<'s> Parser<'s> {
 
 				Ok(Instruction::FenceTso { pred, succ })
 			},
-
 			TokenType::Inst(InstToken::Ecall) => Ok(Instruction::Ecall),
 			TokenType::Inst(InstToken::Ebreak) => Ok(Instruction::Ebreak),
-
 			TokenType::Inst(InstToken::Fencei) => Ok(Instruction::Fencei),
-
-			TokenType::Inst(InstToken::Csrrw) => {
+			TokenType::Inst(InstToken::Csr(csr_inst)) => {
 				let (dest, src, target) = self.parse_rri()?;
 
-				Ok(Instruction::Csrrw { dest, src, target })
+				match csr_inst {
+					CsrInstruction::Csrrw => Ok(Instruction::Csrrw { dest, src, target }),
+					CsrInstruction::Csrrs => Ok(Instruction::Csrrs { dest, src, target }),
+					CsrInstruction::Csrrc => Ok(Instruction::Csrrc { dest, src, target }),
+				}
 			},
-			TokenType::Inst(InstToken::Csrrs) => {
-				let (dest, src, target) = self.parse_rri()?;
-
-				Ok(Instruction::Csrrs { dest, src, target })
-			},
-			TokenType::Inst(InstToken::Csrrc) => {
-				let (dest, src, target) = self.parse_rri()?;
-
-				Ok(Instruction::Csrrc { dest, src, target })
-			},
-
-			TokenType::Inst(InstToken::Csrrwi) => {
+			TokenType::Inst(InstToken::Csri(csri_inst)) => {
 				let (dest, src, target) = self.parse_rii()?;
 
-				Ok(Instruction::Csrrwi { dest, src, target })
+				match csri_inst {
+					CsriInstruction::Csrrwi => Ok(Instruction::Csrrwi { dest, src, target }),
+					CsriInstruction::Csrrsi => Ok(Instruction::Csrrsi { dest, src, target }),
+					CsriInstruction::Csrrci => Ok(Instruction::Csrrci { dest, src, target }),
+				}
 			},
-			TokenType::Inst(InstToken::Csrrsi) => {
-				let (dest, src, target) = self.parse_rii()?;
-
-				Ok(Instruction::Csrrsi { dest, src, target })
-			},
-			TokenType::Inst(InstToken::Csrrci) => {
-				let (dest, src, target) = self.parse_rii()?;
-
-				Ok(Instruction::Csrrci { dest, src, target })
-			},
-
-			TokenType::Inst(InstToken::Mul) => {
+			TokenType::Inst(InstToken::Mdr(mdr_inst)) => {
 				let (dest, src1, src2) = self.parse_rrr()?;
 
-				Ok(Instruction::Mul { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::Mulh) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Mulh { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::Mulhu) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Mulhu { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::Mulhsu) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Mulhsu { dest, src1, src2 })
-			},
-
-			TokenType::Inst(InstToken::Div) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Div { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::Divu) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Divu { dest, src1, src2 })
-			},
-
-			TokenType::Inst(InstToken::Rem) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Rem { dest, src1, src2 })
-			},
-			TokenType::Inst(InstToken::Remu) => {
-				let (dest, src1, src2) = self.parse_rrr()?;
-
-				Ok(Instruction::Remu { dest, src1, src2 })
+				match mdr_inst {
+					MdrInstruction::Mul => Ok(Instruction::Mul { dest, src1, src2 }),
+					MdrInstruction::Mulh => Ok(Instruction::Mulh { dest, src1, src2 }),
+					MdrInstruction::Mulhu => Ok(Instruction::Mulhu { dest, src1, src2 }),
+					MdrInstruction::Mulhsu => Ok(Instruction::Mulhsu { dest, src1, src2 }),
+					MdrInstruction::Div => Ok(Instruction::Div { dest, src1, src2 }),
+					MdrInstruction::Divu => Ok(Instruction::Divu { dest, src1, src2 }),
+					MdrInstruction::Rem => Ok(Instruction::Rem { dest, src1, src2 }),
+					MdrInstruction::Remu => Ok(Instruction::Remu { dest, src1, src2 }),
+				}
 			},
 
 			_ => unreachable!(),

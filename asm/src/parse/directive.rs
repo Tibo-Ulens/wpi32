@@ -3,7 +3,7 @@
 use super::ast::{DataDirective, Literal, RepeatedData};
 use super::Parser;
 use crate::error::{LocationInfo, ParseError};
-use crate::lex::{DirToken, TokenType};
+use crate::lex::{DirToken, RegularDirective, TokenType};
 
 impl<'s> Parser<'s> {
 	/// Parse any of the following [`DataDirective`]s:
@@ -22,29 +22,17 @@ impl<'s> Parser<'s> {
 		let directive_token = self.next().unwrap();
 
 		match &directive_token.t {
-			TokenType::Dir(DirToken::Bytes) => {
+			TokenType::Dir(DirToken::Regular(dir)) => {
 				let data = self.parse_literal_list()?;
-				Ok(DataDirective::Bytes(data))
-			},
-			TokenType::Dir(DirToken::Halves) => {
-				let data = self.parse_literal_list()?;
-				Ok(DataDirective::Halves(data))
-			},
-			TokenType::Dir(DirToken::Words) => {
-				let data = self.parse_literal_list()?;
-				Ok(DataDirective::Words(data))
-			},
-			TokenType::Dir(DirToken::ResBytes) => {
-				let data = self.parse_literal_list()?;
-				Ok(DataDirective::ResBytes(data))
-			},
-			TokenType::Dir(DirToken::ResHalves) => {
-				let data = self.parse_literal_list()?;
-				Ok(DataDirective::ResHalves(data))
-			},
-			TokenType::Dir(DirToken::ResWords) => {
-				let data = self.parse_literal_list()?;
-				Ok(DataDirective::ResWords(data))
+
+				match dir {
+					RegularDirective::Bytes => Ok(DataDirective::Bytes(data)),
+					RegularDirective::Halves => Ok(DataDirective::Halves(data)),
+					RegularDirective::Words => Ok(DataDirective::Words(data)),
+					RegularDirective::ResBytes => Ok(DataDirective::ResBytes(data)),
+					RegularDirective::ResHalves => Ok(DataDirective::ResHalves(data)),
+					RegularDirective::ResWords => Ok(DataDirective::ResWords(data)),
+				}
 			},
 			TokenType::Dir(DirToken::Repeat) => self.parse_repeat_directive(),
 			_ => unreachable!(),

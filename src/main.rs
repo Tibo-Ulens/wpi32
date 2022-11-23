@@ -12,8 +12,6 @@
 //! Custom assembler and emulator for the
 //! [RISC-V](https://en.wikipedia.org/wiki/RISC-V) CPU architecture
 //!
-//! TODO: consider nesting instruction (and maybe directive) token types
-//!       an extra level to shorten parser functions
 //! TODO: more detailed parser errors (maybe see if lexer errors can be
 //!       improved as well but i can't rlly think of anything)
 
