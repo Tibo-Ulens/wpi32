@@ -12,6 +12,8 @@
 //! Custom assembler and emulator for the
 //! [RISC-V](https://en.wikipedia.org/wiki/RISC-V) CPU architecture
 //!
+//! TODO: **!!! T E S T S !!!**
+//!
 //! TODO: more detailed parser errors (maybe see if lexer errors can be
 //!       improved as well but i can't rlly think of anything)
 
