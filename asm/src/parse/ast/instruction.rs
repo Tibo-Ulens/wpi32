@@ -137,7 +137,7 @@ pub struct AddrOffset<'s> {
 /// Can be either "+" or "-"
 ///
 /// See [`AddrOffset`] for grammar
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 #[allow(missing_docs)]
 pub enum OffsetOperator {
 	Plus,
