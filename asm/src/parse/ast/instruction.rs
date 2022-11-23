@@ -119,7 +119,7 @@ pub struct Address<'s> {
 
 /// An offset for a specific [`Address`]
 ///
-/// Contains an [operator](OffsetOperator) and some (offset)[Immediate}]
+/// Contains an [operator](OffsetOperator) and some [offset](Immediate)
 ///
 /// ```ebnf
 /// address_offset = "+" | "-", immediate;
