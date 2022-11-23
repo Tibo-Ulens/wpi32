@@ -9,6 +9,7 @@
 //!    structured representation called an Abstract Syntax Tree (AST) (see [parse::ast])
 //!
 //!  - TODO: Label resolution: Resolve labels to their final value
+//!          ^^^^^^^^^^^^^^^^ CHECK IF LINKER CAN DO THIS
 //!  - TODO: Fold constants: Calculate immediates at runtime
 //!  - TODO: Code generation: Output binary data
 
