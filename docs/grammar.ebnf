@@ -26,13 +26,8 @@ hex_number = "0x", ?r"[a-fA-F0-9]+"?;
 octal_number = "0o", ?r"[0-7]+"?;
 binary_number = "0b", ?r"[0-1]+"?;
 
-identifier_initial = ?r"[a-zA-Z!$&?^_~@?]"?;
-identifier_subsequent = identifier_initial | ?r"0-9"?;
-
-label = identifier_initial, { identifier_subsequent };
-label_define = label, ":";
-local_label = ".", label;
-local_label_define = local_label, ":";
+identifier = ?XID_START?, { ?XID_CONTINUE? };
+identifier_or_keyword = identifier | instruction_kw | directive_kw;
 
 (* Syntactical grammar *)
 
@@ -42,7 +37,7 @@ section = section_header, { line };
 
 preamble_line =
 	{ whitespace },
-	[ label_id, const_directive ],
+	[ macro_call ],
 	[ comment ],
 	newline;
 
@@ -55,19 +50,48 @@ line =
 	[ comment ],
 	newline;
 
-line_content = labeled_statement | statement;
-labeled_statement = label_id, [ const_directive | statement ];
-label_id = label_define | local_label_define;
-statement = data_directive | instruction;
+line_content = [ label ], statement;
+statement =
+	macro_definition
+	| macro_call
+	| labeled_block
+	| directive
+	| instruction;
 
-data_directive =
+macro_definiton =
+	"define_macro", "!",
+	identifier,
+	macro_body;
+macro_body =
+	( "(", { macro_rules }, ")" )
+	| ( "[", { macro_rules }, "]" )
+	| ( "{", { macro_rules }, "}" );
+
+macro_rules = macro_rule, { comma, macro_rule }, [ comma ];
+macro_rule = macro_matcher, "=>", macro_transcriber;
+
+macro_matcher = "(", { macro_match } ")";
+macro_match =
+	?token?
+	| ( "$", identifier_or_keyword, ":", macro_match_type )
+	| ( "$", "(", ( macro_match, { macro_match } ), ")", macro_rep_op );
+macro_match_type = "inst", "reg", "dir", "ident", "imm", "stmt";
+macro_rep_op = "?" | "+" | "*";
+
+macro_transcriber =
+	( "(", { statement }, ")" )
+	| ( "[", { statement }, "]" )
+	| ( "{", { statement }, "}" );
+
+labeled_block = identifier, "{", { line }, "}";
+
+directive =
 	bytes_directive,
 	halves_directive
 	words_directive,
 	res_bytes_directive,
 	res_halves_directive,
-	res_words_directive,
-	repeat_directive;
+	res_words_directive;
 
 bytes_directive = "#BYTES", literal, { comma, literal };
 halves_directive = "#HALVES", literal, { comma, literal };
@@ -76,9 +100,6 @@ words_directive = "#WORDS", literal, { comma, literal };
 res_bytes_directive = "#RES_BYTES", number, { comma, number };
 res_halves_directive = "#RES_HALVES", number, { comma, number };
 res_words_directive = "#RES_WORDS", number, { comma, number };
-
-repeat_directive = "#REPEAT", immediate, ( data_directive | instruction );
-const_directive = "#CONST", literal;
 
 literal = string | char | immediate;
 
