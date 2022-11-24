@@ -20,6 +20,8 @@ pub enum OpToken {
 	Question,
 	/// `:`
 	Colon,
+	/// `$`
+	Dollar,
 	/// `||`
 	LogicOr,
 	/// `^^`
@@ -66,6 +68,7 @@ pub enum OpToken {
 impl Display for OpToken {
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
 		match self {
+			Self::Dollar => write!(f, "$"),
 			Self::Question => write!(f, "?"),
 			Self::Colon => write!(f, ":"),
 			Self::LogicOr => write!(f, "||"),
@@ -97,6 +100,26 @@ impl Display for OpToken {
 }
 
 impl OpToken {
+	/// Check if this token is an arithmetic/logic operator
+	pub(crate) fn is_al_operator(&self) -> bool {
+		matches!(
+			self,
+			Self::Question
+				| Self::Colon | Self::LogicOr
+				| Self::LogicXor | Self::LogicAnd
+				| Self::BitOr | Self::BitXor
+				| Self::BitAnd | Self::Eq
+				| Self::Neq | Self::Lt
+				| Self::Lte | Self::Gt
+				| Self::Gte | Self::Lsl
+				| Self::Lsr | Self::Asr
+				| Self::Plus | Self::Minus
+				| Self::Star | Self::Slash
+				| Self::Percent | Self::Exclamation
+				| Self::BitNot
+		)
+	}
+
 	/// Check if this token is right associative or not
 	pub(crate) fn is_right_associative(&self) -> bool {
 		matches!(self, Self::UnaryMinus | Self::Question | Self::Colon)
@@ -133,7 +156,7 @@ impl OpToken {
 			Self::BitNot => 12,
 			Self::UnaryMinus => 12,
 
-			Self::LeftParen => 0,
+			_ => unreachable!(),
 		}
 	}
 }
