@@ -87,7 +87,7 @@ impl<'i, 's> ImmediateParser<'i, 's> {
 
 		for &token in self.imm_slice {
 			match &token.t {
-				TokenType::LitNum(_) | TokenType::Label(_) | TokenType::LocalLabel(_) => {
+				TokenType::LitNum(_) | TokenType::Identifier(_) => {
 					prev_was_operator = false;
 					rpn_stack.push(token);
 				},
@@ -114,7 +114,7 @@ impl<'i, 's> ImmediateParser<'i, 's> {
 
 					prev_was_operator = false;
 				},
-				TokenType::Op(mut operator) => {
+				TokenType::Op(mut operator) if operator.is_al_operator() => {
 					if prev_was_operator && operator == OpToken::Minus {
 						operator = OpToken::UnaryMinus;
 					}
@@ -171,8 +171,7 @@ impl<'s> Parser<'s> {
 		while let Ok(peek) = self.peek() {
 			match &peek.t {
 				TokenType::LitNum(_)
-				| TokenType::Label(_)
-				| TokenType::LocalLabel(_)
+				| TokenType::Identifier(_)
 				| TokenType::SymLeftParen
 				| TokenType::SymRightParen
 				| TokenType::Op(_) => {
