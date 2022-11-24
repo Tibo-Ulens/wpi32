@@ -198,24 +198,6 @@ pub enum DataDirective<'d> {
 	ResHalves(Vec<Literal<'d>>),
 	/// Reserve a given amount of words
 	ResWords(Vec<Literal<'d>>),
-
-	/// Repeat a given argument any amount of times
-	Repeat {
-		/// The amount of times to repeat the argument
-		amount:   Literal<'d>,
-		/// The data to repeat
-		argument: Box<RepeatedData<'d>>,
-	},
-}
-
-/// The data that can be repeated using a [repeat](DataDirective::Repeat)
-/// directive
-#[derive(Clone, Debug)]
-pub enum RepeatedData<'r> {
-	/// A directive that gets repeated
-	Directive(DataDirective<'r>),
-	/// An instruction that gets repeated
-	Instruction(Instruction<'r>),
 }
 
 /// A literal value
