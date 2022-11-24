@@ -205,8 +205,6 @@ impl<'s> Lexer<'s> {
 							RegularDirective::ResWords,
 						))))
 					},
-					"#REPEAT" => Ok(self.make_token(TokenType::Dir(DirToken::Repeat))),
-					"#CONST" => Ok(self.make_token(TokenType::Dir(DirToken::Const))),
 					_ => {
 						Err(LexError::InvalidDirective {
 							src_file: self.source_file.to_string(),
@@ -224,19 +222,7 @@ impl<'s> Lexer<'s> {
 			".DATA" => Ok(self.make_token(TokenType::Section(id))),
 			".BSS" => Ok(self.make_token(TokenType::Section(id))),
 
-			_ => {
-				if id.starts_with('.') {
-					if let Some(stripped) = id.strip_suffix(':') {
-						Ok(self.make_token(TokenType::LocalLabelDefine(stripped)))
-					} else {
-						Ok(self.make_token(TokenType::LocalLabel(id)))
-					}
-				} else if let Some(stripped) = id.strip_suffix(':') {
-					Ok(self.make_token(TokenType::LabelDefine(stripped)))
-				} else {
-					Ok(self.make_token(TokenType::Label(id)))
-				}
-			},
+			_ => Ok(self.make_token(TokenType::Identifier(id))),
 		}
 	}
 }

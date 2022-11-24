@@ -23,7 +23,6 @@ pub use register::*;
 ///  - `'s`: The lifetime of the reference to the source code string, needed to store any potential
 ///    string references in identifiers
 #[derive(Clone, Copy, PartialEq, Eq)]
-#[allow(missing_docs)]
 pub enum TokenType<'s> {
 	/// An instruction (see also [`InstToken`])
 	Inst(InstToken),
@@ -41,25 +40,30 @@ pub enum TokenType<'s> {
 	/// A section identifier
 	Section(&'s str),
 
-	/// A label reference
-	Label(&'s str),
-	/// A label definition
-	LabelDefine(&'s str),
-	/// A local label reference
-	LocalLabel(&'s str),
-	/// A local label definition
-	LocalLabelDefine(&'s str),
+	/// An identifier
+	Identifier(&'s str),
 
+	/// `,`
 	SymComma,
+	/// `\n`
 	SymNewline,
+	/// `(`
 	SymLeftParen,
+	/// `)`
 	SymRightParen,
+	/// `[`
 	SymLeftBracket,
+	/// `]`
 	SymRightBracket,
+	/// `{`
+	SymLeftBrace,
+	/// `}`
+	SymRightBrace,
 
-	/// An operand (see also [`OpToken`])
+	/// An operator (see also [`OpToken`])
 	Op(OpToken),
 
+	/// A comment
 	Comment(&'s str),
 }
 
@@ -69,221 +73,11 @@ impl<'s> Debug for TokenType<'s> {
 		let v = 16;
 
 		match self {
-			Self::Inst(InstToken::Rri(RriInstruction::Addi)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "addi")
-			},
-			Self::Inst(InstToken::Rri(RriInstruction::Andi)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "andi")
-			},
-			Self::Inst(InstToken::Rri(RriInstruction::Ori)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "ori")
-			},
-			Self::Inst(InstToken::Rri(RriInstruction::Xori)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "xori")
-			},
-			Self::Inst(InstToken::Rri(RriInstruction::Lsli)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "lsli")
-			},
-			Self::Inst(InstToken::Rri(RriInstruction::Lsri)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "lsri")
-			},
-			Self::Inst(InstToken::Rri(RriInstruction::Asri)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "asri")
-			},
-			Self::Inst(InstToken::Rri(RriInstruction::Slti)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "slti")
-			},
-			Self::Inst(InstToken::Rri(RriInstruction::Sltiu)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "sltiu")
-			},
-			Self::Inst(InstToken::Rrr(RrrInstruction::Add)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "add")
-			},
-			Self::Inst(InstToken::Rrr(RrrInstruction::Sub)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "sub")
-			},
-			Self::Inst(InstToken::Rrr(RrrInstruction::And)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "and")
-			},
-			Self::Inst(InstToken::Rrr(RrrInstruction::Or)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "or")
-			},
-			Self::Inst(InstToken::Rrr(RrrInstruction::Xor)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "xor")
-			},
-			Self::Inst(InstToken::Rrr(RrrInstruction::Lsl)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "lsl")
-			},
-			Self::Inst(InstToken::Rrr(RrrInstruction::Lsr)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "lsr")
-			},
-			Self::Inst(InstToken::Rrr(RrrInstruction::Asr)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "asr")
-			},
-			Self::Inst(InstToken::Rrr(RrrInstruction::Slt)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "slt")
-			},
-			Self::Inst(InstToken::Rrr(RrrInstruction::Sltu)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "sltu")
-			},
-			Self::Inst(InstToken::Load(LoadInstruction::Lw)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "lw")
-			},
-			Self::Inst(InstToken::Load(LoadInstruction::Lh)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "lh")
-			},
-			Self::Inst(InstToken::Load(LoadInstruction::Lhu)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "lhu")
-			},
-			Self::Inst(InstToken::Load(LoadInstruction::Lb)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "lb")
-			},
-			Self::Inst(InstToken::Load(LoadInstruction::Lbu)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "lbu")
-			},
-			Self::Inst(InstToken::Store(StoreInstruction::Sw)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "sw")
-			},
-			Self::Inst(InstToken::Store(StoreInstruction::Sh)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "sh")
-			},
-			Self::Inst(InstToken::Store(StoreInstruction::Sb)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "sb")
-			},
-			Self::Inst(InstToken::Lui) => write!(f, "{:<t$} {:<v$}", "KEYWORD", "lui"),
-			Self::Inst(InstToken::Auipc) => write!(f, "{:<t$} {:<v$}", "KEYWORD", "auipc"),
-			Self::Inst(InstToken::Branch(BranchInstruction::Beq)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "beq")
-			},
-			Self::Inst(InstToken::Branch(BranchInstruction::Bne)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "bne")
-			},
-			Self::Inst(InstToken::Branch(BranchInstruction::Blt)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "blt")
-			},
-			Self::Inst(InstToken::Branch(BranchInstruction::Bltu)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "bltu")
-			},
-			Self::Inst(InstToken::Branch(BranchInstruction::Bge)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "bge")
-			},
-			Self::Inst(InstToken::Branch(BranchInstruction::Bgeu)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "bgeu")
-			},
-			Self::Inst(InstToken::Jal) => write!(f, "{:<t$} {:<v$}", "KEYWORD", "jal"),
-			Self::Inst(InstToken::Jalr) => write!(f, "{:<t$} {:<v$}", "KEYWORD", "jalr"),
-			Self::Inst(InstToken::Ecall) => write!(f, "{:<t$} {:<v$}", "KEYWORD", "ecall"),
-			Self::Inst(InstToken::Ebreak) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "ebreak")
-			},
-			Self::Inst(InstToken::Fence) => write!(f, "{:<t$} {:<v$}", "KEYWORD", "fence"),
-			Self::Inst(InstToken::FenceTso) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "fence.tso")
-			},
-			Self::Inst(InstToken::Fencei) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "fence.i")
-			},
-			Self::Inst(InstToken::Csr(CsrInstruction::Csrrw)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "csrrw")
-			},
-			Self::Inst(InstToken::Csr(CsrInstruction::Csrrs)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "csrrs")
-			},
-			Self::Inst(InstToken::Csr(CsrInstruction::Csrrc)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "csrrc")
-			},
-			Self::Inst(InstToken::Csri(CsriInstruction::Csrrwi)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "csrrwi")
-			},
-			Self::Inst(InstToken::Csri(CsriInstruction::Csrrsi)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "csrrsi")
-			},
-			Self::Inst(InstToken::Csri(CsriInstruction::Csrrci)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "csrrci")
-			},
-			Self::Inst(InstToken::Mdr(MdrInstruction::Mul)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "mul")
-			},
-			Self::Inst(InstToken::Mdr(MdrInstruction::Mulh)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "mulh")
-			},
-			Self::Inst(InstToken::Mdr(MdrInstruction::Mulhu)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "mulhu")
-			},
-			Self::Inst(InstToken::Mdr(MdrInstruction::Mulhsu)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "mulhsu")
-			},
-			Self::Inst(InstToken::Mdr(MdrInstruction::Div)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "div")
-			},
-			Self::Inst(InstToken::Mdr(MdrInstruction::Divu)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "divu")
-			},
-			Self::Inst(InstToken::Mdr(MdrInstruction::Rem)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "rem")
-			},
-			Self::Inst(InstToken::Mdr(MdrInstruction::Remu)) => {
-				write!(f, "{:<t$} {:<v$}", "KEYWORD", "remu")
-			},
+			Self::Inst(inst) => write!(f, "{:<t$} {:<v$}", "INSTRUCTION", inst),
 
-			Self::Reg(RegToken::R0) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r0"),
-			Self::Reg(RegToken::R1) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r1"),
-			Self::Reg(RegToken::R2) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r2"),
-			Self::Reg(RegToken::R3) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r3"),
-			Self::Reg(RegToken::R4) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r4"),
-			Self::Reg(RegToken::R5) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r5"),
-			Self::Reg(RegToken::R6) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r6"),
-			Self::Reg(RegToken::R7) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r7"),
-			Self::Reg(RegToken::R8) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r8"),
-			Self::Reg(RegToken::R9) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r9"),
-			Self::Reg(RegToken::R10) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r10"),
-			Self::Reg(RegToken::R11) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r11"),
-			Self::Reg(RegToken::R12) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r12"),
-			Self::Reg(RegToken::R13) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r13"),
-			Self::Reg(RegToken::R14) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r14"),
-			Self::Reg(RegToken::R15) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r15"),
-			Self::Reg(RegToken::R16) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r16"),
-			Self::Reg(RegToken::R17) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r17"),
-			Self::Reg(RegToken::R18) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r18"),
-			Self::Reg(RegToken::R19) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r19"),
-			Self::Reg(RegToken::R20) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r20"),
-			Self::Reg(RegToken::R21) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r21"),
-			Self::Reg(RegToken::R22) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r22"),
-			Self::Reg(RegToken::R23) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r23"),
-			Self::Reg(RegToken::R24) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r24"),
-			Self::Reg(RegToken::R25) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r25"),
-			Self::Reg(RegToken::R26) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r26"),
-			Self::Reg(RegToken::R27) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r27"),
-			Self::Reg(RegToken::R28) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r28"),
-			Self::Reg(RegToken::R29) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r29"),
-			Self::Reg(RegToken::R30) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r30"),
-			Self::Reg(RegToken::R31) => write!(f, "{:<t$} {:<v$}", "REGISTER", "r31"),
+			Self::Reg(reg) => write!(f, "{:<t$} {:<v$}", "REGISTER", reg),
 
-			Self::Dir(DirToken::Section) => {
-				write!(f, "{:<t$} {:<v$}", "DIRECTIVE", "$SECTION")
-			},
-			Self::Dir(DirToken::Regular(RegularDirective::Bytes)) => {
-				write!(f, "{:<t$} {:<v$}", "DIRECTIVE", "$BYTES")
-			},
-			Self::Dir(DirToken::Regular(RegularDirective::Halves)) => {
-				write!(f, "{:<t$} {:<v$}", "DIRECTIVE", "$HALVES")
-			},
-			Self::Dir(DirToken::Regular(RegularDirective::Words)) => {
-				write!(f, "{:<t$} {:<v$}", "DIRECTIVE", "$WORDS")
-			},
-			Self::Dir(DirToken::Regular(RegularDirective::ResBytes)) => {
-				write!(f, "{:<t$} {:<v$}", "DIRECTIVE", "$RES_BYTES")
-			},
-			Self::Dir(DirToken::Regular(RegularDirective::ResHalves)) => {
-				write!(f, "{:<t$} {:<v$}", "DIRECTIVE", "$RES_HALVES")
-			},
-			Self::Dir(DirToken::Regular(RegularDirective::ResWords)) => {
-				write!(f, "{:<t$} {:<v$}", "DIRECTIVE", "$RES_WORDS")
-			},
-			Self::Dir(DirToken::Repeat) => {
-				write!(f, "{:<t$} {:<v$}", "DIRECTIVE", "$repeat")
-			},
-			Self::Dir(DirToken::Const) => write!(f, "{:<t$} {:<v$}", "DIRECTIVE", "$CONST"),
+			Self::Dir(dir) => write!(f, "{:<t$} {:<v$}", "DIRECTIVE", dir),
 
 			Self::Section(s) => write!(f, "{:<t$} {:<v$}", "SECTION", s),
 
@@ -291,10 +85,7 @@ impl<'s> Debug for TokenType<'s> {
 			Self::LitChar(c) => write!(f, "{:<t$} {:<v$}", "CHAR", format!("{:?}", c)),
 			Self::LitNum(n) => write!(f, "{:<t$} {:<v$}", "NUM", n),
 
-			Self::Label(l) => write!(f, "{:<t$} {:<v$}", "LABEL", l),
-			Self::LabelDefine(l) => write!(f, "{:<t$} {:<v$}", "LABEL_DEFINE", l),
-			Self::LocalLabel(ll) => write!(f, "{:<t$} {:<v$}", "LOCAL_LABEL", ll),
-			Self::LocalLabelDefine(ll) => write!(f, "{:<t$} {:<v$}", "LOCAL_LABEL_DEFINE", ll),
+			Self::Identifier(i) => write!(f, "{:<t$} {:<v$}", "IDENTIFIER", i),
 
 			Self::SymComma => write!(f, "{:<t$} {:<v$}", "SYMBOL", ","),
 			Self::SymNewline => write!(f, "{:<t$} {:<v$}", "SYMBOL", "\\n"),
@@ -302,33 +93,10 @@ impl<'s> Debug for TokenType<'s> {
 			Self::SymRightParen => write!(f, "{:<t$} {:<v$}", "SYMBOL", ")"),
 			Self::SymLeftBracket => write!(f, "{:<t$} {:<v$}", "SYMBOL", "["),
 			Self::SymRightBracket => write!(f, "{:<t$} {:<v$}", "SYMBOL", "]"),
+			Self::SymLeftBrace => write!(f, "{:<t$} {:<v$}", "SYMBOL", "{{"),
+			Self::SymRightBrace => write!(f, "{:<t$} {:<v$}", "SYMBOL", "}}"),
 
-			Self::Op(OpToken::TernStart) => write!(f, "{:<t$} {:v$}", "OPERATOR", "?"),
-			Self::Op(OpToken::TernAlt) => write!(f, "{:<t$} {:v$}", "OPERATOR", ":"),
-			Self::Op(OpToken::LogicOr) => write!(f, "{:<t$} {:v$}", "OPERATOR", "||"),
-			Self::Op(OpToken::LogicXor) => write!(f, "{:<t$} {:v$}", "OPERATOR", "^^"),
-			Self::Op(OpToken::LogicAnd) => write!(f, "{:<t$} {:v$}", "OPERATOR", "&&"),
-			Self::Op(OpToken::BitOr) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "|"),
-			Self::Op(OpToken::BitXor) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "^"),
-			Self::Op(OpToken::BitAnd) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "&"),
-			Self::Op(OpToken::Eq) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "=="),
-			Self::Op(OpToken::Neq) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "!="),
-			Self::Op(OpToken::Lt) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "<"),
-			Self::Op(OpToken::Lte) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "<="),
-			Self::Op(OpToken::Gt) => write!(f, "{:<t$} {:<v$}", "OPERATOR", ">"),
-			Self::Op(OpToken::Gte) => write!(f, "{:<t$} {:<v$}", "OPERATOR", ">="),
-			Self::Op(OpToken::Lsl) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "<<"),
-			Self::Op(OpToken::Lsr) => write!(f, "{:<t$} {:<v$}", "OPERATOR", ">>"),
-			Self::Op(OpToken::Asr) => write!(f, "{:<t$} {:<v$}", "OPERATOR", ">>>"),
-			Self::Op(OpToken::Plus) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "+"),
-			Self::Op(OpToken::Minus) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "-"),
-			Self::Op(OpToken::Mul) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "*"),
-			Self::Op(OpToken::Div) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "/"),
-			Self::Op(OpToken::Rem) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "%"),
-			Self::Op(OpToken::LogicNot) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "!"),
-			Self::Op(OpToken::BitNot) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "~"),
-			Self::Op(OpToken::UnaryMinus) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "-"),
-			Self::Op(OpToken::LeftParen) => write!(f, "{:<t$} {:<v$}", "OPERATOR", "("),
+			Self::Op(op) => write!(f, "{:<t$} {:<v$}", "OPERATOR", op),
 
 			Self::Comment(cmt) => write!(f, "{:<t$} {:<v$}", "COMMENT", format!("{:?}", cmt)),
 		}
@@ -350,10 +118,7 @@ impl<'s> Display for TokenType<'s> {
 
 			Self::Section(s) => write!(f, "{}", s),
 
-			Self::Label(l) => write!(f, "{:?}", l),
-			Self::LabelDefine(l) => write!(f, "{:?}", l),
-			Self::LocalLabel(ll) => write!(f, "{:?}", ll),
-			Self::LocalLabelDefine(ll) => write!(f, "{:?}", ll),
+			Self::Identifier(i) => write!(f, "{}", i),
 
 			Self::SymComma => write!(f, "COMMA"),
 			Self::SymNewline => write!(f, "NEWLINE"),
@@ -361,6 +126,8 @@ impl<'s> Display for TokenType<'s> {
 			Self::SymRightParen => write!(f, ")"),
 			Self::SymLeftBracket => write!(f, "["),
 			Self::SymRightBracket => write!(f, "]"),
+			Self::SymLeftBrace => write!(f, "{{"),
+			Self::SymRightBrace => write!(f, "}}"),
 
 			Self::Op(o) => write!(f, "{}", o),
 

@@ -219,8 +219,10 @@ impl<'s> Lexer<'s> {
 			')' => Ok(self.make_token(TokenType::SymRightParen)),
 			'[' => Ok(self.make_token(TokenType::SymLeftBracket)),
 			']' => Ok(self.make_token(TokenType::SymRightBracket)),
-			'?' => Ok(self.make_token(TokenType::Op(OpToken::TernStart))),
-			':' => Ok(self.make_token(TokenType::Op(OpToken::TernAlt))),
+			'{' => Ok(self.make_token(TokenType::SymLeftBrace)),
+			'}' => Ok(self.make_token(TokenType::SymRightBrace)),
+			'?' => Ok(self.make_token(TokenType::Op(OpToken::Question))),
+			':' => Ok(self.make_token(TokenType::Op(OpToken::Colon))),
 			'|' => {
 				match self.peek()? {
 					'|' => {
@@ -250,9 +252,9 @@ impl<'s> Lexer<'s> {
 			},
 			'+' => Ok(self.make_token(TokenType::Op(OpToken::Plus))),
 			'-' => Ok(self.make_token(TokenType::Op(OpToken::Minus))),
-			'*' => Ok(self.make_token(TokenType::Op(OpToken::Mul))),
-			'/' => Ok(self.make_token(TokenType::Op(OpToken::Div))),
-			'%' => Ok(self.make_token(TokenType::Op(OpToken::Rem))),
+			'*' => Ok(self.make_token(TokenType::Op(OpToken::Star))),
+			'/' => Ok(self.make_token(TokenType::Op(OpToken::Slash))),
+			'%' => Ok(self.make_token(TokenType::Op(OpToken::Percent))),
 			'=' => {
 				match self.next()? {
 					'=' => Ok(self.make_token(TokenType::Op(OpToken::Eq))),
@@ -274,7 +276,7 @@ impl<'s> Lexer<'s> {
 						self.next().unwrap(); // Unwrap is safe as peek is some
 						Ok(self.make_token(TokenType::Op(OpToken::Neq)))
 					},
-					_ => Ok(self.make_token(TokenType::Op(OpToken::LogicNot))),
+					_ => Ok(self.make_token(TokenType::Op(OpToken::Exclamation))),
 				}
 			},
 			'~' => Ok(self.make_token(TokenType::Op(OpToken::BitNot))),

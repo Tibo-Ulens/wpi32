@@ -7,8 +7,6 @@ use std::fmt::{Display, Formatter, Result};
 pub enum DirToken {
 	Section,
 	Regular(RegularDirective),
-	Repeat,
-	Const,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -32,8 +30,6 @@ impl Display for DirToken {
 			Self::Regular(RegularDirective::ResBytes) => write!(f, "#RES_BYTES"),
 			Self::Regular(RegularDirective::ResHalves) => write!(f, "#RES_HALVES"),
 			Self::Regular(RegularDirective::ResWords) => write!(f, "#RES_WORDS"),
-			Self::Repeat => write!(f, "#REPEAT"),
-			Self::Const => write!(f, "#CONST"),
 		}
 	}
 }

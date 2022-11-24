@@ -6,42 +6,68 @@ use std::fmt::{Display, Formatter, Result};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[allow(missing_docs)]
 pub enum OpToken {
-	TernStart,
-	TernAlt,
-	LogicOr,
-	LogicXor,
-	LogicAnd,
-	BitOr,
-	BitXor,
-	BitAnd,
-	Eq,
-	Neq,
-	Lt,
-	Lte,
-	Gt,
-	Gte,
-	Lsl,
-	Lsr,
-	Asr,
+	/// `+`
 	Plus,
+	/// `-`
 	Minus,
-	Mul,
-	Div,
-	Rem,
-	LogicNot,
+	/// `*`
+	Star,
+	/// `/`
+	Slash,
+	/// `%`
+	Percent,
+	/// `?`
+	Question,
+	/// `:`
+	Colon,
+	/// `||`
+	LogicOr,
+	/// `^^`
+	LogicXor,
+	/// `&&`
+	LogicAnd,
+	/// `!`
+	Exclamation,
+	/// `|`
+	BitOr,
+	/// `^`
+	BitXor,
+	/// `&`
+	BitAnd,
+	/// `~`
 	BitNot,
-	UnaryMinus,
+	/// `==`
+	Eq,
+	/// `!=`
+	Neq,
+	/// `<`
+	Lt,
+	/// `<=`
+	Lte,
+	/// `>`
+	Gt,
+	/// `>=`
+	Gte,
+	/// `<<`
+	Lsl,
+	/// `>>`
+	Lsr,
+	/// `>>>`
+	Asr,
 
-	/// This will never be produced by the lexer and exists purely simplify
-	/// parsing immediate expressions
+	// These will never be produced by the lexer and exist purely to simplify
+	// parsing immediate expressions
+	/// `-`
+	UnaryMinus,
+	/// `(`
 	LeftParen,
 }
 
 impl Display for OpToken {
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
 		match self {
-			Self::TernStart => write!(f, "?"),
-			Self::TernAlt => write!(f, ":"),
+			Self::Question => write!(f, "?"),
+			Self::Colon => write!(f, ":"),
 			Self::LogicOr => write!(f, "||"),
 			Self::LogicXor => write!(f, "^^"),
 			Self::LogicAnd => write!(f, "&&"),
@@ -59,10 +85,10 @@ impl Display for OpToken {
 			Self::Asr => write!(f, ">>>"),
 			Self::Plus => write!(f, "+"),
 			Self::Minus => write!(f, "-"),
-			Self::Mul => write!(f, "*"),
-			Self::Div => write!(f, "/"),
-			Self::Rem => write!(f, "%"),
-			Self::LogicNot => write!(f, "!"),
+			Self::Star => write!(f, "*"),
+			Self::Slash => write!(f, "/"),
+			Self::Percent => write!(f, "%"),
+			Self::Exclamation => write!(f, "!"),
 			Self::BitNot => write!(f, "~"),
 			Self::UnaryMinus => write!(f, "-"),
 			Self::LeftParen => write!(f, "("),
@@ -73,7 +99,7 @@ impl Display for OpToken {
 impl OpToken {
 	/// Check if this token is right associative or not
 	pub(crate) fn is_right_associative(&self) -> bool {
-		matches!(self, Self::UnaryMinus | Self::TernStart | Self::TernAlt)
+		matches!(self, Self::UnaryMinus | Self::Question | Self::Colon)
 	}
 
 	/// Get the precedence of this token
@@ -81,8 +107,8 @@ impl OpToken {
 	/// 0 -> highest precedence
 	pub(crate) fn get_precedence(&self) -> u8 {
 		match self {
-			Self::TernStart => 0,
-			Self::TernAlt => 0,
+			Self::Question => 0,
+			Self::Colon => 0,
 			Self::LogicOr => 1,
 			Self::LogicXor => 2,
 			Self::LogicAnd => 3,
@@ -100,10 +126,10 @@ impl OpToken {
 			Self::Asr => 9,
 			Self::Plus => 10,
 			Self::Minus => 10,
-			Self::Mul => 11,
-			Self::Div => 11,
-			Self::Rem => 11,
-			Self::LogicNot => 12,
+			Self::Star => 11,
+			Self::Slash => 11,
+			Self::Percent => 11,
+			Self::Exclamation => 12,
 			Self::BitNot => 12,
 			Self::UnaryMinus => 12,
 
