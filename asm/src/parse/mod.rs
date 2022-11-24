@@ -241,7 +241,9 @@ impl<'s> Parser<'s> {
 				self.next().unwrap();
 				Literal::Char(*c)
 			},
-			TokenType::Op(OpToken::Plus | OpToken::Minus | OpToken::BitNot | OpToken::LogicNot)
+			TokenType::Op(
+				OpToken::Plus | OpToken::Minus | OpToken::BitNot | OpToken::Exclamation,
+			)
 			| TokenType::SymLeftParen
 			| TokenType::LitNum(_)
 			| TokenType::Label(_)

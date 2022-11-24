@@ -46,14 +46,13 @@ section_name = ".TEXT" | ".DATA" | ".BSS";
 
 line =
 	{ whitespace },
-	[ line_content ],
+	[ statement ],
 	[ comment ],
 	newline;
 
-line_content = [ label ], statement;
 statement =
 	macro_definition
-	| macro_call
+	| macro_invocation
 	| labeled_block
 	| directive
 	| instruction;
@@ -79,9 +78,16 @@ macro_match_type = "inst", "reg", "dir", "ident", "imm", "stmt";
 macro_rep_op = "?" | "+" | "*";
 
 macro_transcriber =
-	( "(", { statement }, ")" )
-	| ( "[", { statement }, "]" )
-	| ( "{", { statement }, "}" );
+	line
+	| ( "(", { line }, ")" )
+	| ( "[", { line }, "]" )
+	| ( "{", { line }, "}" );
+
+macro_invocation =
+	identifier, "!",
+	| ( "(", { line }, ")" )
+	| ( "[", { line }, "]" )
+	| ( "{", { line }, "}" );
 
 labeled_block = identifier, "{", { line }, "}";
 
