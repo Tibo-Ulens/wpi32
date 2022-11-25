@@ -62,9 +62,20 @@ pub enum MacroMatch<'s> {
 	/// A literal string of characters
 	Raw(TokenType<'s>),
 	/// A single argument
-	Typed { id: &'s str, arg_type: MacroArgType },
+	Typed {
+		/// The name of this argument
+		id:       &'s str,
+		/// The type of this argument
+		arg_type: MacroArgType,
+	},
 	/// A variadic (list of) arguments
-	Variadic { matches: Vec<MacroMatch<'s>>, var_type: MacroVarType },
+	Variadic {
+		/// The list of (sub)matches that should be matched against
+		/// variadically
+		matches:  Vec<MacroMatch<'s>>,
+		/// The type of variadic matching to use
+		var_type: MacroVarType,
+	},
 }
 
 /// The possible type specifiers that can be used in a [`MacroMatch`]
