@@ -18,7 +18,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Zeus RISC-V extravaganza"
 readme = "README.md"
-license = "MIT"
+license = "GPL-3.0-or-later"
 publish = false
 
 [profile.release]
