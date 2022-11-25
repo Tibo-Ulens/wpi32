@@ -1,37 +1,43 @@
-//! [`Parser`] functions to parse [`DataDirective`] expressions
+//! [`Parser`] functions to parse [`Directive`] expressions
 
-use super::ast::{DataDirective, Literal};
+use super::ast::{Directive, Literal};
 use super::Parser;
 use crate::error::ParseError;
 use crate::lex::{DirToken, RegularDirective, TokenType};
 
 impl<'s> Parser<'s> {
-	/// Parse any of the following [`DataDirective`]s:
-	///  - [`#BYTES`](DirToken::Bytes)
-	///  - [`#HALVES`](DirToken::Halves)
-	///  - [`#WORDS`](DirToken::Words)
-	///  - [`#RES_BYTES`](DirToken::ResBytes)
-	///  - [`#RES_HALVES`](DirToken::ResHalves)
-	///  - [`#RES_WORDS`](DirToken::ResWords)
-	///  - [`#REPEAT`](DirToken::Repeat)
+	/// Parse any of the following [`Directive`]s:
+	///  - [`#BYTES`](RegularDirective::Bytes)
+	///  - [`#HALVES`](RegularDirective::Halves)
+	///  - [`#WORDS`](RegularDirective::Words)
+	///  - [`#RES_BYTES`](RegularDirective::ResBytes)
+	///  - [`#RES_HALVES`](RegularDirective::ResHalves)
+	///  - [`#RES_WORDS`](RegularDirective::ResWords)
+	///  - [`#CONST`](RegularDirective::Const)
 	///
 	/// Assumes the current [`Token`](crate::lex::Token) has [`TokenType`]
 	/// [`TokenType::Dir`]
-	pub(super) fn parse_datadirective<'r>(&'r mut self) -> Result<DataDirective<'s>, ParseError> {
+	pub(super) fn parse_directive<'r>(&'r mut self) -> Result<Directive<'s>, ParseError> {
 		// Unwrap is assumed to be safe
-		let directive_token = self.next().unwrap();
+		let directive_token = self.peek().unwrap();
 
 		match &directive_token.t {
+			TokenType::Dir(DirToken::Regular(RegularDirective::Const)) => {
+				self.parse_const_directive().map(Directive::Const)
+			},
 			TokenType::Dir(DirToken::Regular(dir)) => {
+				// unwrap is safe as peek must've existed
+				self.next().unwrap();
 				let data = self.parse_literal_list()?;
 
 				match dir {
-					RegularDirective::Bytes => Ok(DataDirective::Bytes(data)),
-					RegularDirective::Halves => Ok(DataDirective::Halves(data)),
-					RegularDirective::Words => Ok(DataDirective::Words(data)),
-					RegularDirective::ResBytes => Ok(DataDirective::ResBytes(data)),
-					RegularDirective::ResHalves => Ok(DataDirective::ResHalves(data)),
-					RegularDirective::ResWords => Ok(DataDirective::ResWords(data)),
+					RegularDirective::Bytes => Ok(Directive::Bytes(data)),
+					RegularDirective::Halves => Ok(Directive::Halves(data)),
+					RegularDirective::Words => Ok(Directive::Words(data)),
+					RegularDirective::ResBytes => Ok(Directive::ResBytes(data)),
+					RegularDirective::ResHalves => Ok(Directive::ResHalves(data)),
+					RegularDirective::ResWords => Ok(Directive::ResWords(data)),
+					_ => unreachable!(),
 				}
 			},
 			_ => unreachable!(),

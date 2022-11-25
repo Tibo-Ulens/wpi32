@@ -30,21 +30,12 @@ mod directive;
 mod display;
 mod immediate;
 mod instruction;
+mod r#macro;
 
 pub(crate) use display::Node;
 
-use self::ast::{
-	ConstDirective,
-	LabelId,
-	Line,
-	LineContent,
-	Literal,
-	PreambleLine,
-	Root,
-	Section,
-	Statement,
-};
-use crate::lex::{DirToken, OpToken, Token, TokenType};
+use self::ast::{ConstDirective, Line, Literal, PreambleLine, Root, Section, Statement};
+use crate::lex::{DirToken, OpToken, RegularDirective, Token, TokenType};
 
 /// Main parser type
 ///
@@ -113,6 +104,9 @@ impl<'s> Parser<'s> {
 
 	/// Returns [`Ok`] if the next token matches the given
 	/// [`TokenType`](crate::lex::TokenType), else returns [`Err`]
+	///
+	/// TODO: make this accept a custom error return type for better errors
+	/// (might need a closure)
 	fn expect(&mut self, t: TokenType) -> Result<(), ParseError> {
 		let next_type = &self.next()?.t;
 
@@ -163,8 +157,9 @@ impl<'s> Parser<'s> {
 	fn parse_preambleline<'r>(&'r mut self) -> Result<PreambleLine<'s>, ParseError> {
 		let peek = self.peek()?;
 		let constdir = match &peek.t {
-			TokenType::LabelDefine(_) => Some(self.parse_constdir()?),
-			TokenType::LocalLabelDefine(_) => Some(self.parse_constdir()?),
+			TokenType::Dir(DirToken::Regular(RegularDirective::Const)) => {
+				Some(self.parse_const_directive()?)
+			},
 			_ => None,
 		};
 
@@ -187,37 +182,26 @@ impl<'s> Parser<'s> {
 	///  - A [`Literal`] value
 	///
 	/// Assumes the current [`Token`] has [`TokenType`]
-	/// [`TokenType::LabelDefine`] or [`TokenType::LocalLabelDefine`]
-	fn parse_constdir<'r>(&'r mut self) -> Result<ConstDirective<'s>, ParseError> {
+	/// [`TokenType::Dir(DirToken::Const)`]
+	fn parse_const_directive<'r>(&'r mut self) -> Result<ConstDirective<'s>, ParseError> {
 		// Consume the label definition
 		// Unwrap is safe as peek is Ok
-		assert_matches!(
-			self.peek().unwrap().t,
-			TokenType::LabelDefine(_) | TokenType::LocalLabelDefine(_)
-		);
-		let label_token = self.next().unwrap();
+		assert_matches!(self.peek().unwrap().t, TokenType::Identifier(_));
+		self.next().unwrap();
 
-		let id = match &label_token.t {
-			TokenType::LabelDefine(ld) => LabelId::LabelDefine(ld),
-			TokenType::LocalLabelDefine(ld) => LabelId::LocalLabelDefine(ld),
-			_ => unreachable!(),
-		};
+		let id_token = self.next()?;
 
-		let peek = self.peek()?;
-		match &peek.t {
-			TokenType::Dir(DirToken::Const) => {
-				// Unwrap is safe as peek is Ok
-				self.next().unwrap();
-			},
+		let id = match &id_token.t {
+			TokenType::Identifier(id) => id,
 			_ => {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
-					location: Box::new(LocationInfo::from(peek)),
-					fnd:      peek.t.to_string(),
-					ex:       "#CONST".to_string(),
+					location: Box::new(LocationInfo::from(id_token)),
+					fnd:      id_token.t.to_string(),
+					ex:       "IDENTIFIER".to_string(),
 				});
 			},
-		}
+		};
 
 		let value = self.parse_literal()?;
 
@@ -246,8 +230,7 @@ impl<'s> Parser<'s> {
 			)
 			| TokenType::SymLeftParen
 			| TokenType::LitNum(_)
-			| TokenType::Label(_)
-			| TokenType::LocalLabel(_) => Literal::Immediate(self.parse_immediate()?),
+			| TokenType::Identifier(_) => Literal::Immediate(self.parse_immediate()?),
 			_ => {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
@@ -312,14 +295,7 @@ impl<'s> Parser<'s> {
 	///
 	/// Consumes the final newline
 	fn parse_line<'r>(&'r mut self) -> Result<Line<'s>, ParseError> {
-		let peek = self.peek()?;
-		let content = match peek.t {
-			TokenType::SymNewline => None,
-			TokenType::LabelDefine(_) | TokenType::LocalLabelDefine(_) => {
-				Some(self.parse_labeled_statement()?)
-			},
-			_ => self.tryparse_statement()?.map(LineContent::Statement),
-		};
+		let statement = self.tryparse_statement()?;
 
 		let comment = if let TokenType::Comment(c) = self.peek()?.t {
 			// Unwrap is safe as peek is Ok
@@ -331,31 +307,7 @@ impl<'s> Parser<'s> {
 
 		self.expect(TokenType::SymNewline)?;
 
-		Ok(Line { content, comment })
-	}
-
-	/// Parse a [`LabeledStatement`](LineContent::LabeledStatement) consisting
-	/// of:
-	///  - A (local) [label definition](LabelId)
-	///  - An optional [`Statement`]
-	///
-	/// Assumes the current [`Token`] has [`TokenType`]
-	/// [`TokenType::LabelDefine`] or [`TokenType::LocalLabelDefine`]
-	fn parse_labeled_statement<'r>(&'r mut self) -> Result<LineContent<'s>, ParseError> {
-		// Consume the label definition
-		// Unwrap is safe as peek is Ok
-		let label_token = self.next().unwrap();
-		assert_matches!(label_token.t, TokenType::LabelDefine(_) | TokenType::LocalLabelDefine(_));
-
-		let label = match &label_token.t {
-			TokenType::LabelDefine(ld) => LabelId::LabelDefine(ld),
-			TokenType::LocalLabelDefine(ld) => LabelId::LocalLabelDefine(ld),
-			_ => unreachable!(),
-		};
-
-		let stmt = self.tryparse_statement()?;
-
-		Ok(LineContent::LabeledStatement { label, stmt })
+		Ok(Line { statement, comment })
 	}
 
 	/// Try to parse a [`Statement`]
@@ -364,7 +316,7 @@ impl<'s> Parser<'s> {
 	fn tryparse_statement<'r>(&'r mut self) -> Result<Option<Statement<'s>>, ParseError> {
 		let peek = self.peek()?;
 		match &peek.t {
-			TokenType::Dir(_) => Ok(Some(Statement::DataDirective(self.parse_datadirective()?))),
+			TokenType::Dir(_) => Ok(Some(Statement::Directive(self.parse_directive()?))),
 			TokenType::Inst(_) => Ok(Some(Statement::Instruction(self.parse_instruction()?))),
 			TokenType::SymNewline => Ok(None),
 			TokenType::Comment(_) => Ok(None),

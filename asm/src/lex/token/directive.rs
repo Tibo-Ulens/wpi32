@@ -18,6 +18,7 @@ pub enum RegularDirective {
 	ResBytes,
 	ResHalves,
 	ResWords,
+	Const,
 }
 
 impl Display for DirToken {
@@ -30,6 +31,7 @@ impl Display for DirToken {
 			Self::Regular(RegularDirective::ResBytes) => write!(f, "#RES_BYTES"),
 			Self::Regular(RegularDirective::ResHalves) => write!(f, "#RES_HALVES"),
 			Self::Regular(RegularDirective::ResWords) => write!(f, "#RES_WORDS"),
+			Self::Regular(RegularDirective::Const) => write!(f, "#CONST"),
 		}
 	}
 }

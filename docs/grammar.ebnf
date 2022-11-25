@@ -37,7 +37,7 @@ section = section_header, { line };
 
 preamble_line =
 	{ whitespace },
-	[ macro_call ],
+	[ const_directive ],
 	[ comment ],
 	newline;
 
@@ -57,7 +57,7 @@ statement =
 	| directive
 	| instruction;
 
-macro_definiton =
+macro_definition =
 	"define_macro", "!",
 	identifier,
 	macro_body;
@@ -66,16 +66,16 @@ macro_body =
 	| ( "[", { macro_rules }, "]" )
 	| ( "{", { macro_rules }, "}" );
 
-macro_rules = macro_rule, { comma, macro_rule }, [ comma ];
+macro_rules = macro_rule, { comma, macro_rule };
 macro_rule = macro_matcher, "=>", macro_transcriber;
 
 macro_matcher = "(", { macro_match } ")";
 macro_match =
-	?token?
-	| ( "$", identifier_or_keyword, ":", macro_match_type )
-	| ( "$", "(", ( macro_match, { macro_match } ), ")", macro_rep_op );
-macro_match_type = "inst", "reg", "dir", "ident", "imm", "stmt";
-macro_rep_op = "?" | "+" | "*";
+	?tokentype?
+	| ( "$", identifier, ":", macro_arg_type )
+	| ( "$", "(", ( macro_match, { macro_match } ), ")", macro_var_type );
+macro_arg_type = "inst", "reg", "dir", "ident", "imm", "stmt";
+macro_var_type = "?" | "+" | "*";
 
 macro_transcriber =
 	line
@@ -85,19 +85,20 @@ macro_transcriber =
 
 macro_invocation =
 	identifier, "!",
-	| ( "(", { line }, ")" )
-	| ( "[", { line }, "]" )
-	| ( "{", { line }, "}" );
+	| ( "(", { statement }, ")" )
+	| ( "[", { statement }, "]" )
+	| ( "{", { statement }, "}" );
 
 labeled_block = identifier, "{", { line }, "}";
 
 directive =
-	bytes_directive,
-	halves_directive
-	words_directive,
-	res_bytes_directive,
-	res_halves_directive,
-	res_words_directive;
+	bytes_directive
+	| halves_directiv
+	| words_directive
+	| res_bytes_directive
+	| res_halves_directive
+	| res_words_directiv
+	| const_directive;
 
 bytes_directive = "#BYTES", literal, { comma, literal };
 halves_directive = "#HALVES", literal, { comma, literal };
@@ -106,6 +107,8 @@ words_directive = "#WORDS", literal, { comma, literal };
 res_bytes_directive = "#RES_BYTES", number, { comma, number };
 res_halves_directive = "#RES_HALVES", number, { comma, number };
 res_words_directive = "#RES_WORDS", number, { comma, number };
+
+const_directive = "#CONST", identifier, literal;
 
 literal = string | char | immediate;
 

@@ -205,6 +205,10 @@ impl<'s> Lexer<'s> {
 							RegularDirective::ResWords,
 						))))
 					},
+					"#CONST" => {
+						Ok(self
+							.make_token(TokenType::Dir(DirToken::Regular(RegularDirective::Const))))
+					},
 					_ => {
 						Err(LexError::InvalidDirective {
 							src_file: self.source_file.to_string(),

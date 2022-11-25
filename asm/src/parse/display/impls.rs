@@ -5,17 +5,14 @@ use crate::lex::RegToken;
 use crate::parse::ast::{
 	Address,
 	ConstDirective,
-	DataDirective,
+	Directive,
 	Immediate,
 	Instruction,
-	LabelId,
 	Line,
-	LineContent,
 	Literal,
 	OffsetOperator,
 	OrderingTarget,
 	PreambleLine,
-	RepeatedData,
 	Root,
 	Section,
 	Statement,
@@ -68,14 +65,15 @@ impl<'s> From<&PreambleLine<'s>> for Node {
 
 impl<'s> From<&ConstDirective<'s>> for Node {
 	fn from(value: &ConstDirective) -> Self {
-		Node {
-			prefixes: vec!["Directive".to_string()],
-			repr:     "Const".to_string(),
-			children: vec![
-				Node::from(&value.id).add_prefix("Id"),
-				Node::from(&value.value).add_prefix("Value"),
-			],
-		}
+		let mut children = vec![Node {
+			prefixes: vec!["Id".to_string()],
+			repr:     value.id.to_string(),
+			children: vec![],
+		}];
+
+		children.push(Node::from(&value.value).add_prefix("Value"));
+
+		Node { prefixes: vec!["Directive".to_string()], repr: "Const".to_string(), children }
 	}
 }
 
@@ -102,25 +100,8 @@ impl<'s> From<&Line<'s>> for Node {
 	fn from(value: &Line) -> Self {
 		let mut children = vec![];
 
-		if let Some(content) = &value.content {
-			match content {
-				LineContent::LabeledStatement { label, stmt } => {
-					let stmt_children = if let Some(stmt) = stmt {
-						vec![label.into(), stmt.into()]
-					} else {
-						vec![label.into()]
-					};
-
-					children.push(Node {
-						prefixes: vec!["Content".to_string()],
-						repr:     "LabeledStatement".to_string(),
-						children: stmt_children,
-					});
-				},
-				LineContent::Statement(stmt) => {
-					children.push(Node::from(stmt).add_prefix("Content"))
-				},
-			}
+		if let Some(stmt) = &value.statement {
+			children.push(Node::from(stmt).add_prefix("Content"));
 		}
 
 		if let Some(comment) = value.comment {
@@ -139,100 +120,64 @@ impl<'s> From<&Line<'s>> for Node {
 	}
 }
 
-impl<'s> From<&LabelId<'s>> for Node {
-	fn from(value: &LabelId) -> Self {
-		match value {
-			LabelId::LabelDefine(id) => {
-				Node {
-					prefixes: vec!["Label".to_string()],
-					repr:     format!("{:?}", id),
-					children: vec![],
-				}
-			},
-			LabelId::LocalLabelDefine(id) => {
-				Node {
-					prefixes: vec!["LocalLabel".to_string()],
-					repr:     format!("{:?}", id),
-					children: vec![],
-				}
-			},
-		}
-	}
-}
-
 impl<'s> From<&Statement<'s>> for Node {
 	fn from(value: &Statement) -> Self {
 		match value {
-			Statement::DataDirective(dir) => Node::from(dir).add_prefix("Statement"),
+			Statement::MacroDefinition(_m_def) => todo!(),
+			Statement::MacroInvocation(_m_invoc) => todo!(),
+			Statement::LabeledBlock(_l_block) => todo!(),
+			Statement::Directive(dir) => Node::from(dir).add_prefix("Statement"),
 			Statement::Instruction(inst) => Node::from(inst).add_prefix("Statement"),
 		}
 	}
 }
 
-impl<'s> From<&DataDirective<'s>> for Node {
-	fn from(value: &DataDirective) -> Self {
+impl<'s> From<&Directive<'s>> for Node {
+	fn from(value: &Directive) -> Self {
 		match value {
-			DataDirective::Bytes(data) => {
+			Directive::Bytes(data) => {
 				Node {
-					prefixes: vec!["DataDirective".to_string()],
+					prefixes: vec!["Directive".to_string()],
 					repr:     "Bytes".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			DataDirective::Halves(data) => {
+			Directive::Halves(data) => {
 				Node {
-					prefixes: vec!["DataDirective".to_string()],
+					prefixes: vec!["Directive".to_string()],
 					repr:     "Halves".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			DataDirective::Words(data) => {
+			Directive::Words(data) => {
 				Node {
-					prefixes: vec!["DataDirective".to_string()],
+					prefixes: vec!["Directive".to_string()],
 					repr:     "Words".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			DataDirective::ResBytes(data) => {
+			Directive::ResBytes(data) => {
 				Node {
-					prefixes: vec!["DataDirective".to_string()],
+					prefixes: vec!["Directive".to_string()],
 					repr:     "ResBytes".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			DataDirective::ResHalves(data) => {
+			Directive::ResHalves(data) => {
 				Node {
-					prefixes: vec!["DataDirective".to_string()],
+					prefixes: vec!["Directive".to_string()],
 					repr:     "ResHalves".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			DataDirective::ResWords(data) => {
+			Directive::ResWords(data) => {
 				Node {
-					prefixes: vec!["DataDirective".to_string()],
+					prefixes: vec!["Directive".to_string()],
 					repr:     "ResWords".to_string(),
 					children: data.iter().map(|d| d.into()).collect(),
 				}
 			},
-			DataDirective::Repeat { amount, argument } => {
-				Node {
-					prefixes: vec!["DataDirective".to_string()],
-					repr:     "Repeat".to_string(),
-					children: vec![
-						Node::from(amount).add_prefix("Amount"),
-						Node::from(argument.as_ref()).add_prefix("Argument"),
-					],
-				}
-			},
-		}
-	}
-}
-
-impl<'s> From<&RepeatedData<'s>> for Node {
-	fn from(value: &RepeatedData<'s>) -> Self {
-		match value {
-			RepeatedData::Directive(dir) => dir.into(),
-			RepeatedData::Instruction(inst) => inst.into(),
+			Directive::Const(const_dir) => Node::from(const_dir),
 		}
 	}
 }

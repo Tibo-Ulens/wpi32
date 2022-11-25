@@ -295,16 +295,16 @@ impl<'s> Parser<'s> {
 
 	/// Parse a single [`OrderingTarget`]
 	fn parse_ordering_target(&mut self) -> Result<OrderingTarget, ParseError> {
-		let ord_label = self.next()?;
-		match ord_label.t {
-			TokenType::Label(l) => {
-				let flags = OrderingTarget::from(l);
+		let ord_raw = self.next()?;
+		match ord_raw.t {
+			TokenType::Identifier(id) => {
+				let flags = OrderingTarget::from(id);
 
 				if flags.is_empty() {
 					return Err(ParseError::InvalidOrderingSpecifier {
 						src_file: self.source_file.to_string(),
-						location: Box::new(LocationInfo::from(ord_label)),
-						spec:     l.to_string(),
+						location: Box::new(LocationInfo::from(ord_raw)),
+						spec:     id.to_string(),
 					});
 				}
 
@@ -313,8 +313,8 @@ impl<'s> Parser<'s> {
 			_ => {
 				Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
-					location: Box::new(LocationInfo::from(ord_label)),
-					fnd:      ord_label.t.to_string(),
+					location: Box::new(LocationInfo::from(ord_raw)),
+					fnd:      ord_raw.t.to_string(),
 					ex:       "ORDERING_TARGET".to_string(),
 				})
 			},
