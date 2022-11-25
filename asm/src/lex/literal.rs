@@ -187,7 +187,7 @@ impl<'s> Lexer<'s> {
 	/// supplied predicate function
 	pub(super) fn try_take_number<F>(&mut self, pred: F) -> Result<isize, LexError>
 	where
-		F: for<'a> Fn(&'a char) -> bool,
+		F: Fn(char) -> bool,
 	{
 		let raw = match self.take_while(pred) {
 			Ok(n) => n,

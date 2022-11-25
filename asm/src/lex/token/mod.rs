@@ -34,7 +34,9 @@ pub enum TokenType<'s> {
 	/// **UNESCAPED** string literal, basckslash escaping should be performed
 	/// when splitting into bytes
 	LitStr(&'s str),
+	/// Escaped character litera
 	LitChar(char),
+	/// Numeric literal
 	LitNum(isize),
 
 	/// A section identifier

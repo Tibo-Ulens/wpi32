@@ -123,7 +123,7 @@ impl<'s> Lexer<'s> {
 	/// that satisfied the predicate
 	fn take_while<F>(&mut self, pred: F) -> Result<&'s str, LexError>
 	where
-		F: for<'a> Fn(&'a char) -> bool,
+		F: Fn(char) -> bool,
 	{
 		// Return early if the immediately following character is None
 		let mut peek = match self.peek() {
@@ -140,7 +140,7 @@ impl<'s> Lexer<'s> {
 
 		// Columns start at 1
 		let mut i = 1;
-		while pred(&peek) {
+		while pred(peek) {
 			// Unwrap is safe as the previous iteration of the loop assures
 			// there is a character
 			self.next().unwrap();
@@ -207,7 +207,7 @@ impl<'s> Lexer<'s> {
 				Ok(token)
 			},
 			';' => {
-				let comment = match self.take_while(|&c| c != '\n') {
+				let comment = match self.take_while(|c| c != '\n') {
 					Ok(cmt) => cmt,
 					Err(e) => return Some(Err(e.into())),
 				};
@@ -337,8 +337,8 @@ impl<'s> Lexer<'s> {
 
 				Ok(self.make_token(TokenType::LitNum(num)))
 			},
-			c if util::is_identifier_start(&c) => {
-				let raw = match self.take_while(util::is_identifier) {
+			c if unicode_ident::is_xid_start(c) => {
+				let raw = match self.take_while(unicode_ident::is_xid_continue) {
 					Ok(id) => id,
 					Err(e) => return Some(Err(e.into())),
 				};
