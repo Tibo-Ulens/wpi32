@@ -2,7 +2,8 @@
 
 use std::fmt::{Display, Formatter};
 
-use super::make_info_block;
+use super::print::{make_info_body, make_info_header};
+use super::LocationInfo;
 
 /// An error produced by the [`Lexer`](crate::lex::Lexer)
 #[derive(Debug)]
@@ -18,15 +19,15 @@ pub enum LexError {
 		line:     usize,
 		col:      usize,
 		src_line: String,
-		fnd:      char,
-		ex:       char,
+		found:    char,
+		expected: char,
 	},
 	RawUnexpectedSymbol {
 		src_file: String,
 		line:     usize,
 		col:      usize,
 		src_line: String,
-		fnd:      char,
+		found:    char,
 	},
 	InvalidNumber {
 		src_file: String,
@@ -56,43 +57,66 @@ impl Display for LexError {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		let repr = match self {
 			Self::UnexpectedEof { src_file, line, col, src_line } => {
-				make_info_block("unexpected end-of-file", src_file, *line, *col, 1, src_line)
+				let location = LocationInfo::new(*line, *col, 1, src_line);
+				let mut pretty_err =
+					make_info_header("unexpected end-of-file", src_file, &location);
+
+				pretty_err.push_str(&make_info_body(None, &location));
+
+				pretty_err
 			},
-			Self::UnexpectedSymbol { src_file, line, col, src_line, fnd, ex } => {
-				make_info_block(
-					&format!("found unexpected symbol '{:?}', expected '{:?}'", fnd, ex),
+			Self::UnexpectedSymbol { src_file, line, col, src_line, found, expected } => {
+				let location = LocationInfo::new(*line, *col, 1, src_line);
+				let mut pretty_err = make_info_header(
+					&format!("found unexpected symbol `{:?}`, expected `{:?}`", found, expected),
 					src_file,
-					*line,
-					*col,
-					1,
-					src_line,
-				)
+					&location,
+				);
+
+				pretty_err.push_str(&make_info_body(None, &location));
+
+				pretty_err
 			},
-			Self::RawUnexpectedSymbol { src_file, line, col, src_line, fnd } => {
-				make_info_block(
-					&format!("found unexpected symbol '{:?}'", fnd),
+			Self::RawUnexpectedSymbol { src_file, line, col, src_line, found } => {
+				let location = LocationInfo::new(*line, *col, 1, src_line);
+				let mut pretty_err = make_info_header(
+					&format!("found unexpected symbol `{:?}`", found),
 					src_file,
-					*line,
-					*col,
-					1,
-					src_line,
-				)
+					&location,
+				);
+
+				pretty_err.push_str(&make_info_body(None, &location));
+
+				pretty_err
 			},
 			Self::InvalidNumber { src_file, line, col, span, src_line } => {
-				make_info_block("invalid number", src_file, *line, *col, *span, src_line)
+				let location = LocationInfo::new(*line, *col, *span, src_line);
+				let mut pretty_err = make_info_header("invalid number", src_file, &location);
+
+				pretty_err.push_str(&make_info_body(None, &location));
+
+				pretty_err
 			},
 			Self::InvalidEscape { src_file, line, col, span, src_line } => {
-				make_info_block("invalid escape sequence", src_file, *line, *col, *span, src_line)
+				let location = LocationInfo::new(*line, *col, *span, src_line);
+				let mut pretty_err =
+					make_info_header("invalid escape sequence", src_file, &location);
+
+				pretty_err.push_str(&make_info_body(None, &location));
+
+				pretty_err
 			},
 			Self::InvalidDirective { src_file, line, col, span, src_line, dir } => {
-				make_info_block(
-					&format!("invalid directive '{:?}'", dir),
+				let location = LocationInfo::new(*line, *col, *span, src_line);
+				let mut pretty_err = make_info_header(
+					&format!("invalid directive `{:?}`", dir),
 					src_file,
-					*line,
-					*col,
-					*span,
-					src_line,
-				)
+					&location,
+				);
+
+				pretty_err.push_str(&make_info_body(None, &location));
+
+				pretty_err
 			},
 		};
 

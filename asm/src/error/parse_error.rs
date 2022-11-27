@@ -2,7 +2,8 @@
 
 use std::fmt::{Display, Formatter};
 
-use super::{make_info_block, LocationInfo};
+use super::print::{make_info_body, make_info_header};
+use super::LocationInfo;
 
 #[derive(Debug)]
 pub enum ParseError {
@@ -13,27 +14,19 @@ pub enum ParseError {
 	UnexpectedToken {
 		src_file: String,
 		location: Box<LocationInfo>,
-		fnd:      String,
-		ex:       String,
+		found:    String,
+		expected: String,
 	},
-	UnclosedParenthesis {
+	UnclosedDelimiter {
 		src_file:       String,
+		delim_type:     String,
+		found:          String,
 		close_location: Box<LocationInfo>,
 		open_location:  Box<LocationInfo>,
 	},
 	UnmatchedCloseParenthesis {
 		src_file: String,
 		location: Box<LocationInfo>,
-	},
-	UnclosedBracket {
-		src_file:       String,
-		close_location: Box<LocationInfo>,
-		open_location:  Box<LocationInfo>,
-	},
-	UnclosedBrace {
-		src_file:       String,
-		close_location: Box<LocationInfo>,
-		open_location:  Box<LocationInfo>,
 	},
 	InvalidOrderingSpecifier {
 		src_file: String,
@@ -46,104 +39,63 @@ impl Display for ParseError {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		let repr = match self {
 			Self::UnexpectedEof { src_file, location } => {
-				make_info_block(
-					"unexpected end-of-file",
-					src_file,
-					location.line,
-					location.col,
-					1,
-					&location.src_line,
-				)
+				let mut pretty_err = make_info_header("unexpected end-of-file", src_file, location);
+
+				pretty_err.push_str(&make_info_body(None, location));
+
+				pretty_err
 			},
-			Self::UnexpectedToken { src_file, location, fnd, ex } => {
-				make_info_block(
-					&format!("found unexpected token `{}`, expected `{}`", fnd, ex),
+			Self::UnexpectedToken { src_file, location, found, expected } => {
+				let mut pretty_err = make_info_header(
+					&format!("found unexpected token `{}`, expected `{}`", found, expected),
 					src_file,
-					location.line,
-					location.col,
-					location.span,
-					&location.src_line,
-				)
-			},
-			Self::UnclosedParenthesis { src_file, close_location, open_location } => {
-				let err = make_info_block(
-					"expected closing parenthesis",
-					src_file,
-					close_location.line,
-					close_location.col,
-					close_location.span,
-					&close_location.src_line,
-				);
-				let origin = make_info_block(
-					"unclosed parenthesis",
-					src_file,
-					open_location.line,
-					open_location.col,
-					open_location.span,
-					&open_location.src_line,
+					location,
 				);
 
-				format!("{}\n{}", err, origin)
+				pretty_err.push_str(&make_info_body(None, location));
+
+				pretty_err
+			},
+			Self::UnclosedDelimiter {
+				src_file,
+				delim_type,
+				found,
+				close_location,
+				open_location,
+			} => {
+				let mut pretty_err = make_info_header(
+					&format!("found unexpected token `{}`, expected closing {}", found, delim_type),
+					src_file,
+					close_location,
+				);
+
+				pretty_err.push_str(&make_info_body(None, close_location));
+
+				pretty_err.push_str(&make_info_body(
+					Some(&format!("unclosed {}", delim_type)),
+					open_location,
+				));
+
+				pretty_err
 			},
 			Self::UnmatchedCloseParenthesis { src_file, location } => {
-				make_info_block(
-					"unmatched closing parenthesis",
-					src_file,
-					location.line,
-					location.col,
-					location.span,
-					&location.src_line,
-				)
-			},
-			Self::UnclosedBracket { src_file, close_location, open_location } => {
-				let err = make_info_block(
-					"expected closing bracket",
-					src_file,
-					close_location.line,
-					close_location.col,
-					close_location.span,
-					&close_location.src_line,
-				);
-				let origin = make_info_block(
-					"unclosed bracket",
-					src_file,
-					open_location.line,
-					open_location.col,
-					open_location.span,
-					&open_location.src_line,
-				);
+				let mut pretty_err =
+					make_info_header("unmatched closing parenthesis", src_file, location);
 
-				format!("{}\n{}", err, origin)
-			},
-			Self::UnclosedBrace { src_file, close_location, open_location } => {
-				let err = make_info_block(
-					"expected closing brace",
-					src_file,
-					close_location.line,
-					close_location.col,
-					close_location.span,
-					&close_location.src_line,
-				);
-				let origin = make_info_block(
-					"unclosed brace",
-					src_file,
-					open_location.line,
-					open_location.col,
-					open_location.span,
-					&open_location.src_line,
-				);
+				pretty_err.push_str(&make_info_body(None, location));
 
-				format!("{}\n{}", err, origin)
+				pretty_err
 			},
 			Self::InvalidOrderingSpecifier { src_file, location, spec } => {
-				make_info_block(
+				let mut pretty_err = make_info_header(
 					&format!("invalid ordering specifier `{:?}`", spec),
 					src_file,
-					location.line,
-					location.col,
-					location.span,
-					&location.src_line,
-				)
+					location,
+				);
+
+				pretty_err.push_str(&make_info_body(None, location));
+
+				pretty_err
 			},
 		};
 

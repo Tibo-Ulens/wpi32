@@ -62,8 +62,10 @@ impl<'i, 's> ImmediateParser<'i, 's> {
 
 			// If the paren_stack is not empty then the slice must have at
 			// least 1 element, so unwrap is safe
-			return Err(ParseError::UnclosedParenthesis {
+			return Err(ParseError::UnclosedDelimiter {
 				src_file:       self.parser.source_file.to_string(),
+				delim_type:     "parenthesis".to_string(),
+				found:          self.imm_slice.last().unwrap().t.to_string(),
 				close_location: Box::new(LocationInfo::from(self.imm_slice.last().unwrap())),
 				open_location:  Box::new(LocationInfo::from(&popped)),
 			});

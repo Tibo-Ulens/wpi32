@@ -84,8 +84,8 @@ impl<'s> Lexer<'s> {
 					line:     self.line,
 					col:      self.col + 3,
 					src_line: self.get_curr_line().to_string(),
-					fnd:      close,
-					ex:       '\'',
+					found:    close,
+					expected: '\'',
 				});
 			}
 
@@ -113,8 +113,8 @@ impl<'s> Lexer<'s> {
 				line:     self.line,
 				col:      self.col + 2,
 				src_line: self.get_curr_line().to_string(),
-				fnd:      close,
-				ex:       '\'',
+				found:    close,
+				expected: '\'',
 			});
 		}
 

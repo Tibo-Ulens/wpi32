@@ -36,8 +36,8 @@ impl<'s> Parser<'s> {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
 					location: Box::new(LocationInfo::from(id_token)),
-					fnd:      id_token.t.to_string(),
-					ex:       "IDENTIFIER".to_string(),
+					found:    id_token.t.to_string(),
+					expected: "IDENTIFIER".to_string(),
 				});
 			},
 		};
@@ -133,8 +133,8 @@ impl<'s> Parser<'s> {
 					Err(ParseError::UnexpectedToken {
 						src_file: self.source_file.to_string(),
 						location: Box::new(LocationInfo::from(id_or_paren)),
-						fnd:      id_or_paren.t.to_string(),
-						ex:       "IDENTIFIER or (".to_string(),
+						found:    id_or_paren.t.to_string(),
+						expected: "IDENTIFIER or (".to_string(),
 					})
 				},
 			}
@@ -158,8 +158,8 @@ impl<'s> Parser<'s> {
 				Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
 					location: Box::new(LocationInfo::from(specifier)),
-					fnd:      specifier.t.to_string(),
-					ex:       "IDENTIFIER".to_string(),
+					found:    specifier.t.to_string(),
+					expected: "IDENTIFIER".to_string(),
 				})
 			},
 		}
@@ -177,8 +177,8 @@ impl<'s> Parser<'s> {
 				Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
 					location: Box::new(LocationInfo::from(specifier)),
-					fnd:      specifier.t.to_string(),
-					ex:       "? or + or *".to_string(),
+					found:    specifier.t.to_string(),
+					expected: "? or + or *".to_string(),
 				})
 			},
 		}
@@ -232,8 +232,8 @@ impl<'s> Parser<'s> {
 				Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
 					location: Box::new(LocationInfo::from(peek)),
-					fnd:      peek.t.to_string(),
-					ex:       "( or [ or {".to_string(),
+					found:    peek.t.to_string(),
+					expected: "( or [ or {".to_string(),
 				})
 			},
 		}
@@ -251,8 +251,10 @@ impl<'s> Parser<'s> {
 						Ok(())
 					},
 					_ => {
-						Err(ParseError::UnclosedParenthesis {
+						Err(ParseError::UnclosedDelimiter {
 							src_file:       self.source_file.to_string(),
+							delim_type:     "parenthesis".to_string(),
+							found:          peek.t.to_string(),
 							close_location: Box::new(LocationInfo::from(peek)),
 							open_location:  Box::new(LocationInfo::from(&open)),
 						})
@@ -267,8 +269,10 @@ impl<'s> Parser<'s> {
 						Ok(())
 					},
 					_ => {
-						Err(ParseError::UnclosedBracket {
+						Err(ParseError::UnclosedDelimiter {
 							src_file:       self.source_file.to_string(),
+							delim_type:     "bracket".to_string(),
+							found:          peek.t.to_string(),
 							close_location: Box::new(LocationInfo::from(peek)),
 							open_location:  Box::new(LocationInfo::from(&open)),
 						})
@@ -283,8 +287,10 @@ impl<'s> Parser<'s> {
 						Ok(())
 					},
 					_ => {
-						Err(ParseError::UnclosedParenthesis {
+						Err(ParseError::UnclosedDelimiter {
 							src_file:       self.source_file.to_string(),
+							delim_type:     "brace".to_string(),
+							found:          peek.t.to_string(),
 							close_location: Box::new(LocationInfo::from(peek)),
 							open_location:  Box::new(LocationInfo::from(&open)),
 						})

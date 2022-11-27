@@ -267,8 +267,10 @@ impl<'s> Parser<'s> {
 
 		let close_token = self.next()?;
 		if close_token.t != TokenType::SymRightBracket {
-			return Err(ParseError::UnclosedParenthesis {
+			return Err(ParseError::UnclosedDelimiter {
 				src_file:       self.source_file.to_string(),
+				delim_type:     "bracket".to_string(),
+				found:          close_token.t.to_string(),
 				close_location: Box::new(LocationInfo::from(close_token)),
 				open_location:  Box::new(LocationInfo::from(open_peek)),
 			});
@@ -286,8 +288,8 @@ impl<'s> Parser<'s> {
 				Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
 					location: Box::new(LocationInfo::from(next)),
-					fnd:      next.t.to_string(),
-					ex:       "REGISTER".to_string(),
+					found:    next.t.to_string(),
+					expected: "REGISTER".to_string(),
 				})
 			},
 		}
@@ -314,8 +316,8 @@ impl<'s> Parser<'s> {
 				Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
 					location: Box::new(LocationInfo::from(ord_raw)),
-					fnd:      ord_raw.t.to_string(),
-					ex:       "ORDERING_TARGET".to_string(),
+					found:    ord_raw.t.to_string(),
+					expected: "ORDERING_TARGET".to_string(),
 				})
 			},
 		}

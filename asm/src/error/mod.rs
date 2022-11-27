@@ -8,7 +8,6 @@ mod print;
 
 pub use lex_error::LexError;
 pub use parse_error::ParseError;
-pub(crate) use print::make_info_block;
 
 use crate::lex::Token;
 
@@ -41,6 +40,12 @@ impl<'s> From<&Token<'s>> for LocationInfo {
 			span:     value.span,
 			src_line: value.source_line.to_string(),
 		}
+	}
+}
+
+impl LocationInfo {
+	fn new(line: usize, col: usize, span: usize, src_line: &str) -> Self {
+		Self { line, col, span, src_line: src_line.to_string() }
 	}
 }
 

@@ -134,8 +134,8 @@ impl<'s> Parser<'s> {
 			Err(ParseError::UnexpectedToken {
 				src_file: srcf,
 				location: Box::new(LocationInfo::from(prev)),
-				fnd:      repr,
-				ex:       t.to_string(),
+				found:    repr,
+				expected: t.to_string(),
 			})
 		}
 	}
@@ -200,8 +200,8 @@ impl<'s> Parser<'s> {
 			return Err(ParseError::UnexpectedToken {
 				src_file: self.source_file.to_string(),
 				location: Box::new(LocationInfo::from(nl)),
-				fnd:      nl.t.to_string(),
-				ex:       "CONST DIRECTIVE or NEWLINE".to_string(),
+				found:    nl.t.to_string(),
+				expected: "CONST DIRECTIVE or NEWLINE".to_string(),
 			});
 		}
 
@@ -232,8 +232,8 @@ impl<'s> Parser<'s> {
 				Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
 					location: Box::new(LocationInfo::from(peek)),
-					fnd:      peek.t.to_string(),
-					ex:       "CONST DIRECTIVE or MACRO DEFINITION or COMMENT or NEWLINE"
+					found:    peek.t.to_string(),
+					expected: "CONST DIRECTIVE or MACRO DEFINITION or COMMENT or NEWLINE"
 						.to_string(),
 				})
 			},
@@ -263,8 +263,8 @@ impl<'s> Parser<'s> {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
 					location: Box::new(LocationInfo::from(id_token)),
-					fnd:      id_token.t.to_string(),
-					ex:       "IDENTIFIER".to_string(),
+					found:    id_token.t.to_string(),
+					expected: "IDENTIFIER".to_string(),
 				});
 			},
 		};
@@ -301,8 +301,8 @@ impl<'s> Parser<'s> {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
 					location: Box::new(LocationInfo::from(peek)),
-					fnd:      peek.t.to_string(),
-					ex:       "STRING or CHAR or IMMEDIATE".to_string(),
+					found:    peek.t.to_string(),
+					expected: "STRING or CHAR or IMMEDIATE".to_string(),
 				});
 			},
 		};
@@ -332,8 +332,8 @@ impl<'s> Parser<'s> {
 				return Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
 					location: Box::new(LocationInfo::from(peek)),
-					fnd:      peek.t.to_string(),
-					ex:       ".TEXT or .DATA or .BSS".to_string(),
+					found:    peek.t.to_string(),
+					expected: ".TEXT or .DATA or .BSS".to_string(),
 				});
 			},
 		};
@@ -399,8 +399,8 @@ impl<'s> Parser<'s> {
 						Err(ParseError::UnexpectedToken {
 							src_file: self.source_file.to_string(),
 							location: Box::new(LocationInfo::from(peek)),
-							fnd:      peek.t.to_string(),
-							ex:       "! or {".to_string(),
+							found:    peek.t.to_string(),
+							expected: "! or {".to_string(),
 						})
 					},
 				}
@@ -413,8 +413,8 @@ impl<'s> Parser<'s> {
 				Err(ParseError::UnexpectedToken {
 					src_file: self.source_file.to_string(),
 					location: Box::new(LocationInfo::from(peek)),
-					fnd:      peek.t.to_string(),
-					ex:       "DIRECTIVE or INSTRUCTION or COMMENT or NEWLINE".to_string(),
+					found:    peek.t.to_string(),
+					expected: "DIRECTIVE or INSTRUCTION or COMMENT or NEWLINE".to_string(),
 				})
 			},
 		}
@@ -442,8 +442,10 @@ impl<'s> Parser<'s> {
 
 		let close = self.next()?;
 		if close.t != TokenType::SymRightBrace {
-			return Err(ParseError::UnclosedBracket {
+			return Err(ParseError::UnclosedDelimiter {
 				src_file:       self.source_file.to_string(),
+				delim_type:     "brace".to_string(),
+				found:          close.t.to_string(),
 				close_location: Box::new(LocationInfo::from(close)),
 				open_location:  Box::new(LocationInfo::from(&open)),
 			});
