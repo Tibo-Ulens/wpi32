@@ -146,7 +146,7 @@ impl<'i, 's> ImmediateParser<'i, 's> {
 					op_stack.push(operator);
 					op_stack_.push(token);
 				},
-				_ => todo!(),
+				_ => unreachable!(),
 			}
 		}
 

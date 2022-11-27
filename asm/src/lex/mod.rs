@@ -166,6 +166,8 @@ impl<'s> Lexer<'s> {
 	/// state as it goes along
 	///
 	/// Returns [`None`] if no characters are left
+	///
+	/// TODO: handle tabs not being 1 char wide
 	fn take_whitespace(&mut self) -> Option<()> {
 		match self.peek()? {
 			' ' | '\t' => {
@@ -223,6 +225,7 @@ impl<'s> Lexer<'s> {
 			'}' => Ok(self.make_token(TokenType::SymRightBrace)),
 			'?' => Ok(self.make_token(TokenType::Op(OpToken::Question))),
 			':' => Ok(self.make_token(TokenType::Op(OpToken::Colon))),
+			'$' => Ok(self.make_token(TokenType::Op(OpToken::Dollar))),
 			'|' => {
 				match self.peek()? {
 					'|' => {
@@ -258,6 +261,7 @@ impl<'s> Lexer<'s> {
 			'=' => {
 				match self.next()? {
 					'=' => Ok(self.make_token(TokenType::Op(OpToken::Eq))),
+					'>' => Ok(self.make_token(TokenType::SymFatArrow)),
 					c => {
 						Err(LexError::UnexpectedSymbol {
 							src_file: self.source_file.to_string(),
@@ -337,8 +341,8 @@ impl<'s> Lexer<'s> {
 
 				Ok(self.make_token(TokenType::LitNum(num)))
 			},
-			c if unicode_ident::is_xid_start(c) => {
-				let raw = match self.take_while(unicode_ident::is_xid_continue) {
+			c if unicode_ident::is_xid_start(c) || c == '#' || c == '_' || c == '.' => {
+				let raw = match self.take_while(|c| unicode_ident::is_xid_continue(c) || c == '_') {
 					Ok(id) => id,
 					Err(e) => return Some(Err(e.into())),
 				};

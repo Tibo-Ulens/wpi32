@@ -29,7 +29,7 @@ impl<'s> Lexer<'s> {
 	/// Attempt to match an identifier to an instruction, register, section
 	/// name, or directive, or return a new label if a match is not found
 	pub(super) fn match_identifier(&mut self, id: &'s str) -> Result<Token<'s>, LexError> {
-		match id {
+		match &id.to_lowercase()[..] {
 			"addi" => Ok(self.make_token(TokenType::Inst(InstToken::Rri(RriInstruction::Addi)))),
 			"andi" => Ok(self.make_token(TokenType::Inst(InstToken::Rri(RriInstruction::Andi)))),
 			"ori" => Ok(self.make_token(TokenType::Inst(InstToken::Rri(RriInstruction::Ori)))),
@@ -176,36 +176,36 @@ impl<'s> Lexer<'s> {
 
 			d if d.starts_with('#') => {
 				match d {
-					"#SECTION" => Ok(self.make_token(TokenType::Dir(DirToken::Section))),
-					"#BYTES" => {
+					"#section" => Ok(self.make_token(TokenType::Dir(DirToken::Section))),
+					"#bytes" => {
 						Ok(self
 							.make_token(TokenType::Dir(DirToken::Regular(RegularDirective::Bytes))))
 					},
-					"#HALVES" => {
+					"#halves" => {
 						Ok(self.make_token(TokenType::Dir(DirToken::Regular(
 							RegularDirective::Halves,
 						))))
 					},
-					"#WORDS" => {
+					"#words" => {
 						Ok(self
 							.make_token(TokenType::Dir(DirToken::Regular(RegularDirective::Words))))
 					},
-					"#RES_BYTES" => {
+					"#res_bytes" => {
 						Ok(self.make_token(TokenType::Dir(DirToken::Regular(
 							RegularDirective::ResBytes,
 						))))
 					},
-					"#RES_HALVES" => {
+					"#res_halves" => {
 						Ok(self.make_token(TokenType::Dir(DirToken::Regular(
 							RegularDirective::ResHalves,
 						))))
 					},
-					"#RES_WORDS" => {
+					"#res_words" => {
 						Ok(self.make_token(TokenType::Dir(DirToken::Regular(
 							RegularDirective::ResWords,
 						))))
 					},
-					"#CONST" => {
+					"#const" => {
 						Ok(self
 							.make_token(TokenType::Dir(DirToken::Regular(RegularDirective::Const))))
 					},
@@ -222,9 +222,9 @@ impl<'s> Lexer<'s> {
 				}
 			},
 
-			".TEXT" => Ok(self.make_token(TokenType::Section(id))),
-			".DATA" => Ok(self.make_token(TokenType::Section(id))),
-			".BSS" => Ok(self.make_token(TokenType::Section(id))),
+			".text" => Ok(self.make_token(TokenType::Section(id))),
+			".data" => Ok(self.make_token(TokenType::Section(id))),
+			".bss" => Ok(self.make_token(TokenType::Section(id))),
 
 			_ => Ok(self.make_token(TokenType::Identifier(id))),
 		}

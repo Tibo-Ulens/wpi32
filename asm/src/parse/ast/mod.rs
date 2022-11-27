@@ -34,22 +34,36 @@ pub struct Root<'s> {
 /// A single line in the preamble of some source code
 ///
 /// The preamble will not be emitted to any named sections, and so cannot
-/// contain any actual data. However, it can be used to define constants using
-/// [`ConstDirective`]s or to write header comments.
+/// contain any actual data. However, it can be used to define constants or
+/// macros, or to write header comments.
 ///
 /// ```ebnf
 /// preamble_line =
 ///     { whitespace },
-///     [ const_directive ],
+///     [ preamble_statement ],
 ///     [ comment ],
 ///     newline;
 /// ```
 #[derive(Clone, Debug)]
 pub struct PreambleLine<'s> {
-	/// The optional [`ConstDirective`] in this line
-	pub constdir: Option<ConstDirective<'s>>,
+	/// The optional [`PreambleStatement`] in this line
+	pub statement: Option<PreambleStatement<'s>>,
 	/// The optional comment in this line
-	pub comment:  Option<&'s str>,
+	pub comment:   Option<&'s str>,
+}
+
+/// A statement that is allowed within the source file preamble,
+/// can contain either [`MacroDefinition`]s or [`ConstDirective`]s
+///
+/// ```ebnf
+/// preamble_statement = const_directive | macro_definition;
+/// ```
+#[derive(Clone, Debug)]
+pub enum PreambleStatement<'s> {
+	/// A macro definition
+	MacroDefinition(MacroDefinition<'s>),
+	/// A directive
+	ConstDirective(ConstDirective<'s>),
 }
 
 /// A directive to declare assemble-time constants
@@ -145,9 +159,9 @@ pub enum Statement<'s> {
 #[derive(Clone, Debug)]
 pub struct LabeledBlock<'s> {
 	/// The label naming this block
-	label: &'s str,
+	pub label: &'s str,
 	/// The content of this block
-	lines: Vec<Line<'s>>,
+	pub lines: Vec<Line<'s>>,
 }
 
 /// A directive that creates or otherwise manipulates data

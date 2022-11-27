@@ -1,4 +1,3 @@
-use super::{Line, Statement};
 use crate::lex::TokenType;
 /// A macro definition
 ///
@@ -16,16 +15,16 @@ use crate::lex::TokenType;
 #[derive(Clone, Debug)]
 pub struct MacroDefinition<'s> {
 	/// The name of the macro getting defined
-	id:    &'s str,
+	pub id:    &'s str,
 	/// The rules making up this macro
-	rules: Vec<MacroRule<'s>>,
+	pub rules: Vec<MacroRule<'s>>,
 }
 
 /// One of the rules making up a specific macro
 ///
 /// Contains a list of [`MacroMatch`]es to specify an argument pattern to
-/// detect and a transcriber containing one or more [`Line`]s which will get
-/// substituted into the AST when the macro gets called
+/// detect and a transcriber containing one or more [`Statement`]s which will
+/// get substituted into the AST when the macro gets called
 ///
 /// ```ebnf
 /// macro_rule = macro_matcher, "=>", macro_transcriber;
@@ -39,9 +38,9 @@ pub struct MacroDefinition<'s> {
 #[derive(Clone, Debug)]
 pub struct MacroRule<'s> {
 	/// The pattern matching this rule
-	matcher:     Vec<MacroMatch<'s>>,
+	pub matcher:     Vec<MacroMatch<'s>>,
 	/// The body of the rule
-	transcriber: Vec<Line<'s>>,
+	pub transcriber: Vec<TokenType<'s>>,
 }
 
 /// A single pattern to get matched against in macros
@@ -73,6 +72,8 @@ pub enum MacroMatch<'s> {
 		/// The list of (sub)matches that should be matched against
 		/// variadically
 		matches:  Vec<MacroMatch<'s>>,
+		/// The optional repetition separator
+		rep_sep:  Option<TokenType<'s>>,
 		/// The type of variadic matching to use
 		var_type: MacroVarType,
 	},
@@ -112,14 +113,14 @@ pub enum MacroVarType {
 /// ```ebnf
 /// macro_invocation =
 ///     identifier, "!",
-///     | ( "(", { statement }, ")" )
-///     | ( "[", { statement }, "]" )
-///     | ( "{", { statement }, "}" );
+///     | ( "(", { token }, ")" )
+///     | ( "[", { token }, "]" )
+///     | ( "{", { token }, "}" );
 /// ```
 #[derive(Clone, Debug)]
 pub struct MacroInvocation<'s> {
 	/// The name of the macro getting called
-	id:   &'s str,
+	pub id:   &'s str,
 	/// The arguments passed to the macro
-	args: Vec<Statement<'s>>,
+	pub args: Vec<TokenType<'s>>,
 }

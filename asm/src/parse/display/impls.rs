@@ -8,11 +8,19 @@ use crate::parse::ast::{
 	Directive,
 	Immediate,
 	Instruction,
+	LabeledBlock,
 	Line,
 	Literal,
+	MacroArgType,
+	MacroDefinition,
+	MacroInvocation,
+	MacroMatch,
+	MacroRule,
+	MacroVarType,
 	OffsetOperator,
 	OrderingTarget,
 	PreambleLine,
+	PreambleStatement,
 	Root,
 	Section,
 	Statement,
@@ -43,8 +51,8 @@ impl<'s> From<&PreambleLine<'s>> for Node {
 	fn from(value: &PreambleLine) -> Self {
 		let mut children = vec![];
 
-		if let Some(constdir) = &value.constdir {
-			children.push(constdir.into());
+		if let Some(stmt) = &value.statement {
+			children.push(Node::from(stmt).add_prefix("PreambleStatement"));
 		}
 
 		if let Some(comment) = value.comment {
@@ -59,6 +67,15 @@ impl<'s> From<&PreambleLine<'s>> for Node {
 			Node { prefixes: vec![], repr: "Empty".to_string(), children }
 		} else {
 			Node { prefixes: vec![], repr: "PreambleLine".to_string(), children }
+		}
+	}
+}
+
+impl<'s> From<&PreambleStatement<'s>> for Node {
+	fn from(value: &PreambleStatement<'s>) -> Self {
+		match value {
+			PreambleStatement::ConstDirective(const_dir) => const_dir.into(),
+			PreambleStatement::MacroDefinition(m_def) => m_def.into(),
 		}
 	}
 }
@@ -123,12 +140,158 @@ impl<'s> From<&Line<'s>> for Node {
 impl<'s> From<&Statement<'s>> for Node {
 	fn from(value: &Statement) -> Self {
 		match value {
-			Statement::MacroDefinition(_m_def) => todo!(),
-			Statement::MacroInvocation(_m_invoc) => todo!(),
-			Statement::LabeledBlock(_l_block) => todo!(),
+			Statement::MacroDefinition(m_def) => Node::from(m_def).add_prefix("Statement"),
+			Statement::MacroInvocation(m_invoc) => Node::from(m_invoc).add_prefix("Statement"),
+			Statement::LabeledBlock(l_block) => Node::from(l_block).add_prefix("Statement"),
 			Statement::Directive(dir) => Node::from(dir).add_prefix("Statement"),
 			Statement::Instruction(inst) => Node::from(inst).add_prefix("Statement"),
 		}
+	}
+}
+
+impl<'s> From<&MacroDefinition<'s>> for Node {
+	fn from(value: &MacroDefinition<'s>) -> Self {
+		let mut children = vec![Node {
+			prefixes: vec!["Identifier".to_string()],
+			repr:     value.id.to_string(),
+			children: vec![],
+		}];
+
+		children.extend(value.rules.iter().map(|r| r.into()));
+
+		Node { prefixes: vec![], repr: "MacroDefinition".to_string(), children }
+	}
+}
+
+impl<'s> From<&MacroRule<'s>> for Node {
+	fn from(value: &MacroRule<'s>) -> Self {
+		let children = vec![
+			Node {
+				prefixes: vec![],
+				repr:     "Matcher".to_string(),
+				children: value.matcher.iter().map(|m| m.into()).collect(),
+			},
+			Node {
+				prefixes: vec![],
+				repr:     "Transcriber".to_string(),
+				children: value
+					.transcriber
+					.iter()
+					.map(|t| {
+						Node {
+							prefixes: vec!["Token".to_string()],
+							repr:     t.to_string(),
+							children: vec![],
+						}
+					})
+					.collect(),
+			},
+		];
+
+		Node { prefixes: vec![], repr: "MacroRule".to_string(), children }
+	}
+}
+
+impl<'s> From<&MacroMatch<'s>> for Node {
+	fn from(value: &MacroMatch<'s>) -> Self {
+		match value {
+			MacroMatch::Raw(t) => {
+				Node {
+					prefixes: vec!["Raw".to_string()],
+					repr:     t.to_string(),
+					children: vec![],
+				}
+			},
+			MacroMatch::Typed { id, arg_type } => {
+				Node {
+					prefixes: vec![],
+					repr:     "TypedMatch".to_string(),
+					children: vec![
+						Node {
+							prefixes: vec!["Id".to_string()],
+							repr:     id.to_string(),
+							children: vec![],
+						},
+						arg_type.into(),
+					],
+				}
+			},
+			MacroMatch::Variadic { matches, rep_sep, var_type } => {
+				let mut children = vec![];
+				children.extend(matches.iter().map(|m| m.into()));
+				if let Some(rp) = rep_sep {
+					children.push(Node {
+						prefixes: vec!["RepSep".to_string(), "Token".to_string()],
+						repr:     rp.to_string(),
+						children: vec![],
+					});
+				}
+				children.push(var_type.into());
+
+				Node { prefixes: vec![], repr: "VariadicMatch".to_string(), children }
+			},
+		}
+	}
+}
+
+impl From<&MacroArgType> for Node {
+	fn from(value: &MacroArgType) -> Self {
+		let repr = match value {
+			MacroArgType::Inst => "Inst".to_string(),
+			MacroArgType::Reg => "Reg".to_string(),
+			MacroArgType::Dir => "Dir".to_string(),
+			MacroArgType::Ident => "Ident".to_string(),
+			MacroArgType::Imm => "Imm".to_string(),
+			MacroArgType::Stmt => "Stmt".to_string(),
+		};
+
+		Node { prefixes: vec![], repr, children: vec![] }
+	}
+}
+
+impl From<&MacroVarType> for Node {
+	fn from(value: &MacroVarType) -> Self {
+		let repr = match value {
+			MacroVarType::Optional => "Optional".to_string(),
+			MacroVarType::OneOrMore => "OneOrMore".to_string(),
+			MacroVarType::Any => "Any".to_string(),
+		};
+
+		Node { prefixes: vec![], repr, children: vec![] }
+	}
+}
+
+impl<'s> From<&MacroInvocation<'s>> for Node {
+	fn from(value: &MacroInvocation<'s>) -> Self {
+		let mut children = vec![Node {
+			prefixes: vec!["Identifier".to_string()],
+			repr:     value.id.to_string(),
+			children: vec![],
+		}];
+
+		children.extend(
+			value
+				.args
+				.iter()
+				.map(|tt| tt.to_string())
+				.map(|s| Node { prefixes: vec!["Arg".to_string()], repr: s, children: vec![] }),
+		);
+
+		Node { prefixes: vec![], repr: "MacroInvocation".to_string(), children }
+	}
+}
+
+impl<'s> From<&LabeledBlock<'s>> for Node {
+	fn from(value: &LabeledBlock<'s>) -> Self {
+		let mut children = vec![Node {
+			prefixes: vec!["Label".to_string()],
+			repr:     value.label.to_string(),
+			children: vec![],
+		}];
+
+		children.extend(value.lines.iter().map(|l| l.into()));
+
+		Node { prefixes: vec![], repr: "LabeledBlock".to_string(), children }
 	}
 }
 

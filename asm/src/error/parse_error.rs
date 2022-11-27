@@ -30,6 +30,11 @@ pub enum ParseError {
 		close_location: Box<LocationInfo>,
 		open_location:  Box<LocationInfo>,
 	},
+	UnclosedBrace {
+		src_file:       String,
+		close_location: Box<LocationInfo>,
+		open_location:  Box<LocationInfo>,
+	},
 	InvalidOrderingSpecifier {
 		src_file: String,
 		location: Box<LocationInfo>,
@@ -101,6 +106,26 @@ impl Display for ParseError {
 				);
 				let origin = make_info_block(
 					"unclosed bracket",
+					src_file,
+					open_location.line,
+					open_location.col,
+					open_location.span,
+					&open_location.src_line,
+				);
+
+				format!("{}\n{}", err, origin)
+			},
+			Self::UnclosedBrace { src_file, close_location, open_location } => {
+				let err = make_info_block(
+					"expected closing brace",
+					src_file,
+					close_location.line,
+					close_location.col,
+					close_location.span,
+					&close_location.src_line,
+				);
+				let origin = make_info_block(
+					"unclosed brace",
 					src_file,
 					open_location.line,
 					open_location.col,

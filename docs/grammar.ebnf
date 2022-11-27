@@ -37,9 +37,11 @@ section = section_header, { line };
 
 preamble_line =
 	{ whitespace },
-	[ const_directive ],
+	[ preamble_statement ],
 	[ comment ],
 	newline;
+
+preamble_statement = const_directive | macro_definition;
 
 section_header = "#SECTION", section_name, newline;
 section_name = ".TEXT" | ".DATA" | ".BSS";
@@ -62,14 +64,16 @@ macro_definition =
 	identifier,
 	macro_body;
 macro_body =
-	( "(", { macro_rules }, ")" )
-	| ( "[", { macro_rules }, "]" )
-	| ( "{", { macro_rules }, "}" );
+	( "(", macro_rule, { comma, macro_rule }, ")" )
+	| ( "[", macro_rule, { comma, macro_rule }, "]" )
+	| ( "{", macro_rule, { comma, macro_rule }, "}" );
 
-macro_rules = macro_rule, { comma, macro_rule };
-macro_rule = macro_matcher, "=>", macro_transcriber;
+macro_rule = macro_matcher, "=>", macro_transcriber, newline;
 
-macro_matcher = "(", { macro_match } ")";
+macro_matcher =
+	"(", { macro_match } ")"
+	| "[", { macro_match } "]"
+	| "{", { macro_match } "}";
 macro_match =
 	?tokentype?
 	| ( "$", identifier, ":", macro_arg_type )
@@ -78,16 +82,15 @@ macro_arg_type = "inst", "reg", "dir", "ident", "imm", "stmt";
 macro_var_type = "?" | "+" | "*";
 
 macro_transcriber =
-	line
-	| ( "(", { line }, ")" )
-	| ( "[", { line }, "]" )
-	| ( "{", { line }, "}" );
+	( "(", { token }, ")" )
+	| ( "[", { token }, "]" )
+	| ( "{", { token }, "}" );
 
 macro_invocation =
 	identifier, "!",
-	| ( "(", { statement }, ")" )
-	| ( "[", { statement }, "]" )
-	| ( "{", { statement }, "}" );
+	| ( "(", { token }, ")" )
+	| ( "[", { token }, "]" )
+	| ( "{", { token }, "}" );
 
 labeled_block = identifier, "{", { line }, "}";
 
