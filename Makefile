@@ -1,4 +1,4 @@
-.PHONY: r rr b br fmt lint doc docopen doctest
+.PHONY: b br fmt lint doc docopen doctest
 
 b: fmt
 	cargo +nightly build --workspace
