@@ -1,9 +1,7 @@
 name: test
 
 on:
-    push:
-        paths:
-          - "**/*.rs"
+    push
 
 env:
     CARGO_TERM_COLOR: always
