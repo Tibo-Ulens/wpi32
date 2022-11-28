@@ -1,4 +1,4 @@
-.PHONY: r rr b br fmt lint
+.PHONY: r rr b br fmt lint doc docopen doctest
 
 b: fmt
 	cargo +nightly build --workspace
@@ -17,3 +17,6 @@ doc:
 
 docopen:
 	cargo +nightly doc --no-deps --document-private-items --workspace --all-features --open
+
+doctest:
+	cargo +nightly test --doc --workspace
