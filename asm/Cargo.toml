@@ -2,7 +2,7 @@
 name = "asm"
 version = "0.3.0"
 edition = "2021"
-description = "Zeus RISC-V assembler"
+description = "RISC-V assembler"
 readme = "../README.md"
 license = "MIT"
 publish = false
