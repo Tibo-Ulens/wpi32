@@ -17,7 +17,6 @@
 //!  - TODO: Code generation: Output binary data
 
 #![warn(missing_docs)]
-#![feature(is_ascii_octdigit)]
 #![feature(let_chains)]
 #![feature(assert_matches)]
 
