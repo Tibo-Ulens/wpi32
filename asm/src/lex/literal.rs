@@ -185,14 +185,15 @@ impl<'s> Lexer<'s> {
 	///
 	/// Can make decimal, hex, octal, or binary numbers depending on the
 	/// supplied predicate function
-	pub(super) fn try_take_number<F>(&mut self, pred: F) -> Result<isize, LexError>
-	where
-		F: Fn(char) -> bool,
-	{
-		let raw = match self.take_while(pred) {
+	pub(super) fn try_take_number(&mut self) -> Result<isize, LexError> {
+		let raw = match self.take_while(|c| {
+			c.is_ascii_hexdigit() || c == 'x' || c == 'X' || c == 'o' || c == 'O' || c == '_'
+		}) {
 			Ok(n) => n,
 			Err(e) => return Err(e),
 		};
+
+		let raw = raw.replace('_', "");
 
 		let num = if raw.starts_with("0x") {
 			isize::from_str_radix(raw.trim_start_matches("0x"), 16).map_err(|_| {

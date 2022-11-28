@@ -24,7 +24,6 @@ use std::str::Chars;
 mod identifier;
 mod literal;
 mod token;
-mod util;
 
 pub use token::*;
 
@@ -334,7 +333,7 @@ impl<'s> Lexer<'s> {
 				Ok(self.make_token(TokenType::LitStr(raw)))
 			},
 			n if n.is_ascii_digit() => {
-				let num = match self.try_take_number(util::is_digit_or_radix) {
+				let num = match self.try_take_number() {
 					Ok(n) => n,
 					Err(e) => return Some(Err(e.into())),
 				};

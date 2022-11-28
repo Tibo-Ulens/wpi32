@@ -10,7 +10,6 @@
 //!
 //!  - TODO: Macros
 //!  - TODO: Make lexer encode *less* meaning (will probably make macro parsing easier)
-//!  - TODO: Allow underscores in numbers to separate into hundreds/thousands/...
 //!  - TODO: Label resolution: Resolve labels to their final value
 //!
 //!    ^^^^^^^^^^^^^^^^ CHECK IF LINKER CAN DO THIS
