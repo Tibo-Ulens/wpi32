@@ -1,9 +1,5 @@
-use asm::error::Error;
-use asm::lex::{Lexer, Token};
-use asm::parse::{Node, Parser};
-
 #[rustfmt::skip]
-static TEST_SOURCE: &str = "\
+pub(super) static TEST_SOURCE_CODE: &str = "\
 ; Test header comment
 ;
 
@@ -25,7 +21,7 @@ _start {
 ";
 
 #[rustfmt::skip]
-static TEST_TOKENS_REPR: &str = r###"[001:001]: COMMENT    "; Test header comment"         "```; Test header comment```\n"
+pub(super) static TEST_TOKENS_STRING: &str = r###"[001:001]: COMMENT    "; Test header comment"         "```; Test header comment```\n"
 [001:022]: SYMBOL     \n                              "; Test header comment```\n```"
 [002:001]: COMMENT    ";"                             "```;```\n"
 [002:002]: SYMBOL     \n                              ";```\n```"
@@ -130,7 +126,7 @@ static TEST_TOKENS_REPR: &str = r###"[001:001]: COMMENT    "; Test header commen
 [018:002]: SYMBOL     \n                              "}```\n```""###;
 
 #[rustfmt::skip]
-static TEST_AST_REPR: &str = r#"Root
+pub(super) static TEST_AST_STRING: &str = r#"Root
   Preamble
     PreambleLine
       (Comment) "; Test header comment"
@@ -198,30 +194,3 @@ static TEST_AST_REPR: &str = r#"Root
                     (Arg) COMMA
                     (Arg) 7
 "#;
-
-#[test]
-fn lexer_test() -> Result<(), Error> {
-	let lexer = Lexer::new("test_file.asm", TEST_SOURCE);
-	let tokens: Vec<Token> = lexer.into_iter().collect::<Result<Vec<Token>, Error>>()?;
-
-	let repr = tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>().join("\n");
-
-	assert_eq!(repr, TEST_TOKENS_REPR);
-
-	Ok(())
-}
-
-#[test]
-fn parser_test() -> Result<(), Error> {
-	let lexer = Lexer::new("test_file.asm", TEST_SOURCE);
-	let tokens: Vec<Token> = lexer.into_iter().collect::<Result<Vec<Token>, Error>>()?;
-
-	let mut parser = Parser::new("test_file.asm", &tokens);
-	let ast_root = parser.parse()?;
-
-	let repr = Node::from(&ast_root).to_string();
-
-	assert_eq!(repr, TEST_AST_REPR);
-
-	Ok(())
-}
