@@ -1,4 +1,4 @@
-name: fmt-and-lint
+name: test
 
 on:
     push:
@@ -9,22 +9,28 @@ env:
     CARGO_TERM_COLOR: always
 
 jobs:
-    fmt-and-lint:
+    test:
         runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v3
           - name: "install rust toolchain"
             uses: actions-rs/toolchain@v1
             with:
+                toolchain: nightly
                 profile: minimal
                 components: rustfmt, clippy
           - name: "check formatting"
             env:
                 GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             working-directory: .
-            run: cargo fmt -- --check
+            run: cargo +nightly fmt -- --check
           - name: "check linting"
             env:
                 GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             working-directory: .
-            run: cargo clippy -q --workspace --all-features -- -D warnings
+            run: cargo +nightly clippy -q --workspace --all-features -- -D warnings
+          - name: "run tests"
+            env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            working-directory: .
+            run: cargo +nightly test --workspace
