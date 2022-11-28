@@ -1,10 +1,13 @@
-.PHONY: b br fmt lint doc docopen doctest
+.PHONY: b br t fmt lint doc docopen doctest
 
 b: fmt
 	cargo +nightly build --workspace
 
 br: fmt
 	cargo +nightly build --release --workspace
+
+t: fmt
+	cargo +nightly test --workspace
 
 fmt:
 	cargo +nightly fmt
