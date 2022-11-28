@@ -6,19 +6,32 @@
 //!
 //! ### usage
 //! ```rust
-//! let src_file_name = "/foo/bar/baz.asm";
-//! let src_file_path = PathBuf::from(&src_file_name);
+//! use std::fs::File;
+//! use std::io::Read;
+//! use std::path::PathBuf;
 //!
-//! let mut file = File::open(src_file_path)?;
-//! let mut contents = String::new();
+//! use asm::error::Error;
+//! use asm::lex::{Lexer, Token};
+//! use asm::parse::{Node, Parser};
 //!
-//! file.read_to_string(&mut contents)?;
+//! fn parser_example() -> Result<(), Error> {
+//!     let src_file_name = "/foo/bar/baz.asm";
+//!     let src_file_path = PathBuf::from(&src_file_name);
 //!
-//! let lexer = Lexer::new(&src_file_name, &contents);
-//! let tokens: Vec<Token> = lexer.into_iter().collect::<Result<Vec<Token>, Error>>()?;
+//!     let mut file = File::open(src_file_path)?;
+//!     let mut contents = String::new();
 //!
-//! let mut parser = Parser::new(&src_file_name, &tokens);
-//! let ast_root = parser.parse()?;
+//!     file.read_to_string(&mut contents)?;
+//!
+//!     let lexer = Lexer::new(&src_file_name, &contents);
+//!     let tokens: Vec<Token> = lexer.into_iter().collect::<Result<Vec<Token>, Error>>()?;
+//!
+//!     let mut parser = Parser::new(&src_file_name, &tokens);
+//!     let ast_root = parser.parse()?;
+//!     println!("{}", Node::from(&ast_root));
+//!
+//!     Ok(())
+//! }
 //! ```
 
 use std::assert_matches::assert_matches;
@@ -33,7 +46,7 @@ mod immediate;
 mod instruction;
 mod r#macro;
 
-pub(crate) use display::Node;
+pub use display::Node;
 
 use self::ast::{
 	ConstDirective,

@@ -13,13 +13,13 @@ mod impls;
 /// Contains an optional `prefixes` field to allow at least some specificity as
 /// to the type(s) of this node
 #[derive(Clone)]
-pub(crate) struct Node {
+pub struct Node {
 	/// Optional prefixes providing extra type information
-	pub(crate) prefixes: Vec<String>,
+	pub prefixes: Vec<String>,
 	/// The representation of this node
-	pub(crate) repr:     String,
+	pub repr:     String,
 	/// The children of this node
-	pub(crate) children: Vec<Self>,
+	pub children: Vec<Self>,
 }
 
 impl Display for Node {

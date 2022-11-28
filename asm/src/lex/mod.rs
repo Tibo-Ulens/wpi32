@@ -7,15 +7,26 @@
 //!
 //! ### Usage
 //! ```rust
-//! let src_file_name = "/foo/bar/baz.asm";
-//! let src_file_path = PathBuf::from(&src_file_name);
+//! use std::fs::File;
+//! use std::io::Read;
+//! use std::path::PathBuf;
 //!
-//! let mut file = File::open(src_file_path)?;
-//! let mut contents = String::new();
-//! file.read_to_string(&mut contents)?;
+//! use asm::error::Error;
+//! use asm::lex::{Lexer, Token};
 //!
-//! let lexer = Lexer::new(&src_file_path_name, &contents);
-//! let tokens: Vec<Token> = lexer.into_iter().collect::<Result<Vec<Token>, Error>>()?;
+//! fn lexer_example() -> Result<(), Error> {
+//!     let src_file_name = "/foo/bar/baz.asm";
+//!     let src_file_path = PathBuf::from(&src_file_name);
+//!
+//!     let mut file = File::open(src_file_path)?;
+//!     let mut contents = String::new();
+//!     file.read_to_string(&mut contents)?;
+//!
+//!     let lexer = Lexer::new(&src_file_name, &contents);
+//!     let tokens: Vec<Token> = lexer.into_iter().collect::<Result<Vec<Token>, Error>>()?;
+//!
+//!     Ok(())
+//! }
 //! ```
 
 use std::iter::Peekable;

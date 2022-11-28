@@ -23,7 +23,7 @@ pub(crate) fn make_info_header(header: &str, src_file: &str, loc_info: &Location
 
 /// Format error location information into a pretty block
 ///
-/// ```
+/// ```txt
 ///       |
 /// {col} | {source_line}
 ///       |
