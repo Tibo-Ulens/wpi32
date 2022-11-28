@@ -185,7 +185,7 @@ impl<'s> Lexer<'s> {
 	///
 	/// Can make decimal, hex, octal, or binary numbers depending on the
 	/// supplied predicate function
-	pub(super) fn try_take_number(&mut self) -> Result<isize, LexError> {
+	pub(super) fn try_take_number(&mut self) -> Result<i32, LexError> {
 		let raw = match self.take_while(|c| {
 			c.is_ascii_hexdigit() || c == 'x' || c == 'X' || c == 'o' || c == 'O' || c == '_'
 		}) {
@@ -196,7 +196,7 @@ impl<'s> Lexer<'s> {
 		let raw = raw.replace('_', "");
 
 		let num = if raw.starts_with("0x") {
-			isize::from_str_radix(raw.trim_start_matches("0x"), 16).map_err(|_| {
+			i32::from_str_radix(raw.trim_start_matches("0x"), 16).map_err(|_| {
 				LexError::InvalidNumber {
 					src_file: self.source_file.to_string(),
 					line:     self.line,
@@ -206,7 +206,7 @@ impl<'s> Lexer<'s> {
 				}
 			})
 		} else if raw.starts_with("0o") {
-			isize::from_str_radix(raw.trim_start_matches("0o"), 8).map_err(|_| {
+			i32::from_str_radix(raw.trim_start_matches("0o"), 8).map_err(|_| {
 				LexError::InvalidNumber {
 					src_file: self.source_file.to_string(),
 					line:     self.line,
@@ -216,7 +216,7 @@ impl<'s> Lexer<'s> {
 				}
 			})
 		} else if raw.starts_with("0b") {
-			isize::from_str_radix(raw.trim_start_matches("0b"), 2).map_err(|_| {
+			i32::from_str_radix(raw.trim_start_matches("0b"), 2).map_err(|_| {
 				LexError::InvalidNumber {
 					src_file: self.source_file.to_string(),
 					line:     self.line,
@@ -226,7 +226,7 @@ impl<'s> Lexer<'s> {
 				}
 			})
 		} else {
-			raw.parse::<isize>().map_err(|_| {
+			raw.parse::<i32>().map_err(|_| {
 				LexError::InvalidNumber {
 					src_file: self.source_file.to_string(),
 					line:     self.line,

@@ -37,7 +37,7 @@ pub enum TokenType<'s> {
 	/// Escaped character litera
 	LitChar(char),
 	/// Numeric literal
-	LitNum(isize),
+	LitNum(i32),
 
 	/// A section identifier
 	Section(&'s str),
