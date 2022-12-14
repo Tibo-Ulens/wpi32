@@ -67,8 +67,8 @@ use crate::lex::{DirToken, OpToken, RegularDirective, Token, TokenType};
 /// parser-related functions
 ///
 /// ### Lifetimes
-///  - `'s`: The lifetime of the reference to the source code string, needed as (most) tokens
-///    containing string literals will contain references instead of owned data
+///  - `'s`: The lifetime of the reference to the source code string, needed as tokens containing
+///    string literals will contain references instead of owned data
 #[derive(Clone, Copy, Debug)]
 pub struct Parser<'s> {
 	/// The stream of lexemes

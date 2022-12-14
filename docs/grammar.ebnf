@@ -96,7 +96,7 @@ labeled_block = identifier, "{", { line }, "}";
 
 directive =
 	bytes_directive
-	| halves_directiv
+	| halves_directive
 	| words_directive
 	| res_bytes_directive
 	| res_halves_directive

@@ -22,6 +22,7 @@ use std::path::Path;
 pub mod error;
 pub mod lex;
 pub mod parse;
+pub mod rewrite;
 
 use error::Error;
 use lex::{Lexer, Token};
