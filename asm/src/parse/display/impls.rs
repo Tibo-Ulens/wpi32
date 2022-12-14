@@ -4,13 +4,14 @@ use super::Node;
 use crate::lex::RegToken;
 use crate::parse::ast::{
 	Address,
-	ConstDirective,
+	Attribute,
 	Directive,
+	File,
+	Identifier,
 	Immediate,
 	Instruction,
+	Item,
 	LabeledBlock,
-	Line,
-	Literal,
 	MacroArgType,
 	MacroDefinition,
 	MacroInvocation,
@@ -19,143 +20,111 @@ use crate::parse::ast::{
 	MacroVarType,
 	OffsetOperator,
 	OrderingTarget,
-	PreambleLine,
-	PreambleStatement,
-	Root,
-	Section,
-	Statement,
 };
 
-impl<'s> From<&Root<'s>> for Node {
-	fn from(value: &Root) -> Self {
-		let preamble_lines = Node {
+impl<'s> From<&File<'s>> for Node {
+	fn from(value: &File) -> Self {
+		let attrs = Node {
 			prefixes: vec![],
-			repr:     "Preamble".to_string(),
-			children: value.preamble.iter().map(|l| l.into()).collect(),
+			repr:     "Attributes".to_string(),
+			children: value.attrs.iter().map(|a| a.into()).collect(),
 		};
-		let sections = Node {
+		let items = Node {
 			prefixes: vec![],
-			repr:     "Sections".to_string(),
-			children: value.sections.iter().map(|s| s.into()).collect(),
+			repr:     "Items".to_string(),
+			children: value
+				.items
+				.iter()
+				.map(|i| {
+					match i {
+						Some(item) => item.into(),
+						None => {
+							Node {
+								prefixes: vec!["Item".to_string()],
+								repr:     "Empty".to_string(),
+								children: vec![],
+							}
+						},
+					}
+				})
+				.collect(),
 		};
 
-		Node {
-			prefixes: vec![],
-			repr:     "Root".to_string(),
-			children: vec![preamble_lines, sections],
-		}
+		Node { prefixes: vec![], repr: "File".to_string(), children: vec![attrs, items] }
 	}
 }
 
-impl<'s> From<&PreambleLine<'s>> for Node {
-	fn from(value: &PreambleLine) -> Self {
-		let mut children = vec![];
-
-		if let Some(stmt) = &value.statement {
-			children.push(Node::from(stmt).add_prefix("PreambleStatement"));
-		}
-
-		if let Some(comment) = value.comment {
-			children.push(Node {
-				prefixes: vec!["Comment".to_string()],
-				repr:     format!("{:?}", comment),
-				children: vec![],
-			});
-		}
-
-		if children.is_empty() {
-			Node { prefixes: vec![], repr: "Empty".to_string(), children }
-		} else {
-			Node { prefixes: vec![], repr: "PreambleLine".to_string(), children }
-		}
-	}
-}
-
-impl<'s> From<&PreambleStatement<'s>> for Node {
-	fn from(value: &PreambleStatement<'s>) -> Self {
+impl<'s> From<&Attribute<'s>> for Node {
+	fn from(value: &Attribute<'s>) -> Self {
 		match value {
-			PreambleStatement::ConstDirective(const_dir) => const_dir.into(),
-			PreambleStatement::MacroDefinition(m_def) => m_def.into(),
+			Attribute::Inner { name, args } => {
+				let mut children = vec![
+					Node::from(name).add_prefix("Name"),
+					Node {
+						prefixes: vec!["Arguments".to_string()],
+						repr:     args
+							.iter()
+							.map(|a| a.t.to_string())
+							.collect::<Vec<String>>()
+							.join(", "),
+						children: vec![],
+					},
+				];
+
+				Node { prefixes: vec![], repr: "InnerAttribute".to_string(), children }
+			},
+			Attribute::Outer { name, args } => {
+				let mut children = vec![
+					Node::from(name).add_prefix("Name"),
+					Node {
+						prefixes: vec!["Arguments".to_string()],
+						repr:     args
+							.iter()
+							.map(|a| a.t.to_string())
+							.collect::<Vec<String>>()
+							.join(", "),
+						children: vec![],
+					},
+				];
+
+				Node { prefixes: vec![], repr: "InnerAttribute".to_string(), children }
+			},
 		}
 	}
 }
 
-impl<'s> From<&ConstDirective<'s>> for Node {
-	fn from(value: &ConstDirective) -> Self {
-		let mut children = vec![Node {
-			prefixes: vec!["Id".to_string()],
+impl<'s> From<&Item<'s>> for Node {
+	fn from(value: &Item) -> Self {
+		match value {
+			Item::Comment(c) => {
+				Node {
+					prefixes: vec!["Item".to_string(), "Comment".to_string()],
+					repr:     format!("{:?}", c),
+					children: vec![],
+				}
+			},
+			Item::Directive(dir) => Node::from(dir).add_prefix("Item"),
+			Item::Instruction(inst) => Node::from(inst).add_prefix("Item"),
+			Item::LabeledBlock(lblock) => Node::from(lblock).add_prefix("Item"),
+			Item::MacroDefinition(mdef) => Node::from(mdef).add_prefix("Item"),
+			Item::MacroInvocation(minvoc) => Node::from(minvoc).add_prefix("Item"),
+		}
+	}
+}
+
+impl<'s> From<&Identifier<'s>> for Node {
+	fn from(value: &Identifier<'s>) -> Self {
+		Node {
+			prefixes: vec!["Identifier".to_string()],
 			repr:     value.id.to_string(),
 			children: vec![],
-		}];
-
-		children.push(Node::from(&value.value).add_prefix("Value"));
-
-		Node { prefixes: vec!["Directive".to_string()], repr: "Const".to_string(), children }
-	}
-}
-
-impl<'s> From<&Section<'s>> for Node {
-	fn from(value: &Section) -> Self {
-		let lines = Node {
-			prefixes: vec![],
-			repr:     "Lines".to_string(),
-			children: value.lines.iter().map(|l| l.into()).collect(),
-		};
-
-		let mut children = vec![Node {
-			prefixes: vec!["Name".to_string()],
-			repr:     value.name.to_string(),
-			children: vec![],
-		}];
-		children.push(lines);
-
-		Node { prefixes: vec![], repr: "Section".to_string(), children }
-	}
-}
-
-impl<'s> From<&Line<'s>> for Node {
-	fn from(value: &Line) -> Self {
-		let mut children = vec![];
-
-		if let Some(stmt) = &value.statement {
-			children.push(Node::from(stmt).add_prefix("Content"));
-		}
-
-		if let Some(comment) = value.comment {
-			children.push(Node {
-				prefixes: vec!["Comment".to_string()],
-				repr:     format!("{:?}", comment),
-				children: vec![],
-			});
-		}
-
-		if children.is_empty() {
-			Node { prefixes: vec![], repr: "Empty".to_string(), children }
-		} else {
-			Node { prefixes: vec![], repr: "Line".to_string(), children }
-		}
-	}
-}
-
-impl<'s> From<&Statement<'s>> for Node {
-	fn from(value: &Statement) -> Self {
-		match value {
-			Statement::MacroDefinition(m_def) => Node::from(m_def).add_prefix("Statement"),
-			Statement::MacroInvocation(m_invoc) => Node::from(m_invoc).add_prefix("Statement"),
-			Statement::LabeledBlock(l_block) => Node::from(l_block).add_prefix("Statement"),
-			Statement::Directive(dir) => Node::from(dir).add_prefix("Statement"),
-			Statement::Instruction(inst) => Node::from(inst).add_prefix("Statement"),
 		}
 	}
 }
 
 impl<'s> From<&MacroDefinition<'s>> for Node {
 	fn from(value: &MacroDefinition<'s>) -> Self {
-		let mut children = vec![Node {
-			prefixes: vec!["Identifier".to_string()],
-			repr:     value.id.to_string(),
-			children: vec![],
-		}];
+		let mut children = vec![Node::from(&value.name)];
 
 		children.extend(value.rules.iter().map(|r| r.into()));
 
@@ -242,7 +211,7 @@ impl From<&MacroArgType> for Node {
 			MacroArgType::Dir => "Dir".to_string(),
 			MacroArgType::Ident => "Ident".to_string(),
 			MacroArgType::Imm => "Imm".to_string(),
-			MacroArgType::Stmt => "Stmt".to_string(),
+			MacroArgType::Item => "Item".to_string(),
 		};
 
 		Node { prefixes: vec![], repr, children: vec![] }
@@ -263,17 +232,13 @@ impl From<&MacroVarType> for Node {
 
 impl<'s> From<&MacroInvocation<'s>> for Node {
 	fn from(value: &MacroInvocation<'s>) -> Self {
-		let mut children = vec![Node {
-			prefixes: vec!["Identifier".to_string()],
-			repr:     value.id.to_string(),
-			children: vec![],
-		}];
+		let mut children = vec![Node::from(&value.name)];
 
 		children.extend(
 			value
 				.args
 				.iter()
-				.map(|tt| tt.to_string())
+				.map(|t| t.t.to_string())
 				.map(|s| Node { prefixes: vec!["Arg".to_string()], repr: s, children: vec![] }),
 		);
 
@@ -283,13 +248,20 @@ impl<'s> From<&MacroInvocation<'s>> for Node {
 
 impl<'s> From<&LabeledBlock<'s>> for Node {
 	fn from(value: &LabeledBlock<'s>) -> Self {
-		let mut children = vec![Node {
-			prefixes: vec!["Label".to_string()],
-			repr:     value.label.to_string(),
-			children: vec![],
-		}];
+		let mut children = vec![Node::from(&value.label).add_prefix("Label")];
 
-		children.extend(value.lines.iter().map(|l| l.into()));
+		children.extend(value.items.iter().map(|i| {
+			match i {
+				Some(item) => item.into(),
+				None => {
+					Node {
+						prefixes: vec!["Item".to_string()],
+						repr:     "Empty".to_string(),
+						children: vec![],
+					}
+				},
+			}
+		}));
 
 		Node { prefixes: vec![], repr: "LabeledBlock".to_string(), children }
 	}
@@ -297,73 +269,21 @@ impl<'s> From<&LabeledBlock<'s>> for Node {
 
 impl<'s> From<&Directive<'s>> for Node {
 	fn from(value: &Directive) -> Self {
-		match value {
-			Directive::Bytes(data) => {
-				Node {
-					prefixes: vec!["Directive".to_string()],
-					repr:     "Bytes".to_string(),
-					children: data.iter().map(|d| d.into()).collect(),
-				}
+		let mut children = vec![
+			Node::from(&value.name).add_prefix("Name"),
+			Node {
+				prefixes: vec!["Arguments".to_string()],
+				repr:     value
+					.arguments
+					.iter()
+					.map(|a| a.t.to_string())
+					.collect::<Vec<String>>()
+					.join(", "),
+				children: vec![],
 			},
-			Directive::Halves(data) => {
-				Node {
-					prefixes: vec!["Directive".to_string()],
-					repr:     "Halves".to_string(),
-					children: data.iter().map(|d| d.into()).collect(),
-				}
-			},
-			Directive::Words(data) => {
-				Node {
-					prefixes: vec!["Directive".to_string()],
-					repr:     "Words".to_string(),
-					children: data.iter().map(|d| d.into()).collect(),
-				}
-			},
-			Directive::ResBytes(data) => {
-				Node {
-					prefixes: vec!["Directive".to_string()],
-					repr:     "ResBytes".to_string(),
-					children: data.iter().map(|d| d.into()).collect(),
-				}
-			},
-			Directive::ResHalves(data) => {
-				Node {
-					prefixes: vec!["Directive".to_string()],
-					repr:     "ResHalves".to_string(),
-					children: data.iter().map(|d| d.into()).collect(),
-				}
-			},
-			Directive::ResWords(data) => {
-				Node {
-					prefixes: vec!["Directive".to_string()],
-					repr:     "ResWords".to_string(),
-					children: data.iter().map(|d| d.into()).collect(),
-				}
-			},
-			Directive::Const(const_dir) => Node::from(const_dir),
-		}
-	}
-}
+		];
 
-impl<'s> From<&Literal<'s>> for Node {
-	fn from(value: &Literal) -> Self {
-		match value {
-			Literal::String(s) => {
-				Node {
-					prefixes: vec!["Literal".to_string(), "String".to_string()],
-					repr:     format!("{:?}", s),
-					children: vec![],
-				}
-			},
-			Literal::Char(c) => {
-				Node {
-					prefixes: vec!["Literal".to_string(), "Char".to_string()],
-					repr:     format!("{:?}", c),
-					children: vec![],
-				}
-			},
-			Literal::Immediate(imm) => imm.into(),
-		}
+		Node { prefixes: vec![], repr: "Directive".to_string(), children }
 	}
 }
 

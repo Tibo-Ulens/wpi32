@@ -63,7 +63,7 @@ impl<'s> Parser<'s> {
 
 		self.paren_match_end(body_open)?;
 
-		Ok(MacroDefinition { id, rules })
+		Ok(MacroDefinition { name: id, rules })
 	}
 
 	/// Parse a single [`MacroRule`] consisting of:
@@ -207,7 +207,7 @@ impl<'s> Parser<'s> {
 			args.push(self.next()?.t);
 		}
 
-		Ok(MacroInvocation { id, args })
+		Ok(MacroInvocation { name: id, args })
 	}
 
 	/// Attempt to detect and return any opening paren-style token

@@ -1,4 +1,5 @@
-use crate::lex::TokenType;
+use super::Identifier;
+use crate::lex::{Token, TokenType};
 /// A macro definition
 ///
 /// ```ebnf
@@ -15,7 +16,7 @@ use crate::lex::TokenType;
 #[derive(Clone, Debug)]
 pub struct MacroDefinition<'s> {
 	/// The name of the macro getting defined
-	pub id:    &'s str,
+	pub name:  Identifier<'s>,
 	/// The rules making up this macro
 	pub rules: Vec<MacroRule<'s>>,
 }
@@ -86,14 +87,14 @@ pub enum MacroArgType {
 	Inst,
 	/// Any register keyword
 	Reg,
-	/// Any directive keyword
+	/// Any directive
 	Dir,
 	/// Any identifier
 	Ident,
 	/// Any immediate
 	Imm,
-	/// Any statement
-	Stmt,
+	/// Any item
+	Item,
 }
 
 /// The possible types of 'variadicity' that a variadic [`MacroMatch`] can
@@ -120,7 +121,7 @@ pub enum MacroVarType {
 #[derive(Clone, Debug)]
 pub struct MacroInvocation<'s> {
 	/// The name of the macro getting called
-	pub id:   &'s str,
+	pub name: Identifier<'s>,
 	/// The arguments passed to the macro
-	pub args: Vec<TokenType<'s>>,
+	pub args: Vec<Token<'s>>,
 }

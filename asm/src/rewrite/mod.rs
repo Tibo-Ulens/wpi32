@@ -8,12 +8,12 @@ use std::collections::HashMap;
 
 use crate::error::MacroError;
 use crate::parse::ast::{
-	Line,
+	File,
+	Item,
 	MacroDefinition,
 	MacroInvocation,
 	MacroRule,
 	PreambleStatement,
-	Root,
 	Section,
 	Statement,
 };
@@ -35,15 +35,15 @@ pub struct Rewriter<'s> {
 
 impl<'s> Rewriter<'s> {
 	/// Create a new rewriter given a source file name and an AST
-	pub fn new<'r>(source_file: &'s str, ast: &'r mut Root<'s>) -> Self {
+	pub fn new<'r>(source_file: &'s str, ast: &'r mut File<'s>) -> Self {
 		Self { source_file, definitions: RefCell::new(HashMap::new()) }
 	}
 
 	/// Rewrite all macros found in the AST
-	pub fn rewrite(&mut self, ast: &mut Root<'s>) -> Result<(), MacroError> {
+	pub fn rewrite(&mut self, ast: &mut File<'s>) -> Result<(), MacroError> {
 		self.find_macro_definitions(ast);
 
-		for section in ast.sections.iter_mut() {
+		for section in ast.items.iter_mut() {
 			self.rewrite_section(section)?;
 		}
 
@@ -52,7 +52,7 @@ impl<'s> Rewriter<'s> {
 
 	/// Scan through the AST and store all macro definitions in an easier to
 	/// use internal representation
-	fn find_macro_definitions(&self, ast: &mut Root<'s>) {
+	fn find_macro_definitions(&self, ast: &mut File<'s>) {
 		let mut defs: Vec<MacroDefinition> = ast
 			.preamble
 			.iter()
@@ -62,7 +62,7 @@ impl<'s> Rewriter<'s> {
 			})
 			.collect();
 
-		let section_lines: Vec<&Line> = ast.sections.iter().map(|s| &s.lines).flatten().collect();
+		let section_lines: Vec<&Item> = ast.items.iter().map(|s| &s.items).flatten().collect();
 
 		let section_defs: Vec<MacroDefinition> =
 			section_lines
@@ -76,14 +76,14 @@ impl<'s> Rewriter<'s> {
 		defs.extend(section_defs);
 
 		for def in defs {
-			self.definitions.borrow_mut().insert(def.id, def.rules);
+			self.definitions.borrow_mut().insert(def.name, def.rules);
 		}
 	}
 
 	fn rewrite_section(&mut self, section: &mut Section<'s>) -> Result<(), MacroError> {
 		let mut rewritten_lines = vec![];
 
-		for line in section.lines.iter_mut() {
+		for line in section.items.iter_mut() {
 			if let Some(Statement::MacroInvocation(invoc)) = &line.statement {
 				let rewritten_macro = self.rewrite_macro_invocation(invoc)?;
 			} else {
@@ -91,7 +91,7 @@ impl<'s> Rewriter<'s> {
 			}
 		}
 
-		section.lines = rewritten_lines;
+		section.items = rewritten_lines;
 
 		Ok(())
 	}
@@ -99,8 +99,8 @@ impl<'s> Rewriter<'s> {
 	fn rewrite_macro_invocation<'i, 'r: 'i>(
 		&'r self,
 		invocation: &'i MacroInvocation,
-	) -> Result<Vec<Line<'s>>, MacroError> {
-		let macro_definition = self.definitions.borrow().get(invocation.id);
+	) -> Result<Vec<Item<'s>>, MacroError> {
+		let macro_definition = self.definitions.borrow().get(invocation.name);
 
 		Ok(vec![])
 	}

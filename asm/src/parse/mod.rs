@@ -50,12 +50,12 @@ pub use display::Node;
 
 use self::ast::{
 	ConstDirective,
+	File,
+	Item,
 	LabeledBlock,
-	Line,
 	Literal,
 	PreambleLine,
 	PreambleStatement,
-	Root,
 	Section,
 	Statement,
 };
@@ -170,7 +170,7 @@ impl<'s> Parser<'s> {
 	/// Parse the token stream into an AST [`Root`]
 	///
 	/// Assumes the token stream ends on a newline
-	pub fn parse(&'s mut self) -> Result<Root<'s>, Error> {
+	pub fn parse(&'s mut self) -> Result<File<'s>, Error> {
 		let mut preamble = vec![];
 		let mut sections = vec![];
 
@@ -186,7 +186,7 @@ impl<'s> Parser<'s> {
 			sections.push(section);
 		}
 
-		Ok(Root { preamble, sections })
+		Ok(File { preamble, items: sections })
 	}
 
 	/// Parse a preamble line consisting of:
@@ -363,7 +363,7 @@ impl<'s> Parser<'s> {
 			lines.push(line);
 		}
 
-		Ok(Section { name, lines })
+		Ok(Section { name, items: lines })
 	}
 
 	/// Parse a (section) [`Line`] consisting of:
@@ -372,7 +372,7 @@ impl<'s> Parser<'s> {
 	///  - A newline
 	///
 	/// Consumes the final newline
-	fn parse_line<'r>(&'r mut self) -> Result<Line<'s>, ParseError> {
+	fn parse_line<'r>(&'r mut self) -> Result<Item<'s>, ParseError> {
 		let statement = self.tryparse_statement()?;
 
 		let comment = if let TokenType::Comment(c) = self.peek()?.t {
@@ -385,7 +385,7 @@ impl<'s> Parser<'s> {
 
 		self.expect(TokenType::SymNewline)?;
 
-		Ok(Line { statement, comment })
+		Ok(Item { statement, comment })
 	}
 
 	/// Try to parse a [`Statement`]
@@ -464,6 +464,6 @@ impl<'s> Parser<'s> {
 			});
 		}
 
-		Ok(LabeledBlock { label, lines })
+		Ok(LabeledBlock { label, items: lines })
 	}
 }

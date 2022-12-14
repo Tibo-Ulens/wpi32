@@ -16,129 +16,60 @@ pub use immediate::*;
 pub use instruction::*;
 pub use r#macro::*;
 
-/// The root of the AST
+use crate::lex::Token;
+
+/// A single file of code, the root of the AST
 ///
-/// Contains a [`preamble`](PreambleLine) and a list of [`Section`]s
+/// Contains a set of [`Attribute`]s and a list of [`Item`]s
 ///
 /// ```ebnf
-/// root = [ preamble ], { section };
+/// file = { item };
 /// ```
 #[derive(Clone, Debug)]
-pub struct Root<'s> {
-	/// The preamble of the file (see [`PreambleLine`] for more info)
-	pub preamble: Vec<PreambleLine<'s>>,
-	/// All the sections of the file (see [`Section`] for more info)
-	pub sections: Vec<Section<'s>>,
+pub struct File<'s> {
+	/// The attributes of this file
+	pub attrs: Vec<Attribute<'s>>,
+	/// All the items of the file (see [`Item`] for more info)
+	pub items: Vec<Option<Item<'s>>>,
 }
 
-/// A single line in the preamble of some source code
+/// An attribute specifying some potential modification of the item it
+/// references
 ///
-/// The preamble will not be emitted to any named sections, and so cannot
-/// contain any actual data. However, it can be used to define constants or
-/// macros, or to write header comments.
+/// Attributes can be either outer attributes (attributes that 'wrap' some
+/// item) or inner attributes (attributes that are contained within the item
+/// they're modifying)
+///
+/// An attribute will have a name specifying what attribute should be added,
+/// and an optional list of arguments to said attribute
 ///
 /// ```ebnf
-/// preamble_line =
-///     { whitespace },
-///     [ preamble_statement ],
-///     [ comment ],
-///     newline;
+/// attribute = outer_attribute | inner_attribute;
+/// outer_attribute = '#', '[', Token, { Token }, ']'
+/// inner_attribute = '#', '!', '[', Token, { Token }, ']'
 /// ```
 #[derive(Clone, Debug)]
-pub struct PreambleLine<'s> {
-	/// The optional [`PreambleStatement`] in this line
-	pub statement: Option<PreambleStatement<'s>>,
-	/// The optional comment in this line
-	pub comment:   Option<&'s str>,
+pub enum Attribute<'s> {
+	Outer { name: Identifier<'s>, args: Vec<Token<'s>> },
+	Inner { name: Identifier<'s>, args: Vec<Token<'s>> },
 }
 
-/// A statement that is allowed within the source file preamble,
-/// can contain either [`MacroDefinition`]s or [`ConstDirective`]s
+/// A 'thing' that can appear within the source code
 ///
 /// ```ebnf
-/// preamble_statement = const_directive | macro_definition;
+/// item = (
+///     ( macro_definition, [ comment ] )
+///     | ( macro_invocation, [ comment ] )
+///     | ( labeled_block, [ comment ] )
+///     | ( directive, [ comment ] )
+///     | ( instruction, [ comment ] )
+///     | comment
+/// ), newline;
 /// ```
 #[derive(Clone, Debug)]
-pub enum PreambleStatement<'s> {
-	/// A macro definition
-	MacroDefinition(MacroDefinition<'s>),
-	/// A directive
-	ConstDirective(ConstDirective<'s>),
-}
-
-/// A directive to declare assemble-time constants
-///
-/// Sets the prefixed [`LabelId`] equal to its [`value`](Literal)
-///
-/// ```ebnf
-/// const_directive = "#CONST", literal;
-/// ```
-#[derive(Clone, Debug)]
-pub struct ConstDirective<'s> {
-	/// The identifier defining the name of this constant
-	pub id:    &'s str,
-	/// The value of this constant
-	pub value: Literal<'s>,
-}
-
-/// A single assembler
-///
-/// Sections are used to indicate the function of a certain piece of code <br>
-/// The assembler currently recognizes three section types:
-///  - `.TEXT` sections: executable instructions
-///  - `.DATA` sections: initialized read/write data
-///  - `.BSS` sections: uninitialized read/write data
-///
-/// Each section has a name and a list of [`Line`]s
-///
-/// ```ebnf
-/// section = section_header, { line };
-/// section_header = "#SECTION", section_name, newline;
-/// section_name = ".TEXT" | ".DATA" | ".BSS";
-/// ```
-#[derive(Clone, Debug)]
-pub struct Section<'s> {
-	/// The name of the section
-	pub name:  &'s str,
-	/// All the line of code within this section (see [`Line`] for more info)
-	pub lines: Vec<Line<'s>>,
-}
-
-/// A single line of code in a [`Section`]
-///
-/// Lines can be empty, or contain some [`Statement`] or a comment,
-/// or both, optionally preceded by some whitespace
-///
-/// ```ebnf
-/// line =
-///     { whitespace },
-///     [ statement ],
-///     [ comment ],
-///     newline;
-/// ```
-#[derive(Clone, Debug)]
-pub struct Line<'s> {
-	/// The optional content in this line
-	pub statement: Option<Statement<'s>>,
-	/// The optional comment in this line
-	pub comment:   Option<&'s str>,
-}
-
-/// A single assembly statement
-///
-/// Can be a [`MacroDefinition`], [`MacroInvocation`], [`LabeledBlock`],
-/// [`Directive`], or an [`Instruction`]
-///
-/// ```ebnf
-/// statement =
-///     macro_definition
-///     | macro_invocation
-///     | labeled_block
-///     | directive
-///     | instruction;
-/// ```
-#[derive(Clone, Debug)]
-pub enum Statement<'s> {
+pub enum Item<'s> {
+	/// A comment
+	Comment(&'s str),
 	/// A macro definition
 	MacroDefinition(MacroDefinition<'s>),
 	/// A macro invocation
@@ -151,69 +82,49 @@ pub enum Statement<'s> {
 	Instruction(Instruction<'s>),
 }
 
-/// A block of code enclosed by a label
+/// A block identified by a label
 ///
 /// ```ebnf
-/// labeled_block = identifier, "{", { line }, "}";
+/// labeled_block = identifier, "{", { item }, "}";
 /// ```
 #[derive(Clone, Debug)]
 pub struct LabeledBlock<'s> {
 	/// The label naming this block
-	pub label: &'s str,
+	pub label: Identifier<'s>,
 	/// The content of this block
-	pub lines: Vec<Line<'s>>,
+	pub items: Vec<Option<Item<'s>>>,
 }
 
-/// A directive that creates or otherwise manipulates data
+/// A directive specifying how some data should be handled, interpreted, or
+/// modified
 ///
 /// Directives can:
 ///  - define initialised data as bytes, halves, or words
 ///  - reserve a given number bytes, halves, or words
 ///  - declare an identifier as a constant
+///  - specify what symbols to make available globally
+///  - potentially more in the future
 ///
 /// ```ebnf
-/// directive =
-///     bytes_directive
-///     | halves_directive
-///     | words_directive
-///     | res_bytes_directive
-///     | res_halves_directive
-///     | res_words_directive
-///     | const_directive;
+/// directive = '#', Token, { Token };
 /// ```
 #[derive(Clone, Debug)]
-pub enum Directive<'s> {
-	/// Encodes data as bytes
-	Bytes(Vec<Literal<'s>>),
-	/// Encodes data as halves
-	Halves(Vec<Literal<'s>>),
-	/// Encodes data as words
-	Words(Vec<Literal<'s>>),
-
-	/// Reserve a given amount of bytes
-	ResBytes(Vec<Literal<'s>>),
-	/// Reserve a given amount of halves
-	ResHalves(Vec<Literal<'s>>),
-	/// Reserve a given amount of words
-	ResWords(Vec<Literal<'s>>),
-
-	/// Declare some identifier to be a constant
-	Const(ConstDirective<'s>),
+pub struct Directive<'s> {
+	pub name:      Identifier<'s>,
+	pub arguments: Vec<Token<'s>>,
 }
 
-/// A literal value
-///
-/// Can be a string, character, or an [`Immediate`]
-///
-/// ```ebnf
-/// literal = string | char | immediate;
-/// ```
+/// An identifier used to name something
 #[derive(Clone, Debug)]
-pub enum Literal<'s> {
-	/// A string literal
-	String(&'s str),
-	/// A character literal
-	Char(char),
-	/// An immediate (a number, label, or arithmetic expression)
-	Immediate(Immediate<'s>),
+pub struct Identifier<'s> {
+	/// The actual value of the identifier
+	pub id:          &'s str,
+	/// The line number of this token
+	pub line:        usize,
+	/// The column number of this token
+	pub col:         usize,
+	/// The length (in characters) of this token
+	pub span:        usize,
+	/// The line of source code containing this token
+	pub source_line: &'s str,
 }
