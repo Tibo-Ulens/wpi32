@@ -5,6 +5,7 @@ use crate::lex::RegToken;
 use crate::parse::ast::{
 	Address,
 	Attribute,
+	Comment,
 	Directive,
 	File,
 	Identifier,
@@ -20,6 +21,7 @@ use crate::parse::ast::{
 	MacroVarType,
 	OffsetOperator,
 	OrderingTarget,
+	Statement,
 };
 
 impl<'s> From<&File<'s>> for Node {
@@ -94,20 +96,43 @@ impl<'s> From<&Attribute<'s>> for Node {
 }
 
 impl<'s> From<&Item<'s>> for Node {
-	fn from(value: &Item) -> Self {
+	fn from(value: &Item<'s>) -> Self {
+		let mut children = vec![];
+
+		if let Some(cmnt) = &value.comment {
+			children.push(cmnt.into());
+		}
+
+		if let Some(stmt) = &value.statement {
+			children.push(stmt.into());
+		}
+
+		if children.is_empty() {
+			return Self { prefixes: vec![], repr: "Empty".to_string(), children };
+		}
+
+		Self { prefixes: vec![], repr: "Item".to_string(), children }
+	}
+}
+
+impl<'s> From<&Comment<'s>> for Node {
+	fn from(value: &Comment<'s>) -> Self {
+		Self {
+			prefixes: vec!["Comment".to_string()],
+			repr:     value.comment.to_string(),
+			children: vec![],
+		}
+	}
+}
+
+impl<'s> From<&Statement<'s>> for Node {
+	fn from(value: &Statement) -> Self {
 		match value {
-			Item::Comment(c) => {
-				Node {
-					prefixes: vec!["Item".to_string(), "Comment".to_string()],
-					repr:     format!("{:?}", c),
-					children: vec![],
-				}
-			},
-			Item::Directive(dir) => Node::from(dir).add_prefix("Item"),
-			Item::Instruction(inst) => Node::from(inst).add_prefix("Item"),
-			Item::LabeledBlock(lblock) => Node::from(lblock).add_prefix("Item"),
-			Item::MacroDefinition(mdef) => Node::from(mdef).add_prefix("Item"),
-			Item::MacroInvocation(minvoc) => Node::from(minvoc).add_prefix("Item"),
+			Statement::Directive(dir) => Node::from(dir).add_prefix("Statement"),
+			Statement::Instruction(inst) => Node::from(inst).add_prefix("Statement"),
+			Statement::LabeledBlock(lblock) => Node::from(lblock).add_prefix("Statement"),
+			Statement::MacroDefinition(mdef) => Node::from(mdef).add_prefix("Statement"),
+			Statement::MacroInvocation(minvoc) => Node::from(minvoc).add_prefix("Statement"),
 		}
 	}
 }

@@ -54,22 +54,31 @@ pub enum Attribute<'s> {
 	Inner { name: Identifier<'s>, args: Vec<Token<'s>> },
 }
 
-/// A 'thing' that can appear within the source code
+/// Any 'thing' in the source code, can have an optional comment or just be
+/// completely empty
 ///
 /// ```ebnf
-/// item = (
-///     ( macro_definition, [ comment ] )
-///     | ( macro_invocation, [ comment ] )
-///     | ( labeled_block, [ comment ] )
-///     | ( directive, [ comment ] )
-///     | ( instruction, [ comment ] )
-///     | comment
-/// ), newline;
+/// item = [ statement ], [ comment ], newline;
 /// ```
 #[derive(Clone, Debug)]
-pub enum Item<'s> {
-	/// A comment
-	Comment(&'s str),
+pub struct Item<'s> {
+	pub comment:   Option<Comment<'s>>,
+	pub statement: Option<Statement<'s>>,
+}
+
+/// Any statement in the source code, a 'thing' that does some action
+///
+/// ```ebnf
+/// statement =
+///     macro_definition
+///     | macro_invocation
+///     | labeled_block
+///     | directive
+///     | instruction
+/// ;
+/// ```
+#[derive(Clone, Debug)]
+pub enum Statement<'s> {
 	/// A macro definition
 	MacroDefinition(MacroDefinition<'s>),
 	/// A macro invocation
@@ -119,12 +128,27 @@ pub struct Directive<'s> {
 pub struct Identifier<'s> {
 	/// The actual value of the identifier
 	pub id:          &'s str,
-	/// The line number of this token
+	/// The line number of this identifier
 	pub line:        usize,
-	/// The column number of this token
+	/// The column number of this identifier
 	pub col:         usize,
-	/// The length (in characters) of this token
+	/// The length (in characters) of this identifier
 	pub span:        usize,
-	/// The line of source code containing this token
+	/// The line of source code containing this identifier
+	pub source_line: &'s str,
+}
+
+/// A Comment
+#[derive(Clone, Debug)]
+pub struct Comment<'s> {
+	/// The comment itself
+	pub comment:     &'s str,
+	/// The line number of this comment
+	pub line:        usize,
+	/// The column number of this comment
+	pub col:         usize,
+	/// The length (in characters) of this comment
+	pub span:        usize,
+	/// The line of source code containing this comment
 	pub source_line: &'s str,
 }
