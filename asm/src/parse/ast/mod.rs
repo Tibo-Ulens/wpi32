@@ -23,7 +23,7 @@ use crate::lex::Token;
 /// Contains a set of [`Attribute`]s and a list of [`Item`]s
 ///
 /// ```ebnf
-/// file = { item };
+/// file = { attribute }, { item };
 /// ```
 #[derive(Clone, Debug)]
 pub struct File<'s> {
@@ -58,10 +58,11 @@ pub enum Attribute<'s> {
 /// completely empty
 ///
 /// ```ebnf
-/// item = [ statement ], [ comment ], newline;
+/// item = { attribute }, [ statement ], [ comment ], newline;
 /// ```
 #[derive(Clone, Debug)]
 pub struct Item<'s> {
+	pub attrs:     Vec<Attribute<'s>>,
 	pub comment:   Option<Comment<'s>>,
 	pub statement: Option<Statement<'s>>,
 }
