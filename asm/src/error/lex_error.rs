@@ -20,7 +20,7 @@ pub enum LexError {
 		col:      usize,
 		src_line: String,
 		found:    char,
-		expected: char,
+		expected: Vec<char>,
 	},
 	RawUnexpectedSymbol {
 		src_file: String,
@@ -60,7 +60,15 @@ impl Display for LexError {
 			Self::UnexpectedSymbol { src_file, line, col, src_line, found, expected } => {
 				let location = LocationInfo::new(*line, *col, 1, src_line);
 				let mut pretty_err = make_info_header(
-					&format!("found unexpected symbol `{:?}`, expected `{:?}`", found, expected),
+					&format!(
+						"found unexpected symbol `{:?}`, expected `{:?}`",
+						found,
+						expected
+							.iter()
+							.map(|c| c.to_string())
+							.collect::<Vec<String>>()
+							.join(" or ")
+					),
 					src_file,
 					&location,
 				);

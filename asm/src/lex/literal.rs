@@ -85,7 +85,7 @@ impl<'s> Lexer<'s> {
 					col:      self.col + 3,
 					src_line: self.get_curr_line().to_string(),
 					found:    close,
-					expected: '\'',
+					expected: vec!['\''],
 				});
 			}
 
@@ -114,7 +114,7 @@ impl<'s> Lexer<'s> {
 				col:      self.col + 2,
 				src_line: self.get_curr_line().to_string(),
 				found:    close,
-				expected: '\'',
+				expected: vec!['\''],
 			});
 		}
 

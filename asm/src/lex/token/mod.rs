@@ -58,6 +58,10 @@ pub enum TokenType<'s> {
 	SymRightBrace,
 	/// `=>`
 	SymFatArrow,
+	/// #[
+	SymOutAttr,
+	/// #![
+	SymInAttr,
 
 	/// An operator (see also [`OpToken`])
 	Op(OpToken),
@@ -93,6 +97,8 @@ impl<'s> Debug for TokenType<'s> {
 			Self::SymLeftBrace => write!(f, "{:<t$} {:<v$}", "SYMBOL", "{{"),
 			Self::SymRightBrace => write!(f, "{:<t$} {:<v$}", "SYMBOL", "}}"),
 			Self::SymFatArrow => write!(f, "{:<t$} {:<v$}", "SYMBOL", "=>"),
+			Self::SymOutAttr => write!(f, "{:<t$} {:<v$}", "SYMBOL", "#["),
+			Self::SymInAttr => write!(f, "{:<t$} {:<v$}", "SYMBOL", "#!["),
 
 			Self::Op(op) => write!(f, "{:<t$} {:<v$}", "OPERATOR", op),
 
@@ -125,6 +131,8 @@ impl<'s> Display for TokenType<'s> {
 			Self::SymLeftBrace => write!(f, "{{"),
 			Self::SymRightBrace => write!(f, "}}"),
 			Self::SymFatArrow => write!(f, "=>"),
+			Self::SymOutAttr => write!(f, "#["),
+			Self::SymInAttr => write!(f, "#!["),
 
 			Self::Op(o) => write!(f, "{}", o),
 

@@ -173,7 +173,7 @@ impl<'s> Lexer<'s> {
 			"t5" => Ok(self.make_token(TokenType::Reg(RegToken::R30))),
 			"t6" => Ok(self.make_token(TokenType::Reg(RegToken::R31))),
 
-			d if d.starts_with('#') => Ok(self.make_token(TokenType::Dir(d))),
+			d if d.starts_with('$') => Ok(self.make_token(TokenType::Dir(d))),
 
 			_ => Ok(self.make_token(TokenType::Identifier(id))),
 		}

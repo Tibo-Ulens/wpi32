@@ -279,7 +279,7 @@ impl<'s> Lexer<'s> {
 							col:      self.col,
 							src_line: self.get_curr_line().to_string(),
 							found:    c,
-							expected: '=',
+							expected: vec!['=', '>'],
 						})
 					},
 				}
@@ -343,6 +343,38 @@ impl<'s> Lexer<'s> {
 
 				Ok(self.make_token(TokenType::LitStr(raw)))
 			},
+			'#' => {
+				match self.next()? {
+					'[' => {
+						Ok(self.make_token(TokenType::SymOutAttr))
+					},
+					'!' => {
+						let next = self.next()?;
+						if self.next()? != '[' {
+							Err(LexError::UnexpectedSymbol {
+								src_file: self.source_file.to_string(),
+								line:     self.line,
+								col:      self.col,
+								src_line: self.get_curr_line().to_string(),
+								found:    next,
+								expected: vec!['['],
+							})
+						} else {
+							Ok(self.make_token(TokenType::SymInAttr))
+						}
+					},
+					c => {
+						Err(LexError::UnexpectedSymbol {
+							src_file: self.source_file.to_string(),
+							line:     self.line,
+							col:      self.col,
+							src_line: self.get_curr_line().to_string(),
+							found:    c,
+							expected: vec!['[', '!'],
+						})
+					},
+				}
+			},
 			n if n.is_ascii_digit() => {
 				let num = match self.try_take_number() {
 					Ok(n) => n,
@@ -351,7 +383,7 @@ impl<'s> Lexer<'s> {
 
 				Ok(self.make_token(TokenType::LitNum(num)))
 			},
-			c if unicode_ident::is_xid_start(c) || c == '#' || c == '_' || c == '.' => {
+			c if unicode_ident::is_xid_start(c) || c == '$' || c == '_' || c == '.' => {
 				let raw = match self.take_while(|c| unicode_ident::is_xid_continue(c) || c == '_') {
 					Ok(id) => id,
 					Err(e) => return Some(Err(e.into())),
