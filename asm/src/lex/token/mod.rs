@@ -7,12 +7,10 @@
 
 use std::fmt::{Debug, Display};
 
-mod directive;
 mod instruction;
 mod operator;
 mod register;
 
-pub use directive::*;
 pub use instruction::*;
 pub use operator::*;
 pub use register::*;
@@ -28,8 +26,8 @@ pub enum TokenType<'s> {
 	Inst(InstToken),
 	/// A Register (see also [`RegToken`])
 	Reg(RegToken),
-	/// A directive (see also [`DirToken`])
-	Dir(DirToken),
+	/// A directive
+	Dir(&'s str),
 
 	/// **UNESCAPED** string literal, basckslash escaping should be performed
 	/// when splitting into bytes
@@ -38,9 +36,6 @@ pub enum TokenType<'s> {
 	LitChar(char),
 	/// Numeric literal
 	LitNum(i32),
-
-	/// A section identifier
-	Section(&'s str),
 
 	/// An identifier
 	Identifier(&'s str),
@@ -83,8 +78,6 @@ impl<'s> Debug for TokenType<'s> {
 
 			Self::Dir(dir) => write!(f, "{:<t$} {:<v$}", "DIRECTIVE", dir),
 
-			Self::Section(s) => write!(f, "{:<t$} {:<v$}", "SECTION", s),
-
 			Self::LitStr(s) => write!(f, "{:<t$} {:<v$}", "STRING", format!("{:?}", s)),
 			Self::LitChar(c) => write!(f, "{:<t$} {:<v$}", "CHAR", format!("{:?}", c)),
 			Self::LitNum(n) => write!(f, "{:<t$} {:<v$}", "NUM", n),
@@ -120,8 +113,6 @@ impl<'s> Display for TokenType<'s> {
 			Self::LitStr(s) => write!(f, "{:?}", s),
 			Self::LitChar(c) => write!(f, "{:?}", c),
 			Self::LitNum(n) => write!(f, "{}", n),
-
-			Self::Section(s) => write!(f, "{}", s),
 
 			Self::Identifier(i) => write!(f, "{}", i),
 

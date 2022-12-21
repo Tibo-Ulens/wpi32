@@ -8,7 +8,7 @@
 //!  - Labels and LabelDefines ([`TokenType::Label`], [`TokenType::LocalLabel`],
 //!    [`TokenType::LabelDefine`], [`TokenType::LocalLabelDefine`])
 
-use super::token::{DirToken, InstToken, RegToken};
+use super::token::{InstToken, RegToken};
 use super::{
 	BranchInstruction,
 	CsrInstruction,
@@ -16,7 +16,6 @@ use super::{
 	Lexer,
 	LoadInstruction,
 	MdrInstruction,
-	RegularDirective,
 	RriInstruction,
 	RrrInstruction,
 	StoreInstruction,
@@ -174,57 +173,7 @@ impl<'s> Lexer<'s> {
 			"t5" => Ok(self.make_token(TokenType::Reg(RegToken::R30))),
 			"t6" => Ok(self.make_token(TokenType::Reg(RegToken::R31))),
 
-			d if d.starts_with('#') => {
-				match d {
-					"#section" => Ok(self.make_token(TokenType::Dir(DirToken::Section))),
-					"#bytes" => {
-						Ok(self
-							.make_token(TokenType::Dir(DirToken::Regular(RegularDirective::Bytes))))
-					},
-					"#halves" => {
-						Ok(self.make_token(TokenType::Dir(DirToken::Regular(
-							RegularDirective::Halves,
-						))))
-					},
-					"#words" => {
-						Ok(self
-							.make_token(TokenType::Dir(DirToken::Regular(RegularDirective::Words))))
-					},
-					"#res_bytes" => {
-						Ok(self.make_token(TokenType::Dir(DirToken::Regular(
-							RegularDirective::ResBytes,
-						))))
-					},
-					"#res_halves" => {
-						Ok(self.make_token(TokenType::Dir(DirToken::Regular(
-							RegularDirective::ResHalves,
-						))))
-					},
-					"#res_words" => {
-						Ok(self.make_token(TokenType::Dir(DirToken::Regular(
-							RegularDirective::ResWords,
-						))))
-					},
-					"#const" => {
-						Ok(self
-							.make_token(TokenType::Dir(DirToken::Regular(RegularDirective::Const))))
-					},
-					_ => {
-						Err(LexError::InvalidDirective {
-							src_file: self.source_file.to_string(),
-							line:     self.line,
-							col:      self.col,
-							span:     d.len(),
-							src_line: self.get_curr_line().to_string(),
-							dir:      d.to_string(),
-						})
-					},
-				}
-			},
-
-			".text" => Ok(self.make_token(TokenType::Section(id))),
-			".data" => Ok(self.make_token(TokenType::Section(id))),
-			".bss" => Ok(self.make_token(TokenType::Section(id))),
+			d if d.starts_with('#') => Ok(self.make_token(TokenType::Dir(d))),
 
 			_ => Ok(self.make_token(TokenType::Identifier(id))),
 		}

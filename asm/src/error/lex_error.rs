@@ -43,14 +43,6 @@ pub enum LexError {
 		span:     usize,
 		src_line: String,
 	},
-	InvalidDirective {
-		src_file: String,
-		line:     usize,
-		col:      usize,
-		span:     usize,
-		src_line: String,
-		dir:      String,
-	},
 }
 
 impl Display for LexError {
@@ -101,18 +93,6 @@ impl Display for LexError {
 				let location = LocationInfo::new(*line, *col, *span, src_line);
 				let mut pretty_err =
 					make_info_header("invalid escape sequence", src_file, &location);
-
-				pretty_err.push_str(&make_info_body(None, &location));
-
-				pretty_err
-			},
-			Self::InvalidDirective { src_file, line, col, span, src_line, dir } => {
-				let location = LocationInfo::new(*line, *col, *span, src_line);
-				let mut pretty_err = make_info_header(
-					&format!("invalid directive `{:?}`", dir),
-					src_file,
-					&location,
-				);
 
 				pretty_err.push_str(&make_info_body(None, &location));
 
