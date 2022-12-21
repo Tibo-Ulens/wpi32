@@ -16,7 +16,7 @@ pub use immediate::*;
 pub use instruction::*;
 pub use r#macro::*;
 
-use crate::lex::Token;
+use crate::lex::{Token, TokenType};
 
 /// A single file of code, the root of the AST
 ///
@@ -30,7 +30,7 @@ pub struct File<'s> {
 	/// The attributes of this file
 	pub attrs: Vec<Attribute<'s>>,
 	/// All the items of the file (see [`Item`] for more info)
-	pub items: Vec<Option<Item<'s>>>,
+	pub items: Vec<Item<'s>>,
 }
 
 /// An attribute specifying some potential modification of the item it
@@ -45,8 +45,8 @@ pub struct File<'s> {
 ///
 /// ```ebnf
 /// attribute = outer_attribute | inner_attribute;
-/// outer_attribute = '#', '[', Token, { Token }, ']'
-/// inner_attribute = '#', '!', '[', Token, { Token }, ']'
+/// outer_attribute = '#', '[', Token, { Token }, ']', newline;
+/// inner_attribute = '#', '!', '[', Token, { Token }, ']', newline;
 /// ```
 #[derive(Clone, Debug)]
 pub enum Attribute<'s> {
@@ -54,16 +54,15 @@ pub enum Attribute<'s> {
 	Inner { name: Identifier<'s>, args: Vec<Token<'s>> },
 }
 
-/// Any 'thing' in the source code, can have an optional comment or just be
+/// Any 'thing' in the source code, can have optional comments or just be
 /// completely empty
 ///
 /// ```ebnf
-/// item = { attribute }, [ statement ], [ comment ], newline;
+/// item = { comment }, [ statement ], { comment }, newline;
 /// ```
 #[derive(Clone, Debug)]
 pub struct Item<'s> {
-	pub attrs:     Vec<Attribute<'s>>,
-	pub comment:   Option<Comment<'s>>,
+	pub comments:  Vec<Comment<'s>>,
 	pub statement: Option<Statement<'s>>,
 }
 
@@ -89,7 +88,12 @@ pub enum Statement<'s> {
 	/// A directive
 	Directive(Directive<'s>),
 	/// An instruction
-	Instruction(Instruction<'s>),
+	Instruction {
+		/// The attributes of this instruction
+		attrs: Vec<Attribute<'s>>,
+		/// The instruction itself
+		inst:  Instruction<'s>,
+	},
 }
 
 /// A block identified by a label
@@ -99,6 +103,8 @@ pub enum Statement<'s> {
 /// ```
 #[derive(Clone, Debug)]
 pub struct LabeledBlock<'s> {
+	/// The attributes of this block
+	pub attrs: Vec<Attribute<'s>>,
 	/// The label naming this block
 	pub label: Identifier<'s>,
 	/// The content of this block
@@ -120,8 +126,12 @@ pub struct LabeledBlock<'s> {
 /// ```
 #[derive(Clone, Debug)]
 pub struct Directive<'s> {
-	pub name:      Identifier<'s>,
-	pub arguments: Vec<Token<'s>>,
+	/// The attributes of this directive
+	pub attrs: Vec<Attribute<'s>>,
+	/// The name of the directive getting invoked
+	pub name:  Identifier<'s>,
+	/// The arguments of the directive getting invoked
+	pub args:  Vec<Token<'s>>,
 }
 
 /// An identifier used to name something
@@ -139,6 +149,23 @@ pub struct Identifier<'s> {
 	pub source_line: &'s str,
 }
 
+impl<'s> From<Token<'s>> for Identifier<'s> {
+	fn from(value: Token<'s>) -> Self {
+		let id = match value.t {
+			TokenType::Identifier(id) => id,
+			_ => unreachable!(),
+		};
+
+		Self {
+			id,
+			line: value.line,
+			col: value.col,
+			span: value.span,
+			source_line: value.source_line,
+		}
+	}
+}
+
 /// A Comment
 #[derive(Clone, Debug)]
 pub struct Comment<'s> {
@@ -152,4 +179,21 @@ pub struct Comment<'s> {
 	pub span:        usize,
 	/// The line of source code containing this comment
 	pub source_line: &'s str,
+}
+
+impl<'s> From<Token<'s>> for Comment<'s> {
+	fn from(value: Token<'s>) -> Self {
+		let comment = match value.t {
+			TokenType::Comment(c) => c,
+			_ => unreachable!(),
+		};
+
+		Self {
+			comment,
+			line: value.line,
+			col: value.col,
+			span: value.span,
+			source_line: value.source_line,
+		}
+	}
 }

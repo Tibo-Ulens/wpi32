@@ -1,4 +1,4 @@
-use super::Identifier;
+use super::{Attribute, Identifier};
 use crate::lex::{Token, TokenType};
 /// A macro definition
 ///
@@ -15,6 +15,8 @@ use crate::lex::{Token, TokenType};
 /// ```
 #[derive(Clone, Debug)]
 pub struct MacroDefinition<'s> {
+	/// The attributes of this macro definition
+	pub attrs: Vec<Attribute<'s>>,
 	/// The name of the macro getting defined
 	pub name:  Identifier<'s>,
 	/// The rules making up this macro
@@ -120,8 +122,10 @@ pub enum MacroVarType {
 /// ```
 #[derive(Clone, Debug)]
 pub struct MacroInvocation<'s> {
+	/// The attributes of this macro invocation
+	pub attrs: Vec<Attribute<'s>>,
 	/// The name of the macro getting called
-	pub name: Identifier<'s>,
+	pub name:  Identifier<'s>,
 	/// The arguments passed to the macro
-	pub args: Vec<Token<'s>>,
+	pub args:  Vec<Token<'s>>,
 }

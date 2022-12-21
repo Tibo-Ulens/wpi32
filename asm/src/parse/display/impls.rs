@@ -34,22 +34,7 @@ impl<'s> From<&File<'s>> for Node {
 		let items = Node {
 			prefixes: vec![],
 			repr:     "Items".to_string(),
-			children: value
-				.items
-				.iter()
-				.map(|i| {
-					match i {
-						Some(item) => item.into(),
-						None => {
-							Node {
-								prefixes: vec!["Item".to_string()],
-								repr:     "Empty".to_string(),
-								children: vec![],
-							}
-						},
-					}
-				})
-				.collect(),
+			children: value.items.iter().map(|i| i.into()).collect(),
 		};
 
 		Node { prefixes: vec![], repr: "File".to_string(), children: vec![attrs, items] }
@@ -99,9 +84,7 @@ impl<'s> From<&Item<'s>> for Node {
 	fn from(value: &Item<'s>) -> Self {
 		let mut children = vec![];
 
-		if let Some(cmnt) = &value.comment {
-			children.push(cmnt.into());
-		}
+		children.extend(value.comments.iter().map(|c| c.into()));
 
 		if let Some(stmt) = &value.statement {
 			children.push(stmt.into());
@@ -129,7 +112,17 @@ impl<'s> From<&Statement<'s>> for Node {
 	fn from(value: &Statement) -> Self {
 		match value {
 			Statement::Directive(dir) => Node::from(dir).add_prefix("Statement"),
-			Statement::Instruction(inst) => Node::from(inst).add_prefix("Statement"),
+			Statement::Instruction { attrs, inst } => {
+				let mut inst_node = Node::from(inst).add_prefix("Statement");
+
+				inst_node.children.push(Node {
+					prefixes: vec![],
+					repr:     "Attributes".to_string(),
+					children: attrs.iter().map(|a| a.into()).collect(),
+				});
+
+				inst_node
+			},
 			Statement::LabeledBlock(lblock) => Node::from(lblock).add_prefix("Statement"),
 			Statement::MacroDefinition(mdef) => Node::from(mdef).add_prefix("Statement"),
 			Statement::MacroInvocation(minvoc) => Node::from(minvoc).add_prefix("Statement"),
@@ -149,7 +142,15 @@ impl<'s> From<&Identifier<'s>> for Node {
 
 impl<'s> From<&MacroDefinition<'s>> for Node {
 	fn from(value: &MacroDefinition<'s>) -> Self {
-		let mut children = vec![Node::from(&value.name)];
+		let mut children = vec![];
+
+		children.push(Node {
+			prefixes: vec![],
+			repr:     "Attributes".to_string(),
+			children: value.attrs.iter().map(|a| a.into()).collect(),
+		});
+
+		children.push(Node::from(&value.name));
 
 		children.extend(value.rules.iter().map(|r| r.into()));
 
@@ -257,7 +258,15 @@ impl From<&MacroVarType> for Node {
 
 impl<'s> From<&MacroInvocation<'s>> for Node {
 	fn from(value: &MacroInvocation<'s>) -> Self {
-		let mut children = vec![Node::from(&value.name)];
+		let mut children = vec![];
+
+		children.push(Node {
+			prefixes: vec![],
+			repr:     "Attributes".to_string(),
+			children: value.attrs.iter().map(|a| a.into()).collect(),
+		});
+
+		children.push(Node::from(&value.name));
 
 		children.extend(
 			value
@@ -273,7 +282,15 @@ impl<'s> From<&MacroInvocation<'s>> for Node {
 
 impl<'s> From<&LabeledBlock<'s>> for Node {
 	fn from(value: &LabeledBlock<'s>) -> Self {
-		let mut children = vec![Node::from(&value.label).add_prefix("Label")];
+		let mut children = vec![];
+
+		children.push(Node {
+			prefixes: vec![],
+			repr:     "Attributes".to_string(),
+			children: value.attrs.iter().map(|a| a.into()).collect(),
+		});
+
+		children.push(Node::from(&value.label).add_prefix("Label"));
 
 		children.extend(value.items.iter().map(|i| {
 			match i {
@@ -295,11 +312,16 @@ impl<'s> From<&LabeledBlock<'s>> for Node {
 impl<'s> From<&Directive<'s>> for Node {
 	fn from(value: &Directive) -> Self {
 		let mut children = vec![
+			Node {
+				prefixes: vec![],
+				repr:     "Attributes".to_string(),
+				children: value.attrs.iter().map(|a| a.into()).collect(),
+			},
 			Node::from(&value.name).add_prefix("Name"),
 			Node {
 				prefixes: vec!["Arguments".to_string()],
 				repr:     value
-					.arguments
+					.args
 					.iter()
 					.map(|a| a.t.to_string())
 					.collect::<Vec<String>>()

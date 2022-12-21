@@ -48,18 +48,8 @@ mod r#macro;
 
 pub use display::Node;
 
-use self::ast::{
-	ConstDirective,
-	File,
-	Item,
-	LabeledBlock,
-	Literal,
-	PreambleLine,
-	PreambleStatement,
-	Section,
-	Statement,
-};
-use crate::lex::{DirToken, OpToken, RegularDirective, Token, TokenType};
+use self::ast::{Attribute, Comment, File, Item, LabeledBlock, Statement};
+use crate::lex::{OpToken, Token, TokenType};
 
 /// Main parser type
 ///
@@ -171,221 +161,59 @@ impl<'s> Parser<'s> {
 	///
 	/// Assumes the token stream ends on a newline
 	pub fn parse(&'s mut self) -> Result<File<'s>, Error> {
-		let mut preamble = vec![];
-		let mut sections = vec![];
+		let mut attrs = vec![];
+		let mut items = vec![];
 
-		// As long as there is no section header we're in the preamble
-		while let Ok(peek) = self.peek() && peek.t != TokenType::Dir(DirToken::Section) {
-			let preambleline = self.parse_preambleline()?;
-			preamble.push(preambleline);
+		while let Ok(peek) = self.peek() {
+			if peek.t == TokenType::SymInAttr || peek.t == TokenType::SymOutAttr {
+				let attr = self.parse_attribute()?;
+				attrs.push(attr);
+			} else {
+				let item = self.parse_item()?;
+				items.push(item);
+			}
 		}
 
-		while let Ok(peek) = self.peek() && peek.t == TokenType::Dir(DirToken::Section) {
-			let section = self.parse_section()?;
-
-			sections.push(section);
-		}
-
-		Ok(File { preamble, items: sections })
+		Ok(File { attrs, items })
 	}
 
-	/// Parse a preamble line consisting of:
-	///  - An optional [`#CONST`](DirToken::Const) directive
-	///  - An optional Comment
-	///  - A newline
-	///
-	/// Consumes the trailing newline
-	fn parse_preambleline<'r>(&'r mut self) -> Result<PreambleLine<'s>, ParseError> {
-		let statement = self.tryparse_preamble_statement()?;
+	fn parse_attribute<'r>(&'r mut self) -> Result<Attribute<'s>, ParseError> { todo!() }
 
-		let comment = if let TokenType::Comment(c) = self.peek()?.t {
-			// Unwrap is safe as peek is Ok
-			self.next().unwrap();
-			Some(c)
-		} else {
-			None
-		};
-
-		let nl = self.peek()?;
-		if nl.t != TokenType::SymNewline {
-			// Unwrap is safe as peek is [`Ok`]
-			self.next().unwrap();
-			return Err(ParseError::UnexpectedToken {
-				src_file: self.source_file.to_string(),
-				location: Box::new(LocationInfo::from(nl)),
-				found:    nl.t.to_string(),
-				expected: "CONST DIRECTIVE or NEWLINE".to_string(),
-			});
-		}
-
-		// TODO: throw a better error in case anything that isn't a constdir or
-		// comment is found
-		self.expect(TokenType::SymNewline)?;
-
-		Ok(PreambleLine { statement, comment })
-	}
-
-	/// Try to parse a [`PreambleStatement`]
-	///
-	/// Returns [`None`] if the current [`Token`] cannot start a statement
-	fn tryparse_preamble_statement<'r>(
-		&'r mut self,
-	) -> Result<Option<PreambleStatement<'s>>, ParseError> {
-		let peek = self.peek()?;
-		match &peek.t {
-			TokenType::Identifier("define_macro") => {
-				Ok(Some(PreambleStatement::MacroDefinition(self.parse_macro_definition()?)))
-			},
-			TokenType::Dir(DirToken::Regular(RegularDirective::Const)) => {
-				Ok(Some(PreambleStatement::ConstDirective(self.parse_const_directive()?)))
-			},
-			TokenType::SymNewline => Ok(None),
-			TokenType::Comment(_) => Ok(None),
-			_ => {
-				Err(ParseError::UnexpectedToken {
-					src_file: self.source_file.to_string(),
-					location: Box::new(LocationInfo::from(peek)),
-					found:    peek.t.to_string(),
-					expected: "CONST DIRECTIVE or MACRO DEFINITION or COMMENT or NEWLINE"
-						.to_string(),
-				})
-			},
-		}
-	}
-
-	/// Parse a `#CONST` directive consisting of:
-	///  - The [`#CONST`](DirToken::Const) keyword
-	///  - An [`Identifier`] name
-	///  - A [`Literal`] value
-	///
-	/// Assumes the current [`Token`] has [`TokenType`]
-	/// [`TokenType::Dir(DirToken::Const)`]
-	fn parse_const_directive<'r>(&'r mut self) -> Result<ConstDirective<'s>, ParseError> {
-		// Consume the #CONST token
-		// Unwrap is assumed to be safe
-		assert_matches!(
-			self.next().unwrap().t,
-			TokenType::Dir(DirToken::Regular(RegularDirective::Const))
-		);
-
-		let id_token = self.next()?;
-
-		let id = match &id_token.t {
-			TokenType::Identifier(id) => id,
-			_ => {
-				return Err(ParseError::UnexpectedToken {
-					src_file: self.source_file.to_string(),
-					location: Box::new(LocationInfo::from(id_token)),
-					found:    id_token.t.to_string(),
-					expected: "IDENTIFIER".to_string(),
-				});
-			},
-		};
-
-		let value = self.parse_literal()?;
-
-		Ok(ConstDirective { id, value })
-	}
-
-	/// Parse a [`Literal`] consisting of either:
-	///  - A [string literal](Literal::String)
-	///  - A [char literal](Literal::Char)
-	///  - An [immediate](Literal::Immediate)
-	fn parse_literal<'r>(&'r mut self) -> Result<Literal<'s>, ParseError> {
-		let peek = self.peek()?;
-
-		// Unwrap is safe as peek is Ok
-		let lit = match &peek.t {
-			TokenType::LitStr(s) => {
-				self.next().unwrap();
-				Literal::String(s)
-			},
-			TokenType::LitChar(c) => {
-				self.next().unwrap();
-				Literal::Char(*c)
-			},
-			TokenType::Op(
-				OpToken::Plus | OpToken::Minus | OpToken::BitNot | OpToken::Exclamation,
-			)
-			| TokenType::SymLeftParen
-			| TokenType::LitNum(_)
-			| TokenType::Identifier(_) => Literal::Immediate(self.parse_immediate()?),
-			_ => {
-				return Err(ParseError::UnexpectedToken {
-					src_file: self.source_file.to_string(),
-					location: Box::new(LocationInfo::from(peek)),
-					found:    peek.t.to_string(),
-					expected: "STRING or CHAR or IMMEDIATE".to_string(),
-				});
-			},
-		};
-
-		Ok(lit)
-	}
-
-	/// Parse a section consisting of:
-	///  - A section header ([#SECTION directive](DirToken::Section) + name)
-	///  - Any amount of [`Line`]s
-	///
-	/// Assumes the current [`Token`] has [`TokenType`]
-	/// [`TokenType::Dir(DirToken::Section)`]
-	fn parse_section<'r>(&'r mut self) -> Result<Section<'s>, ParseError> {
-		// Consume the `#SECTION` directive token
-		// Unwrap is assumed to be safe
-		assert_eq!(self.next().unwrap().t, TokenType::Dir(DirToken::Section));
-
-		let peek = self.peek()?;
-		let name = match peek.t {
-			TokenType::Section(s) => {
-				// Unwrap is safe as peek is Ok
-				self.next().unwrap();
-				s
-			},
-			_ => {
-				return Err(ParseError::UnexpectedToken {
-					src_file: self.source_file.to_string(),
-					location: Box::new(LocationInfo::from(peek)),
-					found:    peek.t.to_string(),
-					expected: ".TEXT or .DATA or .BSS".to_string(),
-				});
-			},
-		};
-
-		// Section headers must end with a newline
-		self.expect(TokenType::SymNewline)?;
-
-		let mut lines = vec![];
-
-		// As long as there are tokens remaining and they aren't section
-		// directives we stay in the same section
-		while let Ok(peek) = self.peek() && peek.t != TokenType::Dir(DirToken::Section) {
-			let line = self.parse_line()?;
-			lines.push(line);
-		}
-
-		Ok(Section { name, items: lines })
-	}
-
-	/// Parse a (section) [`Line`] consisting of:
+	/// Parse an [`Item`] consisting of:
+	///  - Any amount of comments
 	///  - An optional [`Statement`]
-	///  - An optional comment
 	///  - A newline
 	///
 	/// Consumes the final newline
-	fn parse_line<'r>(&'r mut self) -> Result<Item<'s>, ParseError> {
+	fn parse_item<'r>(&'r mut self) -> Result<Item<'s>, ParseError> {
+		let mut comments = vec![];
+
+		// Comments may appear before the statement
+		while let TokenType::Comment(_) = self.peek()?.t {
+			// Unwrap is safe as peek is [`Ok`]
+			let comment_token = self.next().unwrap();
+			comments.push(Comment::from(*comment_token));
+
+			self.expect(TokenType::SymNewline)?;
+		}
+
 		let statement = self.tryparse_statement()?;
 
-		let comment = if let TokenType::Comment(c) = self.peek()?.t {
-			// Unwrap is safe as peek is Ok
-			self.next().unwrap();
-			Some(c)
+		// Comments may also appear after the statement
+		if let TokenType::Comment(_) = self.peek()?.t {
+			while let TokenType::Comment(_) = self.peek()?.t {
+				// Unwrap is safe as peek is [`Ok`]
+				let comment_token = self.next().unwrap();
+				comments.push(Comment::from(*comment_token));
+
+				self.expect(TokenType::SymNewline)?;
+			}
 		} else {
-			None
-		};
+			// Comment or not, there should still be a newline
+			self.expect(TokenType::SymNewline)?;
+		}
 
-		self.expect(TokenType::SymNewline)?;
-
-		Ok(Item { statement, comment })
+		Ok(Item { comments, statement })
 	}
 
 	/// Try to parse a [`Statement`]

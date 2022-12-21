@@ -345,9 +345,7 @@ impl<'s> Lexer<'s> {
 			},
 			'#' => {
 				match self.next()? {
-					'[' => {
-						Ok(self.make_token(TokenType::SymOutAttr))
-					},
+					'[' => Ok(self.make_token(TokenType::SymOutAttr)),
 					'!' => {
 						let next = self.next()?;
 						if self.next()? != '[' {
