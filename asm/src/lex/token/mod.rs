@@ -32,7 +32,7 @@ pub enum TokenType<'s> {
 	/// **UNESCAPED** string literal, basckslash escaping should be performed
 	/// when splitting into bytes
 	LitStr(&'s str),
-	/// Escaped character litera
+	/// Escaped character literal
 	LitChar(char),
 	/// Numeric literal
 	LitNum(i32),

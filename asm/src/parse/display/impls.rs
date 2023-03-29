@@ -5,14 +5,17 @@ use crate::lex::RegToken;
 use crate::parse::ast::{
 	Address,
 	Attribute,
+	BlockLabel,
 	Comment,
-	Directive,
+	ConstDefinition,
+	Extern,
 	File,
 	Identifier,
 	Immediate,
+	Import,
 	Instruction,
 	Item,
-	LabeledBlock,
+	Label,
 	MacroArgType,
 	MacroDefinition,
 	MacroInvocation,
@@ -21,7 +24,9 @@ use crate::parse::ast::{
 	MacroVarType,
 	OffsetOperator,
 	OrderingTarget,
+	SectionBlock,
 	Statement,
+	Visibility,
 };
 
 impl<'s> From<&File<'s>> for Node {
@@ -84,7 +89,9 @@ impl<'s> From<&Item<'s>> for Node {
 	fn from(value: &Item<'s>) -> Self {
 		let mut children = vec![];
 
-		children.extend(value.comments.iter().map(|c| c.into()));
+		if let Some(cmnt) = &value.comment {
+			children.push(cmnt.into())
+		}
 
 		if let Some(stmt) = &value.statement {
 			children.push(stmt.into());
@@ -111,7 +118,14 @@ impl<'s> From<&Comment<'s>> for Node {
 impl<'s> From<&Statement<'s>> for Node {
 	fn from(value: &Statement) -> Self {
 		match value {
-			Statement::Directive(dir) => Node::from(dir).add_prefix("Statement"),
+			Statement::MacroDefinition(mdef) => Node::from(mdef).add_prefix("Statement"),
+			Statement::MacroInvocation(minvoc) => Node::from(minvoc).add_prefix("Statement"),
+			Statement::Extern(ext) => Node::from(ext).add_prefix("Statement"),
+			Statement::Import(import) => Node::from(import).add_prefix("Statement"),
+			Statement::ConstDefinition(cdef) => Node::from(cdef).add_prefix("Statement"),
+			Statement::SectionBlock(sblock) => Node::from(sblock).add_prefix("Statement"),
+			Statement::LabeledBlock(lblock) => Node::from(lblock).add_prefix("Statement"),
+			Statement::Label(label) => Node::from(label).add_prefix("Statement"),
 			Statement::Instruction { attrs, inst } => {
 				let mut inst_node = Node::from(inst).add_prefix("Statement");
 
@@ -123,9 +137,121 @@ impl<'s> From<&Statement<'s>> for Node {
 
 				inst_node
 			},
-			Statement::LabeledBlock(lblock) => Node::from(lblock).add_prefix("Statement"),
-			Statement::MacroDefinition(mdef) => Node::from(mdef).add_prefix("Statement"),
-			Statement::MacroInvocation(minvoc) => Node::from(minvoc).add_prefix("Statement"),
+		}
+	}
+}
+
+impl<'s> From<&Extern<'s>> for Node {
+	fn from(value: &Extern<'s>) -> Self {
+		let mut children = vec![];
+
+		children.push(Node {
+			prefixes: vec![],
+			repr:     "Attributes".to_string(),
+			children: value.attrs.iter().map(Node::from).collect(),
+		});
+
+		children.push(Node {
+			prefixes: vec![],
+			repr:     "Symbols".to_string(),
+			children: value.symbols.iter().map(Node::from).collect(),
+		});
+
+		Node { prefixes: vec![], repr: "Extern".to_string(), children }
+	}
+}
+
+impl<'s> From<&Import<'s>> for Node {
+	fn from(value: &Import<'s>) -> Self {
+		let mut children = vec![];
+
+		children.push(Node {
+			prefixes: vec![],
+			repr:     "Attributes".to_string(),
+			children: value.attrs.iter().map(Node::from).collect(),
+		});
+
+		children.push(Node {
+			prefixes: vec![],
+			repr:     "Files".to_string(),
+			children: value.files.iter().map(Node::from).collect(),
+		});
+
+		Node { prefixes: vec![], repr: "Import".to_string(), children }
+	}
+}
+
+impl<'s> From<&ConstDefinition<'s>> for Node {
+	fn from(value: &ConstDefinition<'s>) -> Self {
+		let mut children = vec![];
+
+		children.push(Node {
+			prefixes: vec![],
+			repr:     "Attributes".to_string(),
+			children: value.attrs.iter().map(|a| a.into()).collect(),
+		});
+
+		children.push(Node::from(&value.visibility));
+		children.push(Node::from(&value.identifier).add_prefix("Identifier"));
+		children.push(Node::from(&value.value).add_prefix("Value"));
+
+		Node { prefixes: vec![], repr: "ConstDefinition".to_string(), children }
+	}
+}
+
+impl<'s> From<&SectionBlock<'s>> for Node {
+	fn from(value: &SectionBlock<'s>) -> Self {
+		let mut children = vec![];
+
+		children.push(Node {
+			prefixes: vec![],
+			repr:     "Attributes".to_string(),
+			children: value.attrs.iter().map(|a| a.into()).collect(),
+		});
+
+		children.push(Node::from(&value.block_name).add_prefix("BlockName"));
+
+		children.extend(value.items.iter().map(Node::from));
+
+		Node { prefixes: vec![], repr: "SectionBlock".to_string(), children }
+	}
+}
+
+impl<'s> From<&Label<'s>> for Node {
+	fn from(value: &Label<'s>) -> Self {
+		let mut children = vec![];
+
+		children.push(Node {
+			prefixes: vec![],
+			repr:     "Attributes".to_string(),
+			children: value.attrs.iter().map(|a| a.into()).collect(),
+		});
+
+		children.push(Node::from(&value.visibility));
+		children.push(Node::from(&value.label).add_prefix("Label"));
+		children.push(Node::from(value.item.as_ref()).add_prefix("Label"));
+
+		Node { prefixes: vec![], repr: "Label".to_string(), children }
+	}
+}
+
+impl From<&Visibility> for Node {
+	fn from(value: &Visibility) -> Self {
+		match value {
+			Visibility::Private => {
+				Node {
+					prefixes: vec!["Visibility".to_string()],
+					repr:     "Private".to_string(),
+					children: vec![],
+				}
+			},
+			Visibility::Public => {
+				Node {
+					prefixes: vec!["Visibility".to_string()],
+					repr:     "Public".to_string(),
+					children: vec![],
+				}
+			},
 		}
 	}
 }
@@ -280,8 +406,8 @@ impl<'s> From<&MacroInvocation<'s>> for Node {
 	}
 }
 
-impl<'s> From<&LabeledBlock<'s>> for Node {
-	fn from(value: &LabeledBlock<'s>) -> Self {
+impl<'s> From<&BlockLabel<'s>> for Node {
+	fn from(value: &BlockLabel<'s>) -> Self {
 		let mut children = vec![];
 
 		children.push(Node {
@@ -306,31 +432,6 @@ impl<'s> From<&LabeledBlock<'s>> for Node {
 		}));
 
 		Node { prefixes: vec![], repr: "LabeledBlock".to_string(), children }
-	}
-}
-
-impl<'s> From<&Directive<'s>> for Node {
-	fn from(value: &Directive) -> Self {
-		let mut children = vec![
-			Node {
-				prefixes: vec![],
-				repr:     "Attributes".to_string(),
-				children: value.attrs.iter().map(|a| a.into()).collect(),
-			},
-			Node::from(&value.name).add_prefix("Name"),
-			Node {
-				prefixes: vec!["Arguments".to_string()],
-				repr:     value
-					.args
-					.iter()
-					.map(|a| a.t.to_string())
-					.collect::<Vec<String>>()
-					.join(", "),
-				children: vec![],
-			},
-		];
-
-		Node { prefixes: vec![], repr: "Directive".to_string(), children }
 	}
 }
 

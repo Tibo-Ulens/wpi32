@@ -8,11 +8,11 @@
 
 // #![allow(missing_docs)]
 
-mod immediate;
 mod instruction;
 mod r#macro;
 
-pub use immediate::*;
+use std::fmt::{Display, Formatter, Result};
+
 pub use instruction::*;
 pub use r#macro::*;
 
@@ -58,11 +58,16 @@ pub enum Attribute<'s> {
 /// completely empty
 ///
 /// ```ebnf
-/// item = { comment }, [ statement ], { comment }, newline;
+/// item =
+///     (
+///         { comment }
+///         | ( [ statement ], { comment } )
+///     ),
+///     newline;
 /// ```
 #[derive(Clone, Debug)]
 pub struct Item<'s> {
-	pub comments:  Vec<Comment<'s>>,
+	pub comment:   Option<Comment<'s>>,
 	pub statement: Option<Statement<'s>>,
 }
 
@@ -83,10 +88,27 @@ pub enum Statement<'s> {
 	MacroDefinition(MacroDefinition<'s>),
 	/// A macro invocation
 	MacroInvocation(MacroInvocation<'s>),
-	/// A labeled block of code
-	LabeledBlock(LabeledBlock<'s>),
-	/// A directive
-	Directive(Directive<'s>),
+
+	/// An extern label declaration
+	Extern(Extern<'s>),
+	/// An import directive to include other files
+	Import(Import<'s>),
+
+	/// A constant declaration \
+	/// eg. `const foo = 123`
+	ConstDefinition(ConstDefinition<'s>),
+
+	/// A section block \
+	/// eg. `section .text {}`
+	SectionBlock(SectionBlock<'s>),
+
+	/// A named lexical block \
+	/// eg. `foo {}`
+	LabeledBlock(BlockLabel<'s>),
+	/// A non-scoped label \
+	/// eg. `foo: addi r0, r0, 0`
+	Label(Label<'s>),
+
 	/// An instruction
 	Instruction {
 		/// The attributes of this instruction
@@ -96,46 +118,101 @@ pub enum Statement<'s> {
 	},
 }
 
-/// A block identified by a label
+/// An extern directive to declare a list of labels as external
 ///
 /// ```ebnf
-/// labeled_block = identifier, "{", { item }, "}";
+/// extern = "extern", identifier, { ",", identifier }
 /// ```
 #[derive(Clone, Debug)]
-pub struct LabeledBlock<'s> {
-	/// The attributes of this block
-	pub attrs: Vec<Attribute<'s>>,
-	/// The label naming this block
-	pub label: Identifier<'s>,
-	/// The content of this block
-	pub items: Vec<Option<Item<'s>>>,
+pub struct Extern<'s> {
+	pub attrs:   Vec<Attribute<'s>>,
+	/// The symbols to declare as external
+	pub symbols: Vec<Identifier<'s>>,
 }
 
-/// A directive specifying how some data should be handled, interpreted, or
-/// modified
-///
-/// Directives can:
-///  - define initialised data as bytes, halves, or words
-///  - reserve a given number bytes, halves, or words
-///  - declare an identifier as a constant
-///  - specify what symbols to make available globally
-///  - potentially more in the future
+/// An import directive to include other files
 ///
 /// ```ebnf
-/// directive = '#', Token, { Token };
+/// import = "import", identifier, { ",", identifier }
 /// ```
 #[derive(Clone, Debug)]
-pub struct Directive<'s> {
-	/// The attributes of this directive
+pub struct Import<'s> {
 	pub attrs: Vec<Attribute<'s>>,
-	/// The name of the directive getting invoked
-	pub name:  Identifier<'s>,
-	/// The arguments of the directive getting invoked
-	pub args:  Vec<Token<'s>>,
+	/// The files to import
+	pub files: Vec<Identifier<'s>>,
+}
+
+/// An assemble-time constant definition
+///
+/// ```ebnf
+/// const_definition = visibility, "const", identifier, "=", immediate
+/// ```
+#[derive(Clone, Debug)]
+pub struct ConstDefinition<'s> {
+	pub attrs:      Vec<Attribute<'s>>,
+	pub visibility: Visibility,
+	/// The name of the constant
+	pub identifier: Identifier<'s>,
+	/// The value of the constant
+	pub value:      Immediate<'s>,
+}
+
+/// A block wrapping a specific section of the code
+///
+/// ```ebnf
+/// section_block = "section", identifier, "{", { item }, "}"
+/// ```
+#[derive(Clone, Debug)]
+pub struct SectionBlock<'s> {
+	pub attrs:      Vec<Attribute<'s>>,
+	pub block_name: Identifier<'s>,
+	pub items:      Vec<Item<'s>>,
+}
+
+/// A lexical block identified by a label
+///
+/// ```ebnf
+/// labeled_block = visibility, identifier, "{", { item }, "}";
+/// ```
+#[derive(Clone, Debug)]
+pub struct BlockLabel<'s> {
+	pub attrs:      Vec<Attribute<'s>>,
+	pub visibility: Visibility,
+	/// The label naming this block
+	pub label:      Identifier<'s>,
+	/// The content of this block
+	pub items:      Vec<Option<Item<'s>>>,
+}
+
+/// A non-scoping label
+///
+/// ```ebnf
+/// label = visibility, identifier, ":", item
+/// ```
+#[derive(Clone, Debug)]
+pub struct Label<'s> {
+	pub attrs:      Vec<Attribute<'s>>,
+	pub visibility: Visibility,
+	/// The name of the label
+	pub label:      Identifier<'s>,
+	/// The item this label is pointing to
+	pub item:       Box<Item<'s>>,
+}
+
+/// Whether or not a specific item should be made public in the final
+/// executable
+///
+/// ```ebnf
+/// visibility = [ "public" ]
+/// ```
+#[derive(Clone, Copy, Debug)]
+pub enum Visibility {
+	Public,
+	Private,
 }
 
 /// An identifier used to name something
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Identifier<'s> {
 	/// The actual value of the identifier
 	pub id:          &'s str,
@@ -166,8 +243,30 @@ impl<'s> From<Token<'s>> for Identifier<'s> {
 	}
 }
 
-/// A Comment
+/// An immediate value
+///
+/// This can range from a single number to a complex expression referencing
+/// labels and constants
+///
+/// *EBNF not given as it is too chonky, look at the docs folder for grammar*
 #[derive(Clone, Debug)]
+pub struct Immediate<'s> {
+	/// The tokens making up this immediate, parsed into
+	/// [Reverse Polish notation](https://en.wikipedia.org/wiki/Reverse_Polish_notation)
+	pub rpn_tokens: Vec<Token<'s>>,
+}
+
+impl<'s> Display for Immediate<'s> {
+	fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+		let repr =
+			self.rpn_tokens.iter().map(|t| t.t.to_string()).collect::<Vec<String>>().join(" ");
+
+		write!(f, "{}", repr)
+	}
+}
+
+/// A Comment
+#[derive(Clone, Copy, Debug)]
 pub struct Comment<'s> {
 	/// The comment itself
 	pub comment:     &'s str,

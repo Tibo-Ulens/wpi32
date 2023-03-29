@@ -3,12 +3,12 @@
 use std::fmt::{Display, Formatter};
 
 mod lex_error;
-mod macro_error;
+// mod macro_error;
 mod parse_error;
 mod print;
 
 pub use lex_error::LexError;
-pub use macro_error::MacroError;
+// pub use macro_error::MacroError;
 pub use parse_error::ParseError;
 
 use crate::lex::Token;

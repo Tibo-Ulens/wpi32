@@ -34,21 +34,19 @@
 //! }
 //! ```
 
-use std::assert_matches::assert_matches;
 use std::mem::discriminant;
 
 use crate::error::{Error, LocationInfo, ParseError};
 
 pub mod ast;
-mod directive;
 mod display;
 mod immediate;
 mod instruction;
-mod r#macro;
+// mod r#macro;
 
 pub use display::Node;
 
-use self::ast::{Attribute, Comment, File, Item, LabeledBlock, Statement};
+use self::ast::{Attribute, BlockLabel, Comment, File, Item, Statement};
 use crate::lex::{OpToken, Token, TokenType};
 
 /// Main parser type
@@ -269,10 +267,7 @@ impl<'s> Parser<'s> {
 	/// [`TokenType::SymLeftBrace`]
 	///
 	/// Takes the label as an argument
-	fn parse_labeled_block<'r>(
-		&'r mut self,
-		label: &'s str,
-	) -> Result<LabeledBlock<'s>, ParseError> {
+	fn parse_labeled_block<'r>(&'r mut self, label: &'s str) -> Result<BlockLabel<'s>, ParseError> {
 		let open = self.expect(TokenType::SymLeftBrace)?;
 
 		let mut lines = vec![];
@@ -292,6 +287,6 @@ impl<'s> Parser<'s> {
 			});
 		}
 
-		Ok(LabeledBlock { label, items: lines })
+		Ok(BlockLabel { label, items: lines })
 	}
 }
